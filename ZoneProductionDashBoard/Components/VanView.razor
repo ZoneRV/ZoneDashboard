@@ -4,6 +4,35 @@
 
 <RadzenTabs>
     <Tabs>
+        <RadzenTabsItem Text="Info">
+            <RadzenText>@Van.Name.ToUpper()</RadzenText>
+            
+            <RadzenText>@Van.Position</RadzenText>
+            
+            @if(Van.Handover.HasValue)
+            {
+                @if (Van.Handover.Value - DateTimeOffset.Now < TimeSpan.Zero)
+                {
+                    if(Van.Handover.Value - DateTimeOffset.Now < - TimeSpan.FromDays(1))
+                    {
+                        <RadzenText>Hanover: @((Van.Handover.Value - DateTimeOffset.Now).TotalDays.ToString("N0")) days ago</RadzenText>
+                    }
+                    else
+                    {
+                        <RadzenText>Hanover over due</RadzenText>
+                    }
+                }
+                @if(Van.Handover.Value - DateTimeOffset.Now > TimeSpan.FromDays(3))
+                {
+                    <RadzenText>Hanover: @Van.Handover.Value.LocalDateTime.ToString("dd/MM/yy")</RadzenText>
+                }
+                
+                else
+                {
+                    <RadzenText>Hanover: @Van.Handover.Value.LocalDateTime.ToString("ddd hh:mm tt")</RadzenText>
+                }
+            }
+        </RadzenTabsItem>
         <RadzenTabsItem Text="Job Cards">
             <JobCardGridComponent JobCards="Van.JobCards" Style="height: 85vh" GroupByAreaOfOrigin="@true" @ref="@_jobCardGrid"/>
         </RadzenTabsItem>

@@ -179,7 +179,7 @@
         }
 
         await DialogService.OpenAsync<VanView>(
-            args.Data.Name,
+            args.Data.Name.ToUpper(),
             new Dictionary<string, object>
             {
                 { "Van", board }
