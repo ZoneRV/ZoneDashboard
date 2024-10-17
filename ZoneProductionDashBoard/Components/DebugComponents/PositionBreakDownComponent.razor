@@ -1,0 +1,50 @@
+﻿<RadzenCard Style="min-width: 300px">
+    <RadzenStack>
+        <radzenText>@ListName</radzenText>
+        <radzenText>Total Hours: @($"{(int)TotalTime(Cards).TotalHours}"):@($"{TotalTime(Cards).Minutes:00}")</radzenText>
+    </RadzenStack>
+    <RadzenStack>
+        @foreach (CardAreaOfOrigin area in Enum.GetValues<CardAreaOfOrigin>())
+        {
+            if (Cards.Any(x => x.AreaOfOrigin == area))
+            {
+                TimeSpan totalTime = TotalTime(Cards.Where(x => x.AreaOfOrigin == area)); 
+
+                <RadzenCard Style="@($"background: {area.ToChartColor()}")">
+                    <RadzenText>@area.CleanName()</RadzenText>
+                    <RadzenText>Total Hours: @($"{totalTime.TotalHours:N0}"):@($"{totalTime.Minutes:00}") </RadzenText>
+                    <RadzenStack Gap="2px">
+                        @foreach (CardBreakDown card in Cards.Where(x => x.AreaOfOrigin == area))
+                        {
+                            <CardBreakDownComponent Card="@card" ShowListName="@(ShowListName || area == CardAreaOfOrigin.Unknown)"/>
+                        }
+                    </RadzenStack>
+                </RadzenCard>
+            }
+        }
+    </RadzenStack>
+</RadzenCard>
+
+@code {
+    [Parameter, EditorRequired]
+    public IEnumerable<CardBreakDown> Cards { get; set; } = default!;
+    
+    [Parameter, EditorRequired]
+    public string ListName { get; set; } = default!;
+
+    [Parameter]
+    public bool ShowListName { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ArgumentNullException.ThrowIfNull(Cards);
+        ArgumentNullException.ThrowIfNull(ListName);
+        
+        await base.OnInitializedAsync();
+    }
+
+    private TimeSpan TotalTime(IEnumerable<CardBreakDown> cards)
+    {
+        return TimeSpan.FromMinutes(cards.Sum(x => x.TaskTime.TotalMinutes));
+    }
+}

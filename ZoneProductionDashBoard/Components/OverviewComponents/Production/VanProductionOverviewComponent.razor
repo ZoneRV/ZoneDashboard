@@ -1,0 +1,94 @@
+﻿@inherits UpdatableComponent
+
+@if (StatsService.SelectedDepartments.Count > 0)
+{
+    @if (!DisplayVans.Any())
+    {
+        <RadzenText>No job cards found for @(string.Join(", ", StatsService.SelectedDepartments)) on the @(StatsService.SelectedVanType.CleanName()) production line</RadzenText>
+    }
+    else
+    {
+        <DepartmentJobListHeatMapComponent Vans="DisplayVans" @ref="@_heatMap"/>
+    }
+}
+else
+{
+    <NewProductionLineOverviewComponent @ref="@_prodLine"/>
+}
+
+@code {
+    [Inject]
+    public IProductionService ProductionService { get; set; } = default!;
+
+    [Inject]
+    public StatsService StatsService { get; set; } = default!;
+    
+    [Inject] 
+    public NavigationManager NavigationManager { get; set; } = default!;
+
+    DepartmentJobListHeatMapComponent? _heatMap;
+    NewProductionLineOverviewComponent? _prodLine;
+
+    IEnumerable<VanBoard> DisplayVans { get; set; } = default!;
+
+    void PopulateDisplayVans()
+    {
+        if(!StatsService.SelectedDepartments.Any())
+            return;
+        
+        List<VanBoard> vans = ProductionService.GetProductionLineBoards(true).ToList();
+        
+        List<IProductionPosition> positions = vans
+                                              .FilterVans(StatsService.BoardFilterOptions.vanTypes)
+                                              .SelectMany(
+                                                  v => v.Departments.Where(d => StatsService.SelectedDepartments.Contains(d.Name))
+                                                        .SelectMany(d => d.JobCards.Select(jc => jc.Position))
+                                                        .Where(x => x is not PreProduction)
+                                                  ).DistinctBy(x => x.PositionName).ToList();
+
+        List<string> ids = new List<string>();
+
+        IProductionPosition? minPosition = positions.Min(new PositionComparer());
+
+        if (minPosition is null)
+        {
+            DisplayVans = [];
+            return;
+        }
+            
+        IProductionPosition prevPosition = minPosition - 1;
+
+        if (prevPosition is not PreProduction)
+        {
+            ids.AddRange(ProductionService.GetVanIdsInPosition(prevPosition));
+        }
+
+        foreach (var pos in positions)
+        {
+            ids.AddRange(ProductionService.GetVanIdsLastInPosition(pos, 10));
+        }
+
+        ids = ids.Distinct().ToList();
+
+        DisplayVans = ProductionService.GetBoards(ids).OrderDescending(new VanPositionComparer());
+    }
+
+    protected override void OnInitialized() 
+    {
+        ArgumentNullException.ThrowIfNull(NavigationManager);
+        
+        NavigationManager.LocationChanged += (_, _) => Update();
+        
+        PopulateDisplayVans();
+        base.OnInitialized();
+    }
+
+    public override void Update()
+    {
+        PopulateDisplayVans();
+        _heatMap?.Update();
+        _prodLine?.Update();
+        
+        base.Update();
+    }
+}

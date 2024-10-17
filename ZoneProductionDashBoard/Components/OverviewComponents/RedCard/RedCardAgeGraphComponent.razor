@@ -1,0 +1,126 @@
+﻿@using ApexCharts;
+
+@inherits UpdatableComponent
+
+<ApexChart
+    @ref="@_chart"
+    Title="Days to complete red card"
+    TItem="BoxPlotDataItem"
+    Options="_options"
+    XAxisType="XAxisType.Category"
+    Height="300">
+    
+    <ApexBoxPlotSeries
+        TItem="BoxPlotDataItem"
+        Items="@_data"
+        Max="item => item.Max"
+        Min="item => item.Min"
+        Quantile1="item => item.Q1"
+        Median="item => item.Q2"
+        Quantile3="item => item.Q3" 
+        XValue="item => item.Key"
+        OrderBy="item => _data.Single(x => x.Key == item.X).Mean"/>
+    
+</ApexChart>
+
+@code {
+    [Inject]
+    public IProductionService ProductionService { get; set; } = default!;
+
+    [Inject]
+    public StatsService StatsService { get; set; } = default!;
+    
+    [Parameter, EditorRequired]
+    public TimeSpan TimeFrame { get; set; }
+    
+    ApexChart<BoxPlotDataItem> _chart = default!;
+
+    ApexChartOptions<BoxPlotDataItem> _options = new ApexChartOptions<BoxPlotDataItem>();
+
+    List<BoxPlotDataItem> _data = [];
+    List<DataItem> _outlierData = [];
+
+    protected override void OnInitialized()
+    {
+        ArgumentNullException.ThrowIfNull(ProductionService);
+        ArgumentNullException.ThrowIfNull(StatsService);
+        
+        _options.Chart.Animations = new Animations
+        {
+            Enabled = false
+        };
+
+        _options.Chart.Toolbar = new Toolbar
+        {
+            Show = false
+        };
+
+        _options.Chart.Zoom = new Zoom
+        {
+            Enabled = false
+        };
+
+        _options.PlotOptions = new PlotOptions()
+        {
+            Bar = new PlotOptionsBar()
+            {
+                Horizontal = true
+            }
+            
+        };
+
+        LoadDataPoints();
+
+        base.OnInitialized();
+    }
+
+    public override void Update()
+    {
+        LoadDataPoints();
+        _chart.UpdateSeriesAsync();
+        base.Update();
+    }
+
+    private void LoadDataPoints()
+    {
+        _data = [];
+        _outlierData = [];
+        
+        Dictionary<CardAreaOfOrigin, List<decimal>> data = new Dictionary<CardAreaOfOrigin, List<decimal>>();
+
+        IEnumerable<RedCard> redCards = ProductionService.GetRedCards()
+                                                         .FilterCards(StatsService.CardFilterOptions.CardAreaOfOrigins)
+                                                         .Where(x => 
+                                                                    x.VanType == StatsService.SelectedVanType && 
+                                                                    x.CardStatus == CardStatus.Completed &&
+                                                                    x.CardStatusLastUpdated.HasValue && 
+                                                                    x.CardStatusLastUpdated.Value > DateTime.Today - TimeFrame);
+
+        foreach (RedCard redCard in redCards)
+        {
+            if (StatsService.CardFilterOptions.CardAreaOfOrigins.Contains(redCard.AreaOfOrigin) && redCard.CreationDate.HasValue && redCard.CardStatusLastUpdated.HasValue)
+            {
+                if(!data.ContainsKey(redCard.AreaOfOrigin))
+                    data.Add(redCard.AreaOfOrigin, new List<decimal>());
+
+                TimeSpan timeToComplete = redCard.CardStatusLastUpdated.Value - redCard.CreationDate.Value;
+                
+                if(timeToComplete > TimeSpan.FromMinutes(15))
+                    data[redCard.AreaOfOrigin].Add((decimal) timeToComplete.TotalDays);
+            }
+        }
+
+        foreach (CardAreaOfOrigin area in data.Keys)
+        {
+            if (data[area].Count > 4)
+            {
+                BoxPlotDataItem areaData = new BoxPlotDataItem(area, data[area], 1);
+                
+                _data.Add(areaData);
+                
+                if(areaData.Outliers.Any())
+                    _outlierData.Add(new DataItem(areaData.Key, areaData.Outliers.Max()));
+            }
+        }
+    }
+}

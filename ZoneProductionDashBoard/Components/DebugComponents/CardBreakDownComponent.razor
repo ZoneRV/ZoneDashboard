@@ -1,0 +1,74 @@
+﻿<RadzenCard>
+    <RadzenStack Gap="0px">
+        <RadzenText>@DisplayName()</RadzenText>
+        
+        @if(Card.Checklists.Sum(x => x.Items.Count) > 0)
+        {
+            <RadzenText>@Card.Checklists.Sum(x => x.Items.Count) Checks</RadzenText>
+        }
+
+        @if (ShowListName)
+        {
+            <RadzenText>List: @Card.ListName</RadzenText>
+        }
+        
+        @if (Card.TaskTime == TimeSpan.Zero)
+        {
+            <RadzenText Style="background: #b32121; color: black">No Task Time</RadzenText>
+        }
+        else
+        {
+            <RadzenText>@Math.Round(Card.TaskTime.TotalMinutes, 0) Minutes</RadzenText>
+        }
+        
+        @if (Card.Position is null)
+        {
+            @if (Card.JobListIsIgnored)
+            {
+                <RadzenText Style="color: #b32121">Is Ignored</RadzenText>
+            }
+            else
+            {
+                <RadzenText Style="color: #b32121">Not Tracked</RadzenText>
+            }
+        }
+    </RadzenStack>
+</RadzenCard>
+
+
+@code {
+    [Parameter, EditorRequired]
+    public CardBreakDown Card { get; set; } = default!;
+
+    [Parameter]
+    public bool ShowArea { get; set; } = false;
+    
+    [Parameter]
+    public bool ShowBay { get; set; } = false;
+    
+    [Parameter]
+    public bool ShowListName { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ArgumentNullException.ThrowIfNull(Card);
+        
+        await base.OnInitializedAsync();
+    }
+
+    private string DisplayName()
+    {
+        string name = Card.Name;
+
+        if (ShowArea || ShowBay)
+            name += " - ";
+
+        if (ShowArea)
+            name += $" {Card.AreaOfOrigin.CleanName()}";
+        
+        if (ShowBay && Card.Position is not null)
+            name += $" {Card.Position.PositionName}";
+
+        return name;
+    }
+}

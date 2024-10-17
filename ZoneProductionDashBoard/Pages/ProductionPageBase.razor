@@ -1,0 +1,97 @@
+﻿@using System.Collections.Concurrent
+@using System.Reflection
+@using ProductionService = ZoneProductionLibrary.ProductionServices.Main.ProductionService
+@using TrelloDotNet.Model
+@using Serilog
+@using BlazorBootstrap
+
+@implements IDisposable;
+
+@code{
+    [Inject] 
+    public IProductionService ProductionService { get; set; } = default!;
+
+    [Inject]
+    public StatsService StatsService { get; set; } = default!;
+
+    [Inject]
+    public DialogService DialogService { get; set; } = default!;
+
+    protected ConcurrentBag<UpdatableComponent> UpdatableComponents = [];
+
+    private dynamic? _dialogDynamic;
+    protected Progress<double> Progress = new Progress<double>();
+    private double _progressValue;
+
+    protected List<string> SubscribedIds { get; set; } = [];
+    protected List<BoardUpdateType> SubscribedTypes { get; set; } = [];
+
+    public void Dispose()
+    {
+        if (ProductionService is ProductionService)
+        {
+            ZoneProductionLibrary.ProductionServices.Main.ProductionService.BoardUpdated -= UpdateIfIdSubscribed;
+            Progress.ProgressChanged -= UpdateProgressValue;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        ArgumentNullException.ThrowIfNull(StatsService);
+        ArgumentNullException.ThrowIfNull(DialogService);
+        
+        base.OnInitialized();
+        if (ProductionService is ProductionService)
+        {
+            ZoneProductionLibrary.ProductionServices.Main.ProductionService.BoardUpdated += UpdateIfIdSubscribed;
+            Progress.ProgressChanged += UpdateProgressValue;
+        }
+    }
+
+    private void UpdateProgressValue(object? sender, double e)
+    {
+        _progressValue = e;
+        DialogService.Refresh();
+    }
+
+    protected virtual void UpdateIfIdSubscribed(object? sender, BoardUpdateInfo e)
+    {
+        if (SubscribedIds.Contains(e.BoardId) && (SubscribedTypes.Contains(e.Type) || e.TotalBoardUpdate))
+        {
+            foreach (UpdatableComponent updatableComponent in UpdatableComponents)
+            {
+                updatableComponent.Update();
+            }
+
+            InvokeAsync(StateHasChanged);
+            
+            Log.Logger.Information("{this} has been updated {BoardUpdateInfo}", MethodInfo.GetCurrentMethod()?.DeclaringType is null ? "unknown" : MethodInfo.GetCurrentMethod()!.DeclaringType!.Name, e);
+        }
+    }
+
+#pragma warning disable CS4014
+#pragma warning disable CS1998
+    protected async Task ShowLoadingDialog()
+    {
+        _dialogDynamic = DialogService.OpenAsync(
+            $"Loading...",
+             GaugeFragment(),
+             options: new DialogOptions() { ShowTitle = false, Style = "min-height: auto; min-width: auto; width: auto", CloseDialogOnEsc = false, ShowClose = false } );
+#pragma warning restore CS4014
+#pragma warning restore CS1998
+    }
+
+    protected void CloseLoadingDialog()
+    {
+        DialogService.Close(_dialogDynamic);
+    }
+
+    private RenderFragment<DialogService> GaugeFragment() => _ =>
+     {
+        return __builder =>
+        {
+            <ProgressBar Type="ProgressType.StripedAndAnimated" Width="@_progressValue"/>
+        };
+    };
+}
+

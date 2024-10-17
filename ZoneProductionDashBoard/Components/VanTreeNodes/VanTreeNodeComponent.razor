@@ -1,0 +1,42 @@
+﻿@inject ContextMenuService ContextMenuService
+
+<RadzenTree>
+    <RadzenTreeItem  Text="@($"{Van.Name} - {Van.Position.PositionName}")">
+    @foreach(var dep in Van.Departments)
+    {
+        <DepartmentTreeNodeComponent Department=@dep VanPosition="@Van.Position" HideCompleted="HideCompleted" ShowCompletionRate="ShowCompletionRate" ShowTimeRemaining="ShowTimeRemaining" ShowRedCards="ShowRedCards"/>
+    }
+    @if (ShowRedCards && Van.UnallocatedRedCards.Count > 1)
+    {
+        <RadzenTreeItem Text="Unallocated Red Cards">
+        @foreach (RedCard redCard in Van.UnallocatedRedCards)
+        {
+            <RedCardTreeNodeComponent RedCard="redCard" HideCompleted="HideCompleted" ShowComments="true" ShowAttachments="true" />
+        }
+        </RadzenTreeItem>
+    }
+    </RadzenTreeItem>
+</RadzenTree>
+
+@code {
+    [Parameter, EditorRequired] 
+    public VanBoard Van { get; set; } = default!;
+
+    [Parameter] 
+    public bool HideCompleted { get; set; }
+
+    [Parameter]
+    public bool ShowCompletionRate { get; set; }
+
+    [Parameter]
+    public bool ShowTimeRemaining { get; set; }
+
+    [Parameter] 
+    public bool ShowRedCards { get; set; }
+
+    protected override void OnInitialized()
+    {
+        ArgumentNullException.ThrowIfNull(Van);
+        base.OnInitialized();
+    }
+}

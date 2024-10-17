@@ -1,0 +1,39 @@
+﻿@if (_breakDown is null)
+{
+    <RadzenText>Loading...</RadzenText>
+}
+
+else
+{
+    <RadzenStack Orientation="Orientation.Horizontal">
+        <PositionBreakDownComponent Cards="_breakDown.Cards.Where(x => x.Position is null)" ListName="Unassigned" ShowListName="true"/>
+        @foreach (IProductionPosition pos in _breakDown.CardsByPosition.Keys.Where(x => x is not PreProduction))
+        {
+            <PositionBreakDownComponent Cards="_breakDown.CardsByPosition[pos]" ListName="@pos.PositionName"/>
+        }
+    </RadzenStack>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public string Id { get; set; } = default!;
+
+    [Parameter] 
+    public TypeOfVan? TypeOfVan { get; set; } = null;
+
+    private BoardBreakDown _breakDown = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ArgumentNullException.ThrowIfNull(Id);
+
+        _breakDown = await BoardBreakDown.CreateBreakDown(Id, TypeOfVan);
+        
+        await base.OnInitializedAsync();
+    }
+
+    private TimeSpan TotalTime(IEnumerable<CardBreakDown> cards)
+    {
+        return TimeSpan.FromMinutes(cards.Sum(x => x.TaskTime.TotalMinutes));
+    }
+}

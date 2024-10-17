@@ -1,0 +1,93 @@
+﻿@using ApexCharts
+
+<ApexChart
+    TItem="DataItem"
+    Options="@GetOptions()">
+
+    <ApexPointTooltip>
+        <RadzenCard Style="@("background: " + ((CardStatus)context.DataPoint.Items.First().Key).GetIndicatorColor().ToHex())">
+
+            <RadzenText Style="color: black">@(((CardStatus)context.DataPoint.Items.First().Key).CleanName()): @context.DataPoint.Items.First().Value</RadzenText>
+
+            @if (GetStringList(context.DataPoint.Items.First().Extra).Count < 11)
+            {
+                <RadzenStack Gap="1px">
+                @foreach (string name in GetStringList(context.DataPoint.Items.First().Extra))
+                {
+                    <RadzenText Style="color: black; white-space: wrap; max-width: 500px; min-width: 300px" TextStyle="TextStyle.Caption">- @name</RadzenText>
+                }
+                </RadzenStack>
+            }
+
+        </RadzenCard>
+    </ApexPointTooltip>
+
+    <ChildContent>
+        <ApexPointSeries
+            TItem="DataItem"
+            Name="Job Card Status"
+            SeriesType="SeriesType.Pie"
+            Items="@Data"
+            YValue="item => item.Value"
+            XValue="item => ((CardStatus)item.Key).CleanName()"
+            PointColor="item => ((CardStatus)item.Key).GetIndicatorColor().ToHex()"
+            OrderByDescending="item => item.Y ?? 0"/>
+    </ChildContent>
+</ApexChart>
+
+@code {
+
+    [Parameter, EditorRequired] 
+    public IEnumerable<DataItem> Data { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        ArgumentNullException.ThrowIfNull(Data);
+        base.OnInitialized();
+    }
+
+    List<string> GetStringList(object? stringListObject)
+    {
+        ArgumentNullException.ThrowIfNull(stringListObject);
+
+        return (List<string>)stringListObject;
+    }
+
+    ApexChartOptions<DataItem> GetOptions()
+    {
+        return new ApexChartOptions<DataItem>()
+            {
+                Legend = new Legend()
+                {
+                    Show = false
+                },
+                PlotOptions = new PlotOptions()
+                {
+                    Pie = new PlotOptionsPie()
+                    {
+                        CustomScale = .75
+                    }
+                },
+                Chart = new Chart()
+                {
+                    ParentHeightOffset = 0, 
+                    Height = "75px", 
+                    Width = "75px",
+                    Animations = new Animations()
+                    {
+                        Enabled = false
+                    }
+                },
+                Grid = new Grid()
+                {
+                    Padding = new Padding()
+                    {
+                        Top = 0,
+                        Bottom = 0,
+                        Left = 0,
+                        Right = 0
+                    }
+                }
+            };
+    }
+}

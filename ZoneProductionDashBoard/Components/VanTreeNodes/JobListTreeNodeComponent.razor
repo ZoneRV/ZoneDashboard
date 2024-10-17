@@ -1,0 +1,66 @@
+﻿@using System.Globalization;
+@using System.Drawing;
+
+<RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Start" JustifyContent="JustifyContent.Start" Gap="1px">
+    <RadzenTreeItem Text="@ListName" style="@JobListHtmlColorStyleString">
+        @foreach (var card in Jobs)
+        {
+            <JobCardTreeNodeComponent JobCard="card" VanPosition="VanPosition" HideCompleted="HideCompleted" ShowCompletionRate="ShowCompletionRate" ShowTimeRemaining="ShowTimeRemaining"/>
+        }
+    </RadzenTreeItem>
+</RadzenStack>
+
+
+@code {
+    [Parameter, EditorRequired] 
+    public string ListName { get; set; } = default!;
+    
+    [Parameter, EditorRequired]
+    public IEnumerable<JobCard> Jobs { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public IProductionPosition VanPosition { get; set; } = default!;
+
+    [Parameter]
+    public bool HideCompleted { get; set; }
+
+    [Parameter]
+    public bool ShowCompletionRate { get; set; }
+
+    [Parameter]
+    public bool ShowTimeRemaining { get; set; }
+
+    protected override void OnInitialized()
+    {
+        ArgumentNullException.ThrowIfNull(ListName);
+        ArgumentNullException.ThrowIfNull(Jobs);
+        ArgumentNullException.ThrowIfNull(VanPosition);
+        base.OnInitialized();
+    }
+
+    string JobListHtmlColorStyleString
+        => "color: " + ColorTranslator.ToHtml(TrelloUtil.GetIndicatorColor(Jobs.GetCompletionRate(), Jobs.GetTargetStatus(VanPosition)));
+
+    protected string GetNameText(string name, double completionRate, TimeSpan remainingTime)
+    {
+        string result = "";
+
+        if (ShowCompletionRate && completionRate != 1d && completionRate != 0d)
+        {
+            result += $"{Double.Round(completionRate * 100, 0)}% - ";
+        }
+
+        result += name;
+
+        if (ShowTimeRemaining && remainingTime > TimeSpan.FromMinutes(1))
+        {
+            if (remainingTime.Hours > 1)
+                result += $" ∼ {double.Round(remainingTime.TotalHours, 0)}h {remainingTime.Minutes.ToString("00")}m";
+
+            else
+                result += $" ∼ {remainingTime.Minutes.ToString("00")}m";
+        }
+
+        return result;
+    }
+}

@@ -1,0 +1,71 @@
+﻿@page "/cards/"
+
+@inherits ProductionPageBase
+
+<PageTitle>Cards</PageTitle>
+
+<RadzenTabs>
+    <Tabs>
+        <RadzenTabsItem Text="Red Cards">
+            <RedCardGridComponent RedCards="@_redCards" Style="height: 80vh" @ref="@_rGrid" />
+        </RadzenTabsItem>
+        <RadzenTabsItem Text="Job Cards">
+            <JobCardGridComponent JobCards="@_jobCards" Style="height: 80vh" @ref="@_jGrid"/>
+        </RadzenTabsItem>
+    </Tabs>
+</RadzenTabs>
+
+@code {
+    IEnumerable<RedCard> _redCards = [];
+    RedCardGridComponent? _rGrid;
+    
+    IEnumerable<JobCard> _jobCards = [];
+    JobCardGridComponent? _jGrid;
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (firstRender)
+        {
+            ShowLoadingDialog();
+        
+            if(_rGrid is not null && !UpdatableComponents.Contains(_rGrid))
+                UpdatableComponents.Add(_rGrid);
+        
+            if(_jGrid is not null && !UpdatableComponents.Contains(_jGrid))
+                UpdatableComponents.Add(_jGrid);
+
+            SubscribedIds = ProductionService.ProductionVanIds(true).ToList();
+
+            _redCards = await ProductionService.GetRedCardsAsync(Progress, SubscribedIds);
+            _jobCards = ProductionService.GetJobCards(SubscribedIds);
+            
+            if(_rGrid is not null)
+                _rGrid.Update();
+        
+            if(_jGrid is not null)
+                _jGrid.Update();
+
+            CloseLoadingDialog();
+
+            StateHasChanged();
+        }
+    }
+
+    protected override void UpdateIfIdSubscribed(object? sender, BoardUpdateInfo e)
+    {
+        if( 
+            (e.Type is BoardUpdateType.Position or BoardUpdateType.Hanover) ||
+            e.TotalBoardUpdate ||
+            (ProductionService.ProductionVanIds(true).Contains(e.BoardId) && e.Type is BoardUpdateType.JobCard or BoardUpdateType.RedCard)
+                )
+        {
+            _redCards = ProductionService.GetRedCards(SubscribedIds);
+            _jobCards = ProductionService.GetJobCards(SubscribedIds);
+            
+            _rGrid?.Update();
+            _jGrid?.Update();
+        }
+    }
+}

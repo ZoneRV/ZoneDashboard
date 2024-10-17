@@ -1,0 +1,205 @@
+﻿@using Microsoft.AspNetCore.WebUtilities
+
+<RadzenCard>
+    <RadzenStack Orientation="Orientation.Horizontal">
+        <RadzenStack Gap="2px">
+            <RadzenText>Production Line</RadzenText>
+            <RadzenDropDown
+                Name="ProductionLineDropDown"
+                @ref="_productionDropDown"
+                bind-Value=@SelectedProductionLine
+                TValue="@ProductionLine"
+                Data="@(Enum.GetValues(typeof(ProductionLine)).Cast<Enum>())"
+                Change="@OnProductionSelect"
+                Placeholder="Select Production Line"
+                Value="SelectedProductionLine" />
+        </RadzenStack>
+        @if(SelectedProductionLine is not null)
+        {
+            <RadzenStack Gap="2px">
+                <RadzenText>Department</RadzenText>
+                <RadzenDropDown 
+                    @ref="_departmentDropDown"
+                    TValue="IEnumerable<string>" 
+                    Data="@_departments"
+                    bind-Value="@_selectedDepartments"
+                    Change="@OnDepartmentSelect"
+                    AllowSelectAll="false"
+                    Multiple="true"
+                    AllowClear="true"
+                    Placeholder="Filter By Department"
+                    Value="_selectedDepartments"/>
+            </RadzenStack>
+        }
+    </RadzenStack>
+</RadzenCard>
+
+@code {
+    [Inject]
+    public IProductionService ProductionService { get; set; } = default!;
+
+    [Inject]
+    public StatsService StatsService { get; set; } = default!;
+    
+    [Inject]
+    public NavigationManager NavigationManager { get; set; } = default!;
+    
+    public ProductionLine? SelectedProductionLine;
+
+    RadzenDropDown<IEnumerable<string>> _departmentDropDown = default!;
+    RadzenDropDown<ProductionLine> _productionDropDown = default!;
+
+    List<string> _selectedDepartments = new List<string>();
+    List<string> _departments = new List<string>();
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        
+        if (firstRender)
+        {
+            Uri uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+            bool newIntialFilters = false;
+            
+            if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("line", out var lineValue))
+            {
+                string selectedLine = lineValue.FirstOrDefault()!;
+
+                _productionDropDown.SelectItem(Enum.Parse<ProductionLine>(selectedLine));
+            }
+
+            if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("deps", out var depValue))
+            {
+                newIntialFilters = true;
+                IEnumerable<string> selectedDepartments = depValue.FirstOrDefault()!.Split('+').Where(x => !string.IsNullOrEmpty(x) && !string.IsNullOrWhiteSpace(x));
+
+                foreach (string department in selectedDepartments)
+                {
+                    _departmentDropDown.SelectItem(department);
+                }
+            }
+
+            if (newIntialFilters != true)
+                UpdateUriQuery();
+        }
+    }
+
+    void UpdateUriQuery()
+    {
+        Dictionary<string, object?> parameters = [];
+                
+        parameters.Add("line", Enum.GetName(StatsService.SelectedVanType));
+
+        parameters.Add("deps", string.Join("+", StatsService.SelectedDepartments));
+
+        var newUri = NavigationManager.GetUriWithQueryParameters(parameters);
+                
+        NavigationManager.NavigateTo(newUri, false, true);
+    }
+
+    void OnProductionSelect(object value)
+    {
+        List<string> selectedDepartmentCopy = new List<string>(_selectedDepartments);
+        SelectedProductionLine = (ProductionLine)value;
+
+        if (SelectedProductionLine == ProductionLine.Gen2)
+        {
+            _departments = ProductionService.Gen2ProductionDepartments.Select(x => x.Name).ToList();
+            StatsService.BoardFilterOptions.vanTypes = Enum.GetValues<VanModel>().Where(x => x.IsGen2());
+            StatsService.SelectedVanType = TypeOfVan.Gen2;
+        }
+
+        else if (SelectedProductionLine == ProductionLine.Expo)
+        {
+            _departments = ProductionService.ExpoProductionDepartments.Select(x => x.Name).ToList();
+            StatsService.BoardFilterOptions.vanTypes = Enum.GetValues<VanModel>().Where(x => !x.IsGen2());
+            StatsService.SelectedVanType = TypeOfVan.Expo;
+        }
+
+        bool stateNeedsRefresh = false;
+        List<CardAreaOfOrigin> filteredAreas = new List<CardAreaOfOrigin>();
+
+        foreach (string dep in selectedDepartmentCopy)
+        {
+            if (!_departments.Contains(dep))
+            {
+                _selectedDepartments.Remove(dep);
+                stateNeedsRefresh = true;
+            }
+            else
+            {
+                if (SelectedProductionLine == ProductionLine.Gen2)
+                {
+                    filteredAreas.AddRange(ProductionService.Gen2ProductionDepartments.Single(x => x.Name == dep).AreaOfOrigins);
+                }
+
+                else if (SelectedProductionLine == ProductionLine.Expo)
+                {
+                    filteredAreas.AddRange(ProductionService.ExpoProductionDepartments.Single(x => x.Name == dep).AreaOfOrigins);
+                }
+            }
+        }
+
+        if (stateNeedsRefresh)
+            _departmentDropDown.Reset();
+
+        if (!filteredAreas.Any())
+        {
+            if(SelectedProductionLine == ProductionLine.Gen2)
+                filteredAreas.AddRange(ProductionService.Gen2ProductionDepartments.SelectMany(x => x.AreaOfOrigins));
+            
+            else
+                filteredAreas.AddRange(ProductionService.ExpoProductionDepartments.SelectMany(x => x.AreaOfOrigins));
+            
+            StatsService.CardFilterOptions.CardAreaOfOrigins = filteredAreas;
+        }
+
+        else
+            StatsService.CardFilterOptions.CardAreaOfOrigins = filteredAreas;
+
+        StatsService.SelectedDepartments = _selectedDepartments;
+        
+        UpdateUriQuery();
+    }
+
+    void OnDepartmentSelect(object value)
+    {
+        if ((IEnumerable<string>?)value is null || !((IEnumerable<string>)value).Any())
+            _selectedDepartments = new List<string>();
+        else
+            _selectedDepartments = ((IEnumerable<string>)value).ToList();
+
+        List<CardAreaOfOrigin> filteredAreas = new List<CardAreaOfOrigin>();
+
+        foreach (var dep in _selectedDepartments.Where(x => !string.IsNullOrEmpty(x) && !string.IsNullOrWhiteSpace(x)))
+        {
+            if (SelectedProductionLine == ProductionLine.Gen2)
+            {
+                filteredAreas.AddRange(ProductionService.Gen2ProductionDepartments.Single(x => x.Name == dep).AreaOfOrigins);
+            }
+
+            else if (SelectedProductionLine == ProductionLine.Expo)
+            {
+                filteredAreas.AddRange(ProductionService.ExpoProductionDepartments.Single(x => x.Name == dep).AreaOfOrigins);
+            }
+        }
+
+        if (!filteredAreas.Any())
+        {
+            if(SelectedProductionLine == ProductionLine.Gen2)
+                filteredAreas.AddRange(ProductionService.Gen2ProductionDepartments.SelectMany(x => x.AreaOfOrigins));
+            
+            else
+                filteredAreas.AddRange(ProductionService.ExpoProductionDepartments.SelectMany(x => x.AreaOfOrigins));
+            
+            StatsService.CardFilterOptions.CardAreaOfOrigins = filteredAreas;
+        }
+
+        else
+            StatsService.CardFilterOptions.CardAreaOfOrigins = filteredAreas;
+
+        StatsService.SelectedDepartments = _selectedDepartments;
+        
+        UpdateUriQuery();
+    }
+}

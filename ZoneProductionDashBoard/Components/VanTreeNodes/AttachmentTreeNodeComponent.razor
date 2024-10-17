@@ -1,0 +1,68 @@
+﻿<RadzenTreeItem Value="@Attachments" Template="AttachmentRenderFragment" @ref="_itemRef"/>
+
+@code {
+    [Inject] 
+    public DialogService DialogService { get; set; } = default!;
+
+    [Inject]
+    public IProductionService ProductionService { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public IEnumerable<AttachmentInfo> Attachments { get; set; } = default!;
+
+    RadzenTreeItem _itemRef = default!;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        ArgumentNullException.ThrowIfNull(DialogService);
+        ArgumentNullException.ThrowIfNull(ProductionService);
+        ArgumentNullException.ThrowIfNull(Attachments);
+        
+        foreach (AttachmentInfo attachment in Attachments)
+        {
+            if (!File.Exists(IProductionService.FileBasePath + attachment.FilePath))
+            {
+                await ProductionService.DownloadTrelloFileAsync(attachment.Url, attachment.FilePath);
+            }
+        }
+        
+        await base.OnInitializedAsync();
+    }
+
+    private RenderFragment AttachmentRenderFragment(RadzenTreeItem item)
+    {
+        return __builder =>
+               {
+                   <RadzenCard Variant="Variant.Outlined" class="rz-p-2" Style="width: auto;">
+                       <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" Gap="1px">
+                           @foreach (AttachmentInfo attachment in Attachments)
+                           {
+                               <RadzenImage Path="@attachment.FilePath" Style="height: 50px;" Click=@(() => OpenImage(attachment.FilePath))/>
+                           }
+                       </RadzenStack>
+                   </RadzenCard>
+               };
+    }
+
+    private async Task OpenImage(string path)
+    {
+        await DialogService.OpenAsync<RadzenImage>(
+            " ",
+            new Dictionary<string, object>
+                {
+                    { "Path", path },
+                    { "Width", "100%" },
+                    { "Height", "auto" }
+                },
+            new DialogOptions
+                {
+                    Width = "700px",
+                    Height = "530px",
+                    ShowClose = true,
+                    CloseDialogOnOverlayClick = true,
+                    Resizable = true,
+                    Draggable = true,
+                    ShowTitle = false
+                });
+    }
+}

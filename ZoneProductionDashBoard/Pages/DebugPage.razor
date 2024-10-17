@@ -1,0 +1,130 @@
+﻿@page "/debug/"
+
+@using System.Drawing
+@using DBLibrary.Models
+@using Serilog
+@using ZoneProductionLibrary.ProductionServices.Main
+@using ZoneProductionDashBoard.Components.DebugComponents.TreeComponents
+@using ZoneProductionLibrary.Models.BoardObjects
+@inherits ProductionPageBase
+
+<PageTitle>Debug</PageTitle>
+
+<RadzenTabs>
+    <Tabs>
+        <RadzenTabsItem Text="Tools">
+            @if (ProductionService is ProductionService prodService)
+            {
+                @if (DashboardConfig.EnableWebhooks)
+                {
+                    <RadzenButton Text="Delete All Webhooks" Click="_ => prodService.RemoveAllWebhooks()"/>
+                }
+                <RadzenButton Text="Run Production Service Cleanup" Click="async () => await prodService.ProductionServiceCleanUp()"></RadzenButton>
+            }
+            else
+            {
+                <RadzenText>Webhook debug not available for dev production service.</RadzenText>
+            }
+            
+            <RadzenCard>
+                <RadzenText>Vans tracking: @ProductionService.VanCount</RadzenText>
+                <RadzenText>Total Red Cards: @ProductionService.RedCardCount</RadzenText>
+                <RadzenText>Total Job Cards: @ProductionService.JobCardCount</RadzenText>
+                <RadzenText>Total Check Items: @ProductionService.CheckCount</RadzenText>
+            </RadzenCard>
+
+            <RadzenCard>
+                <VanExplorer/>
+            </RadzenCard>
+            
+        </RadzenTabsItem>
+        <RadzenTabsItem Text="Logs">
+            <RadzenCard Style="max-height: 70vh; overflow: auto; display: flex; flex-direction: column-reverse" Variant="Variant.Text">
+                <RadzenStack>
+                    @foreach (string line in logLines)
+                    {
+                        <RadzenCard Style="@("white-space: pre; background: " + GetLogLevelColor(line))" Variant="Variant.Flat">@line</RadzenCard>
+                    }
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenTabsItem>
+        <RadzenTabsItem Text="Reload Reports">
+            <RadzenCard>
+                <RadzenStack>
+                    @foreach (string file in Directory.GetFiles("Logs/CompareReports/"))
+                    {
+                        <RadzenButton Text="@file" Click="args => OnClickReloadReport(args, file)"></RadzenButton>
+                    }
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenTabsItem>
+        <RadzenTabsItem Text="Board Template Breakdowns">
+            <RadzenTabs>
+                <Tabs>
+                    <RadzenTabsItem Text="Gen 2">
+                        <BoardBreakDownComponent Id="sJhOxTmx" TypeOfVan="TypeOfVan.Gen2"/>
+                    </RadzenTabsItem>
+                    <RadzenTabsItem Text="Expo">
+                        <BoardBreakDownComponent Id="R4UaJNGJ" TypeOfVan="TypeOfVan.Expo"/>
+                    </RadzenTabsItem>
+                </Tabs>
+            </RadzenTabs>
+        </RadzenTabsItem>
+    </Tabs>
+</RadzenTabs>
+
+@code {
+    string boardId = "";
+    List<string> logLines = [];
+    RadzenTextArea _textArea = default!;
+
+    protected override void OnInitialized()
+    {
+        string logContent;
+        
+        using (var stream = File.Open($"Logs/log-{DateTime.Now.ToString("yyyyMMdd")}.txt", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+        using (var reader = new StreamReader(stream))
+        {
+            logContent = reader.ReadToEnd();
+        }
+
+        logLines = logContent.Split('[').Skip(1).Select(x => "[" + x).ToList();
+        
+        base.OnInitialized();
+    }
+
+    string GetLogLevelColor(string line)
+    {
+        if (line.StartsWith("[WRN"))
+            return Color.Orange.ToHex();
+
+        if (line.StartsWith("[ERR"))
+            return Color.OrangeRed.ToHex();
+
+        if (line.StartsWith("[INF"))
+            return Color.LightBlue.ToHex();
+
+        return Color.LightGray.ToHex();
+    }
+
+    void OnClickReloadReport(MouseEventArgs args, string filePath)
+    {
+        if (!File.Exists(filePath))
+            DialogService.Alert("File not found", $"{filePath} was not found.");
+
+        else
+        {
+            string content;
+            
+            using (FileStream stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (StreamReader reader = new StreamReader(stream))
+            {
+                content = reader.ReadToEnd();
+            }
+            
+            DialogService.Open<RadzenText>(filePath, new Dictionary<string, object> {{"Text", content}, {"style", "white-space: pre"}});
+        }
+        
+        
+    }
+}

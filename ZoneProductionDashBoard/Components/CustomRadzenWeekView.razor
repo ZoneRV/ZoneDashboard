@@ -1,0 +1,35 @@
+﻿@using Radzen.Blazor.Rendering
+@inherits RadzenWeekView
+
+@code {
+    public override DateTime StartDate
+    {
+        get
+        {
+            return Scheduler.CurrentDate.Date.StartOfWeek();
+        }
+    }
+
+    /// <inheritdoc />
+    public override DateTime EndDate
+    {
+        get
+        {
+            return StartDate.EndOfWeek().Subtract(TimeSpan.FromDays(1));
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (Scheduler.CurrentDate.DayOfWeek == DayOfWeek.Saturday)
+        {
+            Scheduler.CurrentDate = Scheduler.CurrentDate.Date.AddDays(2);
+        }
+        else if (Scheduler.CurrentDate.DayOfWeek == DayOfWeek.Sunday)
+        {
+            Scheduler.CurrentDate = Scheduler.CurrentDate.Date.AddDays(1);
+        }
+        
+        base.OnParametersSet();
+    }
+}

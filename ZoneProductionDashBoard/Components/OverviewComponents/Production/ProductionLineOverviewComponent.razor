@@ -1,0 +1,163 @@
+﻿@using Orientation = Radzen.Orientation
+
+@inherits UpdatableComponent
+
+<RadzenDataGrid
+    @ref="@_grid"
+    TItem="VanBoard"
+    Data="@_boards"
+    HideGroupedColumn="true"
+    Render="@OnRender"
+    Style="height: 70vh"
+    GridLines="DataGridGridLines.Both">
+    
+    <GroupHeaderTemplate>
+        <RadzenText Style="position: sticky; left: 20px">@(context.Data.Key)</RadzenText>
+    </GroupHeaderTemplate>
+
+    <Columns>
+        <RadzenDataGridColumn Title="Van" Property="Name" Frozen="true" Width="100px"/>
+        <RadzenDataGridColumn Title="Position" Property="Position.PositionName">
+        </RadzenDataGridColumn>
+        
+        @foreach (ProductionDepartment dep in _departments)
+        {
+            <RadzenDataGridColumn TItem="VanBoard" Title="@dep.Name" Template="van => DepartmentRenderFragment(van, dep)" Width="300px"/>
+        }
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    [Inject] 
+    public StatsService StatsService { get; set; } = default!;
+
+    [Inject]
+    public IProductionService ProductionService { get; set; } = default!;
+
+    RadzenDataGrid<VanBoard> _grid = default!;
+    IEnumerable<IProductionPosition> _positions = default!;
+    List<VanBoard> _boards = default!;
+    List<ProductionDepartment> _departments = default!;
+
+    protected override void OnInitialized()
+    { 
+        Update();
+        base.OnInitialized();
+    }
+
+
+    public override void Update()
+    {
+        if (StatsService.SelectedVanType == TypeOfVan.Gen2)
+        {
+            _positions = Gen2ProductionPosition.GetAll();
+            _departments = ProductionService.Gen2ProductionDepartments;
+        }
+
+        else
+        {
+            _positions = ExpoProductionPosition.GetAll();
+            _departments = ProductionService.ExpoProductionDepartments;
+        }
+
+        IEnumerable<string> ids = ProductionService.GetVanIdsInPositions(_positions.ToArray());
+
+        _boards = ProductionService.GetBoards(ids).ToList();
+
+        _boards.Sort(new VanPositionComparer());
+        
+        base.Update();
+    }
+    
+    void OnRender(DataGridRenderEventArgs<VanBoard> args)
+    {
+        if(args.FirstRender)
+        {
+            args.Grid.Groups.Add(new GroupDescriptor(){ Property = "Position.PositionName" });
+            StateHasChanged();
+        }
+    }
+
+    RenderFragment DepartmentRenderFragment(VanBoard van, ProductionDepartment dep)
+    {
+        Department department = van.Departments.Single(x => x.Name == dep.Name);
+
+        Dictionary<CardStatus, List<JobCard>> jobCards = [];
+        List<DataItem> jobStatusData = [];
+
+        foreach (JobCard jobCard in department.JobCards.Where(x => x.Position < van.Position || x.Position.Equals(van.Position)))
+        {
+            if (jobCards.ContainsKey(jobCard.CardStatus))
+                jobCards[jobCard.CardStatus].Add(jobCard);
+            else
+                jobCards.Add(jobCard.CardStatus, [jobCard]);
+        }
+
+        foreach (CardStatus status in jobCards.Keys)
+        {
+            jobStatusData.Add(new DataItem(status, jobCards[status].Count, jobCards[status].Select(x => x.Name).ToList()));
+        }
+        
+        Dictionary<CardStatus, List<RedCard>> redCards = [];
+        List<DataItem> redCardStatusData = [];
+
+        foreach (RedCard redCard in department.RedCards)
+        {
+            if (redCards.ContainsKey(redCard.CardStatus))
+                redCards[redCard.CardStatus].Add(redCard);
+            else
+                redCards.Add(redCard.CardStatus, [redCard]);
+        }
+
+        foreach (CardStatus status in redCards.Keys)
+        {
+            redCardStatusData.Add(new DataItem(status, redCards[status].Count, redCards[status].Select(x => x.Name).ToList()));
+        }
+
+        return __builder =>
+               {
+                   <div style="height: 100px">
+                       <div style="position: absolute; z-index: 1;">
+                           <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem">
+                               <RadzenStack AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="1px">
+                                   <RadzenText>Job Cards</RadzenText>
+                                   @if (jobStatusData.Count > 1)
+                                   {
+                                       <CardStatusPieChart Data="jobStatusData"/> 
+                                   }
+                                   else
+                                   {
+                                       <RadzenText> - </RadzenText>
+                                   }
+                               </RadzenStack>
+                               <RadzenStack AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="1px">
+                                   <RadzenText>Red Cards</RadzenText>
+                                   @if (redCardStatusData.Count > 0)
+                                   {
+                                       <CardStatusPieChart Data="redCardStatusData"/>
+                                   }
+                                   else
+                                   {
+                                       <RadzenText> - </RadzenText>
+                                   }
+                               </RadzenStack>
+                               <div style="display: grid; grid-template-rows: auto">
+                                   @if (department.BayLeaderSignOfCards.Count(x => x.Position < van.Position || x.Position.Equals(van.Position)) > 0)
+                                   {
+                                       <RadzenCard Variant="Variant.Flat" Style="@("background: " + (department.BayLeaderSignOfCards.Where(x => x.Position < van.Position || x.Position.Equals(van.Position)).All(x => x.CardStatus == CardStatus.Completed) ? CardStatus.Completed.GetIndicatorColor().ToHex() : CardStatus.InProgress.GetIndicatorColor().ToHex()))">
+                                           <RadzenText Text="Sign Off" />
+                                       </RadzenCard>
+                                   }
+                                   @if (department.PippsCards.Count(x => x.Position < van.Position || x.Position.Equals(van.Position)) > 0)
+                                   {
+                                       <RadzenCard Variant="Variant.Flat" Style="@("background: " + (department.PippsCards.Where(x => x.Position < van.Position || x.Position.Equals(van.Position)).All(x => x.CardStatus == CardStatus.Completed) ? CardStatus.Completed.GetIndicatorColor().ToHex() : CardStatus.InProgress.GetIndicatorColor().ToHex()))">
+                                           <RadzenText Text="Pipps"/>
+                                       </RadzenCard>
+                                   }
+                               </div>
+                           </RadzenStack>
+                       </div>
+                   </div>
+               };
+    }
+}

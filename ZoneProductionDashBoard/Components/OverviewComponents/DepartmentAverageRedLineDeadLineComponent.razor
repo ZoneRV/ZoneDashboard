@@ -1,0 +1,155 @@
+﻿@using ApexCharts;
+
+@inherits UpdatableComponent
+
+<ApexChart
+    TItem="BoxPlotDataItem"
+    Options="_options"
+    XAxisType="XAxisType.Category"
+    Height="600"
+    Width="1000"
+    @ref="@_chart">
+    @{ Dictionary<CardAreaOfOrigin, List<BoxPlotDataItem>> chartData = LoadData(); }
+    @foreach (CardAreaOfOrigin area in StatsService.CardFilterOptions.CardAreaOfOrigins)
+    {
+        if (chartData.TryGetValue(area, out List<BoxPlotDataItem>? data) && data.Count > 0)
+        {
+            <ApexBoxPlotSeries
+                TItem="BoxPlotDataItem"
+                Name="@Enum.GetName(area)"
+                Items="@data"
+                Max="item => item.Max"
+                Min="item => item.Min"
+                Quantile1="item => item.Q1"
+                Median="item => item.Q2"
+                Quantile3="item => item.Q3"
+                XValue="item => item.Key"/>
+
+        }
+    }
+</ApexChart>
+
+@code {
+    [Inject] 
+    public IProductionService ProductionService { get; set; } = default!;
+
+    [Inject]
+    public StatsService StatsService { get; set; } = default!;
+    
+    [Inject] 
+    public NavigationManager NavigationManager { get; set; } = default!;
+
+    ApexChart<BoxPlotDataItem> _chart = default!;
+
+    ApexChartOptions<BoxPlotDataItem> _options = new ApexChartOptions<BoxPlotDataItem>();
+
+    protected override void OnInitialized()
+    {
+        LoadData();
+        _options.Chart.Animations = new Animations
+        {
+            Enabled = false
+        };
+
+        _options.Chart.Toolbar = new Toolbar
+        {
+            Show = false
+        };
+
+        _options.Chart.Zoom = new Zoom
+        {
+            Enabled = false
+        };
+
+        _options.Yaxis =
+        [
+            new YAxis
+            {
+                Title = new AxisTitle
+                {
+                    Text = "Work % completed in bay"
+                }
+            }
+        ];
+
+        _options.Stroke = new Stroke()
+        {
+            Width = 1
+        };
+        
+        NavigationManager.LocationChanged += (_, _) => Update();
+
+        base.OnInitialized();
+    }
+
+    private Dictionary<CardAreaOfOrigin, List<BoxPlotDataItem>> LoadData()
+    {
+        Dictionary<CardAreaOfOrigin, List<BoxPlotDataItem>> data = [];
+        
+        List<IProductionPosition> positions = [new PreProduction()];
+
+        List<string> ids = ProductionService.GetVanIdsByLocalHandoverDates(14, DateTime.Now).ToList();
+
+        IEnumerable<VanBoard> prodVans = ProductionService.GetBoards(ids).FilterVans(StatsService.BoardFilterOptions.vanTypes);
+
+        IProductionPosition pos = StatsService.SelectedVanType == TypeOfVan.Gen2 ? Gen2ProductionPosition.First : ExpoProductionPosition.First;
+
+        for (; pos < new PostProduction(); pos++)
+        {
+            positions.Add(pos);
+        }
+
+        positions.Add(new PostProduction());
+
+        data = new Dictionary<CardAreaOfOrigin, List<BoxPlotDataItem>>();
+
+        foreach (CardAreaOfOrigin area in Enum.GetValues<CardAreaOfOrigin>())
+        {
+            List<BoxPlotDataItem> points = LoadAreaDataPoints(area, prodVans, positions).ToList();
+            
+            if(points.Count > 0)
+                data.Add(area, points);
+        }
+
+        return data;
+    }
+
+    public override void Update()
+    {
+        LoadData();
+        _chart.UpdateOptionsAsync(true, false, false);
+        _chart.UpdateSeriesAsync();
+        base.Update();
+    }
+
+    private IEnumerable<BoxPlotDataItem> LoadAreaDataPoints(CardAreaOfOrigin area, IEnumerable<VanBoard> vans, IEnumerable<IProductionPosition> positions)
+    {
+        List<BoxPlotDataItem> results = [];
+        Dictionary<string, List<decimal>> data = new Dictionary<string, List<decimal>>();
+
+        foreach (IProductionPosition pos in positions)
+        {
+            data.Add(pos.PositionName, new List<decimal>());
+        }
+
+        foreach (VanBoard van in vans)
+        {
+            List<JobCard> jobs = van.JobCards.Where(x => x.AreaOfOrigin == area).ToList();
+
+            Dictionary<string, decimal> vanResults = jobs.GetWorkCompletedByBay(van.VanModel.IsGen2() ? TypeOfVan.Gen2 : TypeOfVan.Expo, van.PositionHistory);
+
+            foreach (string position in vanResults.Keys)
+            {
+                data[position].Add(vanResults[position]);
+            }
+        }
+
+        foreach (string position in data.Keys)
+        {
+            if(data[position].Any())
+                results.Add(new BoxPlotDataItem(position, data[position], 100));
+        }
+
+        return results;
+    }
+}

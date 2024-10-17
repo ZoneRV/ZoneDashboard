@@ -1,0 +1,73 @@
+﻿@using System.Diagnostics
+@inherits LayoutComponentBase
+
+<PageTitle>Zone Production Dashboard</PageTitle>
+
+<main>
+    <div class="top-row" style="position: relative; z-index: 10">
+        <div style="flex: auto">
+            <RadzenMenu Style="width: min-content">
+                <RadzenMenuItem Text="Handover" Path="handover" Icon="event_upcoming"></RadzenMenuItem>
+                <RadzenMenuItem Text="Overview" Path="overview" Icon="assessment"></RadzenMenuItem>
+                <RadzenMenuItem Text="Cards" Path="cards" Icon="stack"></RadzenMenuItem>
+                @if (Debugger.IsAttached)
+                {
+                    <RadzenMenuItem Text="Debug" Icon="bug_report" Path="debug"></RadzenMenuItem>
+                }
+            </RadzenMenu>
+        </div>
+        <div style="margin-right: auto">
+            <RadzenStack Orientation="Orientation.Horizontal">
+                <RadzenAutoComplete 
+                    @bind-Value=@_searchTerm 
+                    Data=@_vanNames 
+                    Style="width: 13rem" 
+                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" 
+                    Placeholder="Search Cards Or Vans"
+                />
+                <RadzenButton Text="Search" Click=@(_ => OnClickSearch())/>
+            </RadzenStack>
+        </div>
+    </div>
+
+    <article class="content px-4">
+        @Body
+    </article>
+</main>
+
+<RadzenDialog />
+<RadzenContextMenu />
+<RadzenTooltip />
+
+@code {
+    [Inject] 
+    public IProductionService ProductionService { get; set; } = default!;
+
+    [Inject] 
+    public NavigationManager NavManager { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ArgumentNullException.ThrowIfNull(ProductionService);
+        ArgumentNullException.ThrowIfNull(NavManager);
+        
+        await base.OnInitializedAsync();
+
+        this._vanNames = ProductionService.ProductionVans.Keys.ToArray();
+    }
+
+    private string _searchTerm = string.Empty;
+    private string[] _vanNames = [];
+    
+    private void OnClickSearch()
+    {
+        if(string.IsNullOrEmpty(_searchTerm) || string.IsNullOrWhiteSpace(_searchTerm))
+            return;
+        
+        if(_vanNames.Contains(_searchTerm))
+            NavManager.NavigateTo($"/searchVan/{_searchTerm}");
+
+        else
+            NavManager.NavigateTo($"/cards?name={_searchTerm}");
+    }
+}

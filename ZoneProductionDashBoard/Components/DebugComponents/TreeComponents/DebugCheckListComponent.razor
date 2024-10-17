@@ -1,0 +1,40 @@
+﻿@using ZoneProductionLibrary.Models.BoardObjects
+
+@if (ChecklistObject.CheckObjectIds.Count > 0)
+{
+    <RadzenTreeItem Text="@(ChecklistObject.Id + " - " + ChecklistObject.Name)">
+    @foreach (string checkId in @ChecklistObject.CheckObjectIds)
+    {
+        if (Checks.Any(x => x.Id == checkId))
+        {
+            CheckObject check = Checks.First(x => x.Id == checkId);
+            <RadzenTreeItem Text="@(check.Id + " - "  + check.Name)"/>
+        }
+        else
+        {
+            <RadzenTreeItem Text="@(checkId + " is missing!")" Style="color: red" Expanded="true"/>
+        }
+    }
+    </RadzenTreeItem>
+}
+else
+{
+    <RadzenTreeItem Text="@(ChecklistObject.Id + " - " + ChecklistObject.Name)"/>
+}
+
+
+@code {
+    [Parameter, EditorRequired]
+    public ChecklistObject ChecklistObject { get; set; } = default!;
+    
+    [Parameter, EditorRequired]
+    public IEnumerable<CheckObject> Checks { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        ArgumentNullException.ThrowIfNull(ChecklistObject);
+        ArgumentNullException.ThrowIfNull(Checks);
+        base.OnInitialized();
+    }
+
+}

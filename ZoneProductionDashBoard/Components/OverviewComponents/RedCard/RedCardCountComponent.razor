@@ -1,0 +1,88 @@
+﻿@using Orientation = Radzen.Orientation
+@using ApexCharts
+@inherits UpdatableComponent
+
+<RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center">
+    <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center">
+        <RadzenText>Outstanding Red Cards:</RadzenText>
+        <RadzenText Style="color:red" TextStyle="TextStyle.H2">@_outstandingRedCardCount</RadzenText>
+    </RadzenStack>
+    <RadzenStack AlignItems="AlignItems.Center">
+        <RadzenText>Completed Red Cards:</RadzenText>
+        <RadzenText Style="color:limegreen" TextStyle="TextStyle.H2">@_completedRedCardCount</RadzenText>
+    </RadzenStack>
+    <ApexChart
+        TItem="DataItem"
+        Height="500"
+        Width="250"
+        @ref="@_typeChart"
+        Options="@_options">
+        <ApexPointSeries
+            TItem="DataItem"
+            Items="@_redCardTypeData"
+            XValue="item => ((RedFlagIssue)item.Key).CleanName()"
+            YValue="item => item.Value"
+            SeriesType="SeriesType.Donut"
+            OrderByDescending="item => item.Y ?? 0"
+            PointColor="item => ((RedFlagIssue)item.Key).ToChartColor()"/>
+    </ApexChart>
+</RadzenStack>
+
+@code {
+    [Inject]
+    public IProductionService ProductionService { get; set; } = default!;
+
+    [Inject]
+    public StatsService StatsService { get; set; } = default!;
+    
+    [Parameter, EditorRequired]
+    public TimeSpan TimeFrame { get; set; }
+
+    ApexChart<DataItem> _typeChart = default!;
+    ApexChartOptions<DataItem> _options = new ApexChartOptions<DataItem>();
+
+    int _outstandingRedCardCount = 0;
+    int _completedRedCardCount = 0;
+    IEnumerable<DataItem> _redCardTypeData = [];
+    
+    public override void Update()
+    {
+        base.Update();
+        GetCountData();
+        InvokeAsync(async () =>
+                    {
+                        StateHasChanged();
+                        await _typeChart.UpdateOptionsAsync(true, false, false);
+                        await _typeChart.UpdateSeriesAsync();
+                    });
+        
+    }
+
+    protected override void OnInitialized()
+    {
+        _options.Legend = new Legend()
+        {
+            Position = ApexCharts.LegendPosition.Bottom
+        };
+        
+        GetCountData();
+        
+        base.OnInitialized();
+    }
+
+    void GetCountData()
+    {
+        List<RedCard> redCards = ProductionService.GetRedCards().ToList();
+
+        redCards = redCards.FilterCards(StatsService.CardFilterOptions)
+                           .Where(x => StatsService.SelectedVanType == x.VanType
+                                       && x.CreationDate.HasValue &&
+                                       x.CreationDate.Value > DateTime.Today - TimeFrame)
+                           .ToList();
+
+        _outstandingRedCardCount = redCards.Count(x => x.CardStatus != CardStatus.Completed);
+        _completedRedCardCount = redCards.Count(x => x.CardStatus == CardStatus.Completed);
+
+        _redCardTypeData = redCards.RedCardByTypeData();
+    }
+}

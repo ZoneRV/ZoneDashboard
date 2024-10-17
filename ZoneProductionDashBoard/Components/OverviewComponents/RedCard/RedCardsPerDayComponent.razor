@@ -1,0 +1,138 @@
+﻿@using ApexCharts
+
+@inherits UpdatableComponent
+
+<ApexChart
+    TItem="DataItem"
+    Title="RedCards/Day"
+    XAxisType="XAxisType.Category"
+    @ref="@_redCardDateChart"
+    Height="300"
+    Options="_options">
+
+    @foreach (string name in _redCardDateData.Keys)
+    {
+        <ApexPointSeries
+            TItem="DataItem"
+            Items="@_redCardDateData[name]"
+            Name="@name"
+            YValue="item => item.Value"
+            XValue="item => item.Key"
+            SeriesType="SeriesType.Line"/>
+    }
+</ApexChart>
+
+@code {
+    [Inject]
+    public IProductionService ProductionService { get; set; } = default!;
+
+    [Inject]
+    public StatsService StatsService { get; set; } = default!;
+    
+    [Parameter, EditorRequired]
+    public TimeSpan TimeFrame { get; set; }
+
+    Dictionary<string, IEnumerable<DataItem>> _redCardDateData = [];
+    ApexChart<DataItem> _redCardDateChart = default!;
+
+    ApexChartOptions<DataItem> _options = new ApexChartOptions<DataItem>();
+
+   
+    public override void Update()
+    {
+        _redCardDateData = LoadRedCardDateData();
+        base.Update();
+        _redCardDateChart.UpdateOptionsAsync(true, false, false);
+        _redCardDateChart.UpdateSeriesAsync();
+    }
+
+    protected override void OnInitialized()
+    {
+        _redCardDateData = LoadRedCardDateData();
+        
+        _options.Chart.Animations = new Animations
+        {
+            Enabled = false
+        };
+
+        _options.Chart.Toolbar = new Toolbar
+        {
+            Show = false
+        };
+
+        _options.Chart.Zoom = new Zoom
+        {
+            Enabled = false
+        };
+
+        _options.Colors = ColorExtensions.AltColorStrings;
+        
+        base.OnInitialized();
+    }
+
+    private Dictionary<string, IEnumerable<DataItem>> LoadRedCardDateData()
+    {
+        List<RedCard> redCards = ProductionService.GetRedCards()
+                                                  .Where(
+                                                      x => 
+                                                          x.CreationDate.HasValue && 
+                                                          x.CreationDate.Value > DateTime.Today - TimeFrame &&
+                                                          x.VanType == StatsService.SelectedVanType
+                                              ).ToList();
+
+        Dictionary<string, IEnumerable<DataItem>> redCardDateData = [];
+        
+        if (StatsService.SelectedDepartments.Count is 0 or > 1)
+        {
+            List<ProductionDepartment> departments;
+            
+            if (StatsService.BoardFilterOptions.vanTypes.All(x => x.IsGen2()))
+                departments = ProductionService.Gen2ProductionDepartments;
+
+            else
+                departments = ProductionService.ExpoProductionDepartments;
+
+            if (StatsService.SelectedDepartments.Count > 1)
+                departments = departments.Where(x => StatsService.SelectedDepartments.Contains(x.Name)).ToList();
+
+            foreach (ProductionDepartment department in departments)
+            {
+                List<DataItem> data = redCards.FilterCards(department.AreaOfOrigins).RedCardCountByLocalDateData(true, "ddd d/M", DateTime.Today - TimeFrame, DateTime.Today).ToList();
+                
+                if(data.Any(x => x.Value > 0))
+                    redCardDateData.Add(department.Name, data);
+            }
+        }
+        else
+        {
+            foreach (CardAreaOfOrigin area in StatsService.CardFilterOptions.CardAreaOfOrigins)
+            {
+                List<DataItem> data = redCards.Where(x => x.AreaOfOrigin == area).RedCardCountByLocalDateData(true, "ddd d/M", DateTime.Today - TimeFrame, DateTime.Today).ToList();
+                
+                if(data.Any(x => x.Value > 0))
+                    redCardDateData.Add(area.CleanName(), data);
+            }
+        }
+
+        _options.Annotations = new Annotations()
+        {
+            Xaxis = []
+        };
+
+        foreach (string key in redCardDateData.Values.SelectMany(data => data.Select(x => (string)x.Key)).Distinct())
+        {
+            if (!string.IsNullOrEmpty(key) && !string.IsNullOrWhiteSpace(key) && key.StartsWith("Mon"))
+            {
+                _options.Annotations.Xaxis.Add(
+                    new AnnotationsXAxis()
+                    {
+                        X = key, 
+                        BorderColor = "Grey", 
+                        StrokeDashArray = 4
+                    });
+            }
+        }
+
+        return redCardDateData;
+    }
+}

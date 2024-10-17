@@ -1,0 +1,52 @@
+﻿@using System.Drawing;
+@using Color = System.Drawing.Color
+
+@if(ShouldShow(RedCard.CardStatus == CardStatus.Completed))
+{
+    @if ((RedCard.Comments.Count == 0 || !ShowComments) && (RedCard.Attachments.Count == 0 || !ShowAttachments))
+    {
+        <RadzenTreeItem Text="@(RedCard.Name)" style="@("white-space: pre-wrap; " + RedCardHtmlColorStyleString)" />
+    }
+    else 
+    {
+        <RadzenTreeItem Text="@RedCard.Name" style="@("white-space: pre-wrap; " + RedCardHtmlColorStyleString)">
+            @if (RedCard.Attachments.Count > 0 && ShowAttachments)
+            {
+                <AttachmentTreeNodeComponent Attachments="@RedCard.Attachments" />
+            }
+            @if (RedCard.Comments.Count > 0 && ShowComments)
+            {
+                @foreach (Comment comment in RedCard.Comments)
+                {
+                    <CommentTreeNodeComponent Comment="@comment"/>
+                }
+            }
+        </RadzenTreeItem>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public RedCard RedCard { get; set; } = default!;
+
+    [Parameter]
+    public bool ShowComments { get; set; }
+
+    [Parameter]
+    public bool ShowAttachments { get; set; }
+
+    [Parameter]
+    public bool HideCompleted { get; set; }
+
+    protected override void OnInitialized()
+    {
+        ArgumentNullException.ThrowIfNull(RedCard);
+        base.OnInitialized();
+    }
+
+    bool ShouldShow(bool isComplete)
+        => !HideCompleted || !isComplete;
+
+    string RedCardHtmlColorStyleString
+        => "color: " + ColorTranslator.ToHtml(RedCard.CardStatus == CardStatus.Completed ? Color.Green : Color.Orange);
+}

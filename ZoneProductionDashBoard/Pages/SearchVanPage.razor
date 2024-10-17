@@ -1,0 +1,51 @@
+﻿@page "/SearchVan/{VanName}"
+
+@inherits ProductionPageBase
+
+<PageTitle>@VanName</PageTitle>
+
+@if (string.IsNullOrEmpty(VanName) || string.IsNullOrWhiteSpace(VanName))
+{
+    <RadzenText></RadzenText>
+}
+else if (_board is null)
+{
+    <RadzenText>@VanName not found.</RadzenText>
+}
+else
+{
+    <VanView Van="@_board"/>
+}
+
+@code {
+    [Parameter] 
+    public string VanName { get; set; } = default!;
+
+    private VanBoard? _board;
+
+    protected override void OnInitialized()
+    {
+        ArgumentNullException.ThrowIfNull(ProductionService);
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (firstRender)
+        {
+            await ShowLoadingDialog();
+            
+            _board = await ProductionService.GetBoardAsyncByName(VanName);
+
+            if (_board is null)
+            {
+                CloseLoadingDialog();
+                await DialogService.Alert($"{VanName} is not a valid van name.", "Van not found");
+                return;
+            }
+            
+            StateHasChanged();
+        }
+    }
+}

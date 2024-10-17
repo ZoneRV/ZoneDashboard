@@ -1,0 +1,183 @@
+﻿@using ZoneProductionDashBoard.Components.Base
+@using ZoneProductionDashBoard.Components.VanTreeNodes
+
+@inherits UpdatableComponent
+
+<RadzenDataGrid 
+    Data="@_vans" 
+    TItem="VanBoard" 
+    AllowVirtualization="true"
+    Style="height:700px; display: flex; flex-direction: column; flex: 1; min-width:720px"
+    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" 
+    @ref="_grid">
+    <Columns>
+        <RadzenDataGridColumn TItem="VanBoard" Title="Name" Template="NameTemplate" Width="220px" MinWidth="220px"/>
+        <RadzenDataGridColumn TItem="VanBoard" Title="Job Cards" Template="JobCardTemplate" MinWidth="250px" />
+        <RadzenDataGridColumn TItem="VanBoard" Title="Red Cards" Template="RedCardTemplate" MinWidth="250px" />
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    [Inject] 
+    public IProductionService ProductionService { get; set; } = default!;
+
+    [Inject]
+    public StatsService StatsService { get; set; } = default!;
+
+    [Inject]
+    public DialogService DialogService { get; set; } = default!;
+    
+    [Inject] 
+    public NavigationManager NavigationManager { get; set; } = default!;
+
+    private IEnumerable<VanBoard> _vans = [];
+
+    RadzenDataGrid<VanBoard> _grid = default!;
+
+    protected override void OnInitialized()
+    {
+        ArgumentNullException.ThrowIfNull(ProductionService);
+        ArgumentNullException.ThrowIfNull(StatsService);
+        ArgumentNullException.ThrowIfNull(DialogService);
+        ArgumentNullException.ThrowIfNull(NavigationManager);
+        ArgumentNullException.ThrowIfNull(_vans);
+        
+        NavigationManager.LocationChanged += (_, _) => Update();
+        
+        _vans = ProductionService.GetNextHandoverVans(StatsService.BoardFilterOptions.vanTypes, 10);
+        
+        base.OnInitialized();
+    }
+
+    public override void Update()
+    {
+        _vans = ProductionService.GetNextHandoverVans(StatsService.BoardFilterOptions.vanTypes, 10);
+        base.Update();
+    }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _grid.Sorts.Add(new SortDescriptor() { Property = "Handover", SortOrder = SortOrder.Ascending });
+            _grid.Reload();
+        }
+
+        return base.OnAfterRenderAsync(firstRender);
+    }
+
+    private RenderFragment NameTemplate(VanBoard board)
+    {
+        if (!board.Handover.HasValue)
+            throw new ArgumentNullException(nameof(board.Handover), "Cannot display van with no handover in handover component.");
+        
+        TimeSpan timeToHandover = board.Handover.Value.LocalDateTime - DateTime.Now;
+
+        var redCards = board.RedCards
+            .FilterCards(StatsService.CardFilterOptions.CardAreaOfOrigins)
+            .Where(x => x.CardStatus != CardStatus.Completed);
+
+        var jobCards = board.JobCards
+            .FilterCards(StatsService.CardFilterOptions.CardAreaOfOrigins)
+            .Where(x => x.CardStatus != CardStatus.Completed);
+
+        return __builder =>
+        {
+            @if (!jobCards.Any() && !redCards.Any())
+            {
+                <RadzenText TextStyle="TextStyle.H4" Style="color: green">@board.Name.ToUpper()</RadzenText>
+                <RadzenText>@board.Handover.Value.LocalDateTime.ToString("ddd dd/MM")</RadzenText>
+            }
+            else
+            {
+                <RadzenText TextStyle="TextStyle.H4">@board.Name.ToUpper()</RadzenText>
+
+                @if (timeToHandover < TimeSpan.Zero)
+                {
+                    <RadzenText Style="color: red">@board.Handover.Value.LocalDateTime.ToString("ddd dd/MM"): Overdue</RadzenText>
+                }
+                else if(timeToHandover < TimeSpan.FromDays(2))
+                {
+                    <RadzenText Style="color: orangered">@board.Handover.Value.LocalDateTime.ToString("ddd dd/MM")</RadzenText>
+                }
+                else if (timeToHandover < TimeSpan.FromDays(4))
+                {
+                    <RadzenText Style="color: orange">@board.Handover.Value.LocalDateTime.ToString("ddd dd/MM")</RadzenText>
+                }
+                else
+                {
+                    <RadzenText>@board.Handover.Value.LocalDateTime.ToString("ddd dd/MM")</RadzenText>
+                }
+
+                if (redCards.Any())
+                {
+                    <RadzenText>@redCards.Count() Red Cards</RadzenText>
+                }
+
+                if (jobCards.Any())
+                {
+                    TimeSpan remainingTime = TimeSpan.FromHours(jobCards.Sum(x => x.RemainingTaskTime.TotalHours));
+                    remainingTime = TimeSpan.FromHours(double.Round(remainingTime.TotalHours * 4, MidpointRounding.AwayFromZero) / 4);
+
+                    @if(remainingTime.Hours > 1)
+                    {
+                        <RadzenText>@jobCards.Count() Jobs:<span style="color: red"> ∼ @((int)remainingTime.TotalHours)h @(remainingTime.Minutes.ToString("00"))m</span></RadzenText>
+                    }
+                    else
+                    {
+                        <RadzenText>@jobCards.Count() Jobs:<span style="color: red"> ∼ @(remainingTime.Minutes.ToString("00"))m</span></RadzenText>
+                    }
+                }
+            }
+        };
+    }
+
+    private RenderFragment RedCardTemplate(VanBoard board)
+    {
+        var cards = board.RedCards
+            .FilterCards(StatsService.CardFilterOptions.CardAreaOfOrigins)
+            .Where(x => x.CardStatus != CardStatus.Completed);
+
+        return __builder =>
+        {
+            if(cards.Count() > 0)
+            {
+                <RadzenTree Style="display:flex; flex-direction: column; flex: auto; max-height: 400px;">
+                    @foreach(var card in cards)
+                    {
+                        <RedCardTreeNodeComponent RedCard="card" HideCompleted="true" ShowComments="true" ShowAttachments="true"/> 
+                    }
+                </RadzenTree>
+            }
+            else
+            {
+                <RadzenText TextStyle="TextStyle.H4" Style="color: green">All Completed</RadzenText>
+            }
+        };
+    }
+
+    private RenderFragment JobCardTemplate(VanBoard board)
+    {
+        var cards = board.JobCards
+            .FilterCards(StatsService.CardFilterOptions.CardAreaOfOrigins)
+            .Where(x => x.CardStatus != CardStatus.Completed);
+
+        return __builder =>
+        {
+            if (cards.Count() > 0)
+            {
+                <RadzenTree Style="display: flex; flex-direction: column; flex: 1; max-height: 400px;">
+                    @foreach (var card in cards)
+                    {
+                        <JobCardTreeNodeComponent JobCard="card" HideCompleted="true" ShowCompletionRate="true" ShowTimeRemaining="false" VanPosition="board.Position" ShowComments="true" ShowAttachments="true"/>
+                    }
+                </RadzenTree>
+            }
+            else
+            {
+                <RadzenText TextStyle="TextStyle.H4" Style="color: green">All Completed</RadzenText>
+            }
+        };
+    }
+}
+

@@ -1,0 +1,325 @@
+﻿@using Microsoft.AspNetCore.WebUtilities
+@using Serilog
+@using ZoneProductionDashBoard.Components.VanTreeNodes
+
+@inherits UpdatableComponent
+
+<RadzenDataGrid
+    @ref="@_dataGrid"
+    Data="@JobCards"
+    TItem="JobCard"
+    AllowVirtualization="!GroupByAreaOfOrigin"
+    AllowSorting="true"
+    AllowColumnResize="true"
+    AllowFiltering="true"
+    FilterMode="FilterMode.SimpleWithMenu"
+    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+    Render="OnRender"
+    GroupRowRender="OnGroupRender"
+    Style="@Style">
+
+    <GroupHeaderTemplate>
+        @if(_isSingleVan)
+        {
+            if (context.Data.Key is CardAreaOfOrigin)
+            {
+                <RadzenText>@(context.Data.Key) - @_dataGrid.View.Where(x => x.AreaOfOrigin == AreaFromDynamic(context)).GetCompletionRate(2)%</RadzenText>
+            }
+            else
+            {
+                <RadzenText>@(context.Data.Key)</RadzenText>
+            }
+        }
+        else
+        {
+            <RadzenText Style="position: sticky; left: 20px">@(AreaFromDynamic(context))</RadzenText>
+        }
+    </GroupHeaderTemplate>
+
+    <Columns>
+
+        @if (!_isSingleVan)
+        {
+            <RadzenDataGridColumn TItem="JobCard" Property="BoardName" Title="Van" Frozen="true"
+                                  Sortable="false" Width="200px">
+
+                <FilterTemplate>
+                    <RadzenTextBox Change="SetVanNameFilters" Style="width: 100%" />
+                </FilterTemplate>
+
+                <FooterTemplate>
+                    <RadzenText>Number Of Vans: @($"{_dataGrid.View.Select(x => x.BoardName.ToLower()).Distinct().Count()}")</RadzenText>
+                </FooterTemplate>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="JobCard" Title="Time To Handover"
+                                  Sortable="true" SortProperty="TimeToHandover" Filterable="false" Template="TimeToHandoverRenderFragment" Width="200px"/>
+        }
+
+        <RadzenDataGridColumn TItem="JobCard" Property="Name" Title="Name"
+                              Sortable="false" Template="RedCardNameRenderFragment" MinWidth="500px">
+            
+            <FilterTemplate>
+                <RadzenTextBox @ref="@_nameFilterBox" Change="SetNameFilters" Style="width: 100%"/>
+            </FilterTemplate>
+
+            <FooterTemplate>
+                <RadzenText>Showing @($"{_dataGrid.View.Count()} out of {JobCards.Count()}")</RadzenText>
+            </FooterTemplate>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn TItem="JobCard" SortProperty="CardStatus" FilterProperty="CardStatus" Title="Status" Template="CardStatusRender" Width="165px">
+            <FilterTemplate>
+                <RadzenDropDown TValue="string" Data="_statusOptions" Change="SetStatusFilters" AllowClear="true" Placeholder="Select..."/>
+            </FilterTemplate>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn TItem="JobCard" SortProperty="AreaOfOrigin" FilterProperty="AreaOfOrigin" Title="Area Of Origin" Template="CardAreaRender" Width="165px"/>
+
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    [Inject] 
+    public NavigationManager NavigationManager { get; set; } = default!;
+
+    [Inject] 
+    public IProductionService ProductionService { get; set; } = default!;
+    
+    [Parameter, EditorRequired]
+    public IEnumerable<JobCard> JobCards { get; set; } = default!;
+    
+    [Parameter]
+    public bool GroupByAreaOfOrigin { get; set; }
+
+    [Parameter] 
+    public string Style { get; set; } = string.Empty;
+
+    private bool _isSingleVan => JobCards.Select(x => x.BoardId).Distinct().Count() == 1;
+    
+    private RadzenDataGrid<JobCard> _dataGrid = default!;
+    private RadzenTextBox _nameFilterBox = default!;
+    private IEnumerable<string> _statusOptions = ["Completed", "Other"];
+
+    private CardAreaOfOrigin AreaFromDynamic(Group area)
+    {
+        return area.Data.Key;
+    }
+
+    protected override void OnInitialized()
+    {
+        ArgumentNullException.ThrowIfNull(JobCards);
+        ArgumentNullException.ThrowIfNull(NavigationManager);
+        ArgumentNullException.ThrowIfNull(ProductionService);
+        
+        NavigationManager.LocationChanged += HandleLocationChanged;
+        
+        base.OnInitialized();
+    }
+    
+    void OnRender(DataGridRenderEventArgs<JobCard> args)
+    {
+        if(args.FirstRender && GroupByAreaOfOrigin)
+        {
+            args.Grid.Groups.Add(new GroupDescriptor(){ Property = "AreaOfOrigin" });
+
+            if (_isSingleVan)
+            {
+                args.Grid.Groups.Add(new GroupDescriptor(){ Property = "TrelloListName" });
+            }
+            
+            StateHasChanged();
+        }
+    }
+
+    void OnGroupRender(GroupRowRenderEventArgs args)
+    {
+        if (args.FirstRender && GroupByAreaOfOrigin)
+        {
+            args.Expanded = false;
+        }
+    }
+    
+    void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        foreach (RadzenDataGridColumn<JobCard> column in _dataGrid.ColumnsCollection)
+        {
+            _dataGrid.ClearFilter(column, false, false);
+        }
+        
+        SetFiltersFromQuery();
+        StateHasChanged();
+    }
+    
+     void SetStatusFilters(object? value)
+    {
+        RadzenDataGridColumn<JobCard>? column = _dataGrid.ColumnsCollection.Single(x => x.Title == "Status");
+
+        if (value is null)
+        {
+            column.ClearFilters();
+            return;
+        }
+
+        string selection = (string)value;
+
+        if (selection == "Completed")
+        {
+            column.ClearFilters();
+            column.FilterOperator = FilterOperator.Equals;
+            column.FilterValue = CardStatus.Completed;
+        }
+        else
+        {
+            column.ClearFilters();
+            column.FilterOperator = FilterOperator.NotEquals;
+            column.FilterValue = CardStatus.Completed;
+        }
+    }
+    
+    void SetNameFilters(object? value)
+    {
+        RadzenDataGridColumn<JobCard>? column = _dataGrid.ColumnsCollection.Single(x => x.Title == "Name");
+
+        if (value is null)
+        {
+            column.ClearFilters();
+            return;
+        }
+
+        string selection = (string)value;
+        
+        if (string.IsNullOrEmpty(selection) || string.IsNullOrWhiteSpace(selection))
+        {
+            column.ClearFilters();
+            return;
+        }
+
+        column.ClearFilters();
+        column.FilterOperator = FilterOperator.Contains;
+        column.FilterValue = selection;
+    }
+    
+    void SetVanNameFilters(object? value)
+    {
+        RadzenDataGridColumn<JobCard>? column = _dataGrid.ColumnsCollection.Single(x => x.Title == "Van");
+
+        if (value is null)
+        {
+            column.ClearFilters();
+            return;
+        }
+
+        string selection = (string)value;
+        
+        if (string.IsNullOrEmpty(selection) || string.IsNullOrWhiteSpace(selection))
+        {
+            column.ClearFilters();
+            return;
+        }
+
+        column.ClearFilters();
+        column.FilterOperator = FilterOperator.Contains;
+        column.FilterValue = selection;
+    }
+
+    void SetFiltersFromQuery()
+    {
+        Uri uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+
+        if(QueryHelpers.ParseQuery(uri.Query).TryGetValue("name", out var jobCardNames))
+        {
+            string? jobCardName = jobCardNames.FirstOrDefault();
+
+            if (!string.IsNullOrEmpty(jobCardName))
+            {
+                _nameFilterBox.Value = jobCardName.ToLower();
+            }
+        }
+
+        _dataGrid.Reload();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            
+            SetFiltersFromQuery();
+        }
+        
+        base.OnAfterRender(firstRender);
+    }
+
+    private RenderFragment RedCardNameRenderFragment(JobCard jobCard)
+    {
+        return __builder =>
+               {
+                   <RadzenTree Style="overflow: hidden">
+                       
+                       <JobCardTreeNodeComponent
+                           JobCard="jobCard"
+                           HideCompleted="false"
+                           VanPosition="@ProductionService.ProductionVans[jobCard.BoardName].Position"
+                           ShowAttachments="true"
+                           ShowComments="true"/>
+
+                   </RadzenTree>
+               };
+    }
+
+    private RenderFragment TimeToHandoverRenderFragment(JobCard jobCard)
+    {
+        TimeSpan timeSpan = ProductionService.ProductionVans[jobCard.BoardName].TimeToHandover ?? TimeSpan.Zero;
+        
+        string timeToHandoverString = "";
+        bool isNegative = false;
+
+        if (timeSpan < TimeSpan.Zero)
+        {
+            isNegative = true;
+            timeSpan = -timeSpan;
+        }
+        if (timeSpan < TimeSpan.FromDays(1))
+        {
+            timeToHandoverString += $"{timeSpan.Hours.ToString("00")} hours";
+        }
+        else if (timeSpan.Days < 2)
+        {
+            timeToHandoverString += $"1 day {timeSpan.Hours.ToString("00")} hours";
+        }
+        else
+        {
+            timeToHandoverString += $"{(int)timeSpan.TotalDays} days {timeSpan.Hours.ToString("00")} hours";
+        }
+        if (isNegative)
+        {
+            timeToHandoverString += " ago";
+        }
+
+        return __builder =>
+               {
+                   <RadzenText>@timeToHandoverString</RadzenText>
+               };
+    }
+
+    private RenderFragment CardStatusRender(JobCard jobCard)
+    {
+        return __builder =>
+               {
+                   <RadzenCard Style="@("height: 4em; background:" + jobCard.CardStatus.GetIndicatorColor().ToHex())">
+                       <RadzenText Style="white-space: pre-wrap; text-align: center;">@jobCard.CardStatus.CleanName()</RadzenText>
+                   </RadzenCard>
+               };
+    }
+
+    private RenderFragment CardAreaRender(JobCard jobCard)
+    {
+        return __builder =>
+               {
+                   <RadzenCard Style="@("height: 4em; background:" + jobCard.AreaOfOrigin.ToChartColor())">
+                       <RadzenText Style="white-space: pre-wrap; text-align: center;">@jobCard.AreaOfOrigin.CleanName()</RadzenText>
+                   </RadzenCard>
+               };
+    }
+}

@@ -1,0 +1,57 @@
+﻿@using System.Drawing;
+
+@if (Department.RedCards.Count > 0 || Department.JobCards.Count > 0)
+{
+    <RadzenTreeItem Text="@Department.Name" style="@("color:" + ColorTranslator.ToHtml(Department.Color(VanPosition)))">
+        @if(Department.JobCards.Count > 0)
+        {
+            <RadzenTreeItem Text="Jobcards" style="@("color:" + ColorTranslator.ToHtml(Department.Color(VanPosition)))">
+                @foreach (var job in Department.JobCards)
+                {
+                    <JobCardTreeNodeComponent JobCard="job" HideCompleted="HideCompleted" ShowCompletionRate="false" ShowTimeRemaining="false" VanPosition="VanPosition"/>
+                }
+            </RadzenTreeItem>
+        }
+        @if (ShowRedCards && Department.RedCards.Count > 0)
+        {
+            <RadzenTreeItem Text="Redcards" style="@("color:" + ColorTranslator.ToHtml(Department.RedcardColor))">
+                @foreach (var card in Department.RedCards)
+                {
+                    <RedCardTreeNodeComponent RedCard="card" HideCompleted="HideCompleted" ShowAttachments="true" ShowComments="true"/>
+                }
+            </RadzenTreeItem>
+        }
+    </RadzenTreeItem>
+}
+else
+{
+    <RadzenTreeItem Text="@Department.Name" style="@("color:" + ColorTranslator.ToHtml(Department.Color(VanPosition)))"/>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public Department Department { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public IProductionPosition VanPosition { get; set; } = default!;
+
+    [Parameter]
+    public bool HideCompleted { get; set; }
+
+    [Parameter]
+    public bool ShowCompletionRate { get; set; }
+
+    [Parameter]
+    public bool ShowTimeRemaining { get; set; }
+
+    [Parameter] 
+    public bool ShowRedCards { get; set; }
+
+    protected override void OnInitialized()
+    {
+        ArgumentNullException.ThrowIfNull(Department);
+        ArgumentNullException.ThrowIfNull(VanPosition);
+        base.OnInitialized();
+    }
+
+}

@@ -1,0 +1,69 @@
+﻿@using Orientation = Radzen.Orientation
+
+@inherits UpdatableComponent
+
+<RadzenCard>
+    <RadzenDropDown
+        TValue="TimeFrame"
+        Data="_timeFrames"
+        bind-Value="_selectedTimeFrame"
+        Change="TimeFrameSelected"
+        Placeholder="2 Weeks"/>
+    <RadzenStack Orientation="Orientation.Horizontal">
+        <RedCardCountComponent TimeFrame="@_selectedTimeFrame.TimeSpan" @ref="_countComponent"/>
+        <RadzenStack Style="display: flex; flex: auto">
+            <RedCardsPerDayComponent TimeFrame="@_selectedTimeFrame.TimeSpan" @ref=@_redCardsPerDay/>
+            <RedCardAgeGraphComponent TimeFrame="@_selectedTimeFrame.TimeSpan" @ref=@_redCardAgeGraphComponent/>
+        </RadzenStack>
+    </RadzenStack>
+</RadzenCard>
+
+@code {
+    [Inject] 
+    public NavigationManager NavigationManager { get; set; } = default!;
+    
+    RedCardAgeGraphComponent _redCardAgeGraphComponent = default!;
+    RedCardCountComponent _countComponent = default!;
+    RedCardsPerDayComponent _redCardsPerDay = default!;
+    
+    private TimeFrame _selectedTimeFrame = new TimeFrame("2 Weeks", TimeSpan.FromDays(14));
+
+    IEnumerable<TimeFrame> _timeFrames =
+    [
+        new TimeFrame("1 Week", TimeSpan.FromDays(7)),
+        new TimeFrame("2 Weeks", TimeSpan.FromDays(14)),
+        new TimeFrame("3 Weeks", TimeSpan.FromDays(21)),
+        new TimeFrame("1 Month", TimeSpan.FromDays(30)),
+    ];
+
+    protected override void OnInitialized()
+    {
+        ArgumentNullException.ThrowIfNull(NavigationManager);
+        
+        NavigationManager.LocationChanged += (_, _) => Update();
+        
+        base.OnInitialized();
+    }
+
+    public override void Update()
+    {
+        base.Update();
+        _redCardAgeGraphComponent.Update();
+        _countComponent.Update();
+        _redCardsPerDay.Update();
+    }
+
+    private void TimeFrameSelected(object value)
+    {
+        _selectedTimeFrame = (TimeFrame)value;
+        Update();
+    }
+
+    protected class TimeFrame(string name, TimeSpan timeSpan)
+    {
+        public override string ToString() => Name;
+
+        private string Name { get; set; } = name;
+        protected internal TimeSpan TimeSpan { get; set; } = timeSpan;
+    }
+}

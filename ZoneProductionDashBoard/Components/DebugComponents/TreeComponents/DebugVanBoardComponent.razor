@@ -1,0 +1,46 @@
+﻿@using ZoneProductionLibrary.Models.BoardObjects
+
+<RadzenTree Text="@(VanBoardObject.Id + " - " + VanBoardObject.Name)">
+    <RadzenTreeItem Text="Job Cards">
+        @foreach (string jobCardId in @VanBoardObject.JobCardIds)
+        {
+            if (JobCards.Any(x => x.Id == jobCardId))
+            {
+                var jobCard = JobCards.First(x => x.Id == jobCardId);
+                <DebugJobCardComponent JobCardObject="@jobCard" CheckLists="@CheckLists" Checks="@Checks"/>
+            }
+            else
+            {
+                <RadzenTreeItem Text="@(jobCardId + " is missing!")" Style="color: red" Expanded="true"/>
+            }
+        }
+    </RadzenTreeItem>
+</RadzenTree>
+
+@code {
+    [Parameter, EditorRequired]
+    public VanBoardObject VanBoardObject { get; set; } = default!;
+    
+    [Parameter, EditorRequired]
+    public IEnumerable<RedCardObject> RedCards { get; set; } = default!;
+    
+    [Parameter, EditorRequired]
+    public IEnumerable<JobCardObject> JobCards { get; set; } = default!;
+    
+    [Parameter, EditorRequired]
+    public IEnumerable<ChecklistObject> CheckLists { get; set; } = default!;
+    
+    [Parameter, EditorRequired]
+    public IEnumerable<CheckObject> Checks { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        ArgumentNullException.ThrowIfNull(VanBoardObject);
+        ArgumentNullException.ThrowIfNull(RedCards);
+        ArgumentNullException.ThrowIfNull(JobCards);
+        ArgumentNullException.ThrowIfNull(CheckLists);
+        ArgumentNullException.ThrowIfNull(Checks);
+        base.OnInitialized();
+    }
+
+}

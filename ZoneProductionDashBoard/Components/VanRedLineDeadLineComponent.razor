@@ -1,0 +1,171 @@
+﻿@using ZoneProductionDashBoard.Components.VanTreeNodes;
+@using PnP.Framework.Extensions
+@using BlazorBootstrap
+@using ApexCharts;
+
+@inherits UpdatableComponent
+
+<div style="height: 70vh; overflow: hidden">
+    <ApexChart
+        TItem="DateDataItem"
+        Options="_options"
+        XAxisType="XAxisType.Datetime"
+        Title="@(Van.Name + " - " + Van.Position.PositionName)"
+        Height="@("100%")">
+        @foreach (CardAreaOfOrigin area in Enum.GetValues<CardAreaOfOrigin>())
+        {
+            if (_jobData.TryGetValue(area, out List<DateDataItem>? dataItems) && dataItems.Count > 0)
+            {
+                <ApexPointSeries
+                    TItem="DateDataItem"
+                    Items="@dataItems"
+                    XValue="e => e.Key"
+                    YValue="e => e.Value"
+                    Name="@area.CleanName()"
+                    Color="@area.ToChartColor()"/>
+            }
+        }
+        
+    </ApexChart>
+</div>
+@code {
+    [Inject] 
+    public IProductionService ProductionService { get; set; } = default!;
+
+    [Parameter, EditorRequired] 
+    public VanBoard Van { get; set; } = default!;
+
+    ApexChartOptions<DateDataItem> _options = new ApexChartOptions<DateDataItem>();
+    Dictionary<CardAreaOfOrigin, List<DateDataItem>> _jobData = [];
+
+    protected override void OnInitialized()
+    {
+        ArgumentNullException.ThrowIfNull(ProductionService);
+        ArgumentNullException.ThrowIfNull(Van);
+        
+        _options.Chart.Animations = new Animations
+        {
+            Enabled = false
+        };
+
+        _options.Chart.Toolbar = new Toolbar
+        {
+            Show = false
+        };
+
+        _options.Chart.Zoom = new Zoom
+        {
+            Enabled = false
+        };
+
+        _options.Stroke = new Stroke
+        {
+            Curve = Curve.Stepline
+        };
+
+        _options.Yaxis = new List<YAxis>
+        {
+            new YAxis
+            {
+                Title =new  AxisTitle
+                {
+                    Text = "% Completed"
+                },
+                Max = 100,
+                Min = 0,
+                Labels = new YAxisLabels
+                {
+                    Formatter = 
+                        @"function (value) 
+                        {
+                            if (value === undefined) 
+                                {return '';}
+
+                            return value + '%';
+                        }"
+                }
+            }
+        };
+
+        _options.Xaxis = new XAxis { };
+
+        if (Van.PositionHistory.Count() > 0)
+            _options.Xaxis.Min = (Van.PositionHistory.First().date.LocalDateTime - TimeSpan.FromDays(1)).ToUnixTimeMilliseconds();
+
+        _options.Annotations = new Annotations { Xaxis = new List<AnnotationsXAxis>() };
+
+        foreach(var move in Van.PositionHistory)
+        {
+            var newAxis = new AnnotationsXAxis
+            {
+                Label = new Label
+                {
+                    Text = move.position.PositionName
+                },
+                X = move.date.LocalDateTime.ToUnixTimeMilliseconds()
+            };
+
+            if (move.position is PostProduction)
+            {
+                newAxis.Label.BorderColor = "red";
+                newAxis.BorderColor = "red";
+            }
+
+            _options.Annotations.Xaxis.Add(newAxis);
+        }
+
+        if (Van.Handover.HasValue)
+        {
+            _options.Annotations.Xaxis.Add(new AnnotationsXAxis
+                {
+                    Label = new Label
+                    {
+                        Text = "Handover",
+                        BorderColor = "red"
+                    },
+                    X = Van.Handover.Value.LocalDateTime.ToUnixTimeMilliseconds(),
+                    BorderColor = "red"
+                });
+        }
+
+        foreach (CardAreaOfOrigin area in Enum.GetValues<CardAreaOfOrigin>())
+        {
+            _jobData.Add(area, GetJobCompletedDates(area).ToList());
+        }
+        
+        if (Van.Handover.HasValue && (Van.Handover.Value - DateTimeOffset.Now) < TimeSpan.FromDays(5))
+            _options.Xaxis.Max = System.Math.Max(_jobData.SelectMany(x => x.Value).Max(x => x.Key  + TimeSpan.FromDays(1)).ToUnixTimeMilliseconds(), (Van.Handover.Value.LocalDateTime + TimeSpan.FromDays(1)).ToUnixTimeMilliseconds());
+
+        base.OnInitialized();
+    }
+
+    private IEnumerable<DateDataItem> GetJobCompletedDates(CardAreaOfOrigin area)
+    {
+        var completedResults = Van.JobCards.Where(x => x.AreaOfOrigin == area).GetCompletionRateHistory();
+
+        (DateTimeOffset? date, decimal change) firstDataPoint = completedResults.FirstOrDefault(x => x.date.HasValue);
+
+        if (firstDataPoint.Equals(default))
+            return [];
+        
+        List<DateDataItem> dateDataItems = new List<DateDataItem>([new DateDataItem(firstDataPoint.date!.Value.LocalDateTime, 0)]);
+
+        decimal completedAmount = 0;
+
+        foreach ((DateTimeOffset? date, decimal change) pair in completedResults)
+        {
+            if (!pair.date.HasValue)
+            {
+                completedAmount += pair.change;
+            }
+            else
+            {
+                completedAmount += pair.change;
+                
+                dateDataItems.Add(new DateDataItem(pair.date.Value.LocalDateTime, completedAmount * 100M));
+            }
+        }
+
+        return dateDataItems;
+    }
+}

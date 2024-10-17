@@ -1,0 +1,281 @@
+﻿@using ApexCharts
+
+@inherits UpdatableComponent
+
+<ApexChart TItem="FormattedJobCard" Options="_options" Height="@("600px")" Width="@("100%")" @ref="_chart">
+
+    <ApexPointTooltip>
+        <RadzenText Style="@("color: " + context.DataPoint.Items.First().CardStatus.GetIndicatorColor().ToHex())">@context.DataPoint.Items.First().LabelDescription</RadzenText>
+        @if (context.DataPoint.Items.First().CardStatus == CardStatus.UnableToComplete)
+        {
+            foreach (string comment in context.DataPoint.Items.First().Comments)
+            {
+                <RadzenText>- @comment</RadzenText>
+            }
+        }
+    </ApexPointTooltip>
+    
+    <ChildContent>
+        @foreach (VanBoard van in Vans)
+        {
+            <ApexPointSeries TItem="FormattedJobCard"
+                             Items="@GetFormattedCards(van.JobCards.Where(x => StatsService.CardFilterOptions.CardAreaOfOrigins.Contains(x.AreaOfOrigin)))"
+                             Name="@($"{van.Name} - {van.Position.PositionName}")"
+                             SeriesType="SeriesType.Heatmap"
+                             PointColor="@(x => x.CardStatus.GetIndicatorColor().ToHex())"
+                             XValue="@(x => x.Name)"
+                             YValue="@(e => CardValue(e, van.Position))" 
+                             Group="@van.Position.PositionName"/>
+        }
+    </ChildContent>
+</ApexChart>
+
+
+@code {
+    [Inject] 
+    public StatsService StatsService { get; set; } = default!;
+
+    [Parameter, EditorRequired] 
+    public IEnumerable<VanBoard> Vans { get; set; } = default!;
+
+    ApexChart<FormattedJobCard> _chart = default!; 
+
+    ApexChartOptions<FormattedJobCard> _options = new ApexChartOptions<FormattedJobCard>();
+
+    Dictionary<CardAreaOfOrigin, List<string>> _jobNames = [];
+
+    public override void Update()
+    {
+        InvokeAsync(_chart.RenderAsync);
+        base.Update();
+    }
+
+    protected override void OnInitialized()
+    {
+        ArgumentNullException.ThrowIfNull(Vans);
+        
+        _options.PlotOptions = new PlotOptions()
+        {
+            Heatmap = new PlotOptionsHeatmap()
+            {
+                ColorScale = new PlotOptionsHeatmapColorScale()
+                {
+                    Ranges = 
+                    [
+                        new PlotOptionsHeatmapColorScaleRange()
+                        {
+                            Name = "",
+                            From = 20,
+                            To = 20,
+                            Color = System.Drawing.Color.White.ToHex()
+                        },
+                        new PlotOptionsHeatmapColorScaleRange()
+                        {
+                            Name = "Not Due",
+                            From = 10,
+                            To = 10,
+                            Color = System.Drawing.Color.Black.ToHex()
+                        },
+                        new PlotOptionsHeatmapColorScaleRange()
+                        {
+                            Name = "Unable To Complete",
+                            From = -1,
+                            To = -0.01,
+                            Color = CardStatus.UnableToComplete.GetIndicatorColor().ToHex()
+                        },
+                        new PlotOptionsHeatmapColorScaleRange()
+                        {
+                            Name = "In Progress",
+                            From = 0.01,
+                            To = .99,
+                            Color = CardStatus.InProgress.GetIndicatorColor().ToHex()
+                        },
+                        new PlotOptionsHeatmapColorScaleRange()
+                        {
+                            Name = "Completed",
+                            From = 1,
+                            To = 1,
+                            Color = CardStatus.Completed.GetIndicatorColor().ToHex()
+                        },
+                        new PlotOptionsHeatmapColorScaleRange()
+                        {
+                            Name = "Not Started",
+                            From = 0,
+                            To = 0,
+                            Color = System.Drawing.Color.LightSlateGray.ToHex()
+                        }
+                    ], 
+                    Max = 1,
+                    Min = -1, 
+                    Inverse = true
+                }, 
+                UseFillColorAsStroke = true, 
+                ReverseNegativeShade = true
+            }
+        };
+
+        _options.Xaxis = new XAxis()
+        {
+            Position = XAxisPosition.Top,
+            Labels = new XAxisLabels()
+            {
+                Rotate = 300,
+                Trim = true
+            }
+        };
+
+        _options.Legend = new Legend()
+        {
+            Show = false
+        };
+        
+        _options.Chart.Animations = new Animations
+        {
+            Enabled = false
+        };
+
+        _options.Chart.Toolbar = new Toolbar
+        {
+            Show = false
+        };
+
+        _options.Chart.Zoom = new Zoom
+        {
+            Enabled = false
+        };
+
+        base.OnInitialized();
+    }
+
+    private decimal CardValue(FormattedJobCard jobCard, IProductionPosition vanPosition)
+    {
+        if (string.IsNullOrEmpty(jobCard.Name))
+            return 20;
+        
+        if (jobCard.CardStatus == CardStatus.Unknown)
+            return 10;
+
+        if (jobCard.CardStatus == CardStatus.UnableToComplete)
+            return -1 * jobCard.CompletionRate;
+
+        if (jobCard.CardStatus == CardStatus.Completed)
+            return 1;
+
+        if (jobCard.CardStatus == CardStatus.InProgress || jobCard.CompletionRate > 0)
+            return jobCard.CompletionRate;
+
+        if (jobCard.Position > vanPosition)
+            return 10;
+
+        return 0;
+    }
+
+    private IEnumerable<FormattedJobCard> GetFormattedCards(IEnumerable<JobCard> cards)
+    {
+        _jobNames = [];
+        
+        foreach (CardAreaOfOrigin area in Enum.GetValues<CardAreaOfOrigin>())
+        {
+            _jobNames.Add(area, []);
+        }
+
+        foreach (JobCard job in Vans.SelectMany(v => v.JobCards))
+        {
+            _jobNames[job.AreaOfOrigin].Add(job.Name);
+        }
+        
+        foreach (CardAreaOfOrigin area in Enum.GetValues<CardAreaOfOrigin>())
+        {
+            _jobNames[area] = _jobNames[area].Distinct().ToList();
+        }
+        
+        var list = new List<FormattedJobCard>();
+
+        IEnumerable<JobCard> jobCards = cards.ToList();
+        Dictionary<CardAreaOfOrigin, List<JobCard>> groups = new Dictionary<CardAreaOfOrigin, List<JobCard>>();
+
+        foreach (CardAreaOfOrigin area in StatsService.CardFilterOptions.CardAreaOfOrigins)
+        {
+            groups.Add(area, []);
+        }
+        
+        foreach (JobCard job in jobCards)
+        {
+            if (_jobNames.ContainsKey(job.AreaOfOrigin))
+            {
+                groups[job.AreaOfOrigin].Add(job);
+            }
+        }
+
+        int areaCount = 0;
+        
+        foreach (CardAreaOfOrigin area in StatsService.CardFilterOptions.CardAreaOfOrigins)
+        {
+            int cardCount = 0;
+            
+            foreach (string jobName in _jobNames[area])
+            {
+                if(groups[area].Any(x => x.Name == jobName))
+                    list.Add(new FormattedJobCard(groups[area].First(x => x.Name == jobName)));
+                
+                else
+                    list.Add(new FormattedJobCard(jobName, area));
+
+                cardCount++;
+            }
+            
+            areaCount++;
+            
+            if(cardCount > 0 && areaCount < StatsService.CardFilterOptions.CardAreaOfOrigins.Count())
+                list.Add(new FormattedJobCard());
+
+        }
+
+        return list;
+    }
+
+    public class FormattedJobCard
+    {
+        public string Name;
+        public string? LabelDescription = null;
+        public CardStatus CardStatus;
+        public IProductionPosition Position;
+        public decimal CompletionRate;
+        public List<string> Comments = [];
+
+        public FormattedJobCard(JobCard jobCard)
+        {
+            Name = $"{jobCard.Name}";
+            LabelDescription = $"{jobCard.Name} - {jobCard.Position.PositionName}";
+            CardStatus = jobCard.CardStatus;
+            Position = jobCard.Position;
+            CompletionRate = (decimal)jobCard.CompletionRate;
+            Comments = jobCard.Comments.Select(x => x.Content).ToList();
+
+            if (CardStatus == CardStatus.Completed || CompletionRate == 1)
+                LabelDescription = $"{jobCard.Name} - Completed";
+            
+            else if (CompletionRate == 0)
+                LabelDescription = $"{jobCard.Name}";
+            
+            else 
+                LabelDescription = $"{jobCard.Name} - {Math.Round(CompletionRate * 100, 0)}% completed";
+        }
+
+        public FormattedJobCard(string name, CardAreaOfOrigin areaOfOrigin)
+        {
+            Name = $"{name}";
+            CardStatus = CardStatus.Unknown;
+            Position = new PreProduction();
+            CompletionRate = 0; 
+        }
+
+        public FormattedJobCard()
+        {
+            Name = "";
+            CardStatus = CardStatus.Unknown;
+            Position = new PreProduction();
+            CompletionRate = 20; 
+        }
+    }
+}

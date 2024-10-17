@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Operations Version="1.0" xmlns="http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02">
+  <Operation Name="Rename Refactor" Key="80bad81c-07b4-45aa-8d28-bc895d297f93" ChangeDateTime="08/21/2024 11:05:46">
+    <Property Name="ElementName" Value="[dbo].[TrelloActions].[Id]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[dbo].[TrelloActions]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="ActionId" />
+  </Operation>
+  <Operation Name="Rename Refactor" Key="64c9a7f4-3afd-4607-8b99-f9b01e9ebfc3" ChangeDateTime="08/21/2024 11:07:33">
+    <Property Name="ElementName" Value="[dbo].[TrelloActions].[DateTime]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[dbo].[TrelloActions]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="Date" />
+  </Operation>
+</Operations>

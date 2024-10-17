@@ -1,0 +1,149 @@
+﻿@using Serilog
+@using ZoneProductionLibrary.Models.BoardObjects
+@using ZoneProductionLibrary.ProductionServices.Main
+@inherits ZoneProductionDashBoard.Pages.ProductionPageBase
+
+<RadzenStack Orientation="Orientation.Horizontal" Style="max-width: 600px">
+    <RadzenDropDown
+        TValue="string"
+        Data="@_vanNames"
+        AllowFiltering="true"
+        Change="VanSelected"/>
+    @if (_van is null && !string.IsNullOrEmpty(_selectedVanId) && !string.IsNullOrWhiteSpace(_selectedVanId))
+    {
+        <RadzenButton Click="LoadVan">Load Van</RadzenButton>
+    }
+    else if(!string.IsNullOrEmpty(_selectedVanId) && !string.IsNullOrWhiteSpace(_selectedVanId))
+    {
+        <RadzenButton Click="ReloadVan">Reload Van</RadzenButton>
+        <RadzenButton Click="() => UnloadVan(_selectedVanId)">Unload Van</RadzenButton>
+    }
+</RadzenStack>
+
+
+@if (string.IsNullOrEmpty(_selectedVanId) || string.IsNullOrWhiteSpace(_selectedVanId))
+{
+    <RadzenText>Select Van</RadzenText>
+}
+
+else if (_van is null)
+{
+    <RadzenText>Van Not Loaded</RadzenText>
+    
+}
+
+else
+{
+    <RadzenText>@_van.Name Loaded</RadzenText>
+}
+
+@code {
+
+    IEnumerable<string> _vanNames = [];
+    string _selectedVanId = "";
+    VanBoard? _van;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        _vanNames = ProductionService.ProductionVans.Keys;
+    }
+
+    private void VanSelected(object o)
+    {
+        if (o is null)
+        {
+            _selectedVanId = "";
+            return;
+        }
+        
+        _selectedVanId = ProductionService.ProductionVans[(string)o].Id;
+        
+        _van = ProductionService.GetBoardById(_selectedVanId);
+    }
+
+    private async Task LoadVan()
+    {
+        await ShowLoadingDialog();
+
+        _van = await ProductionService.GetBoardAsyncById(_selectedVanId);
+        
+        CloseLoadingDialog();
+        
+        StateHasChanged();
+    }
+
+    private void UnloadVan(string id)
+    {
+        if (ProductionService is ProductionService prod)
+        {
+            prod.TryRemoveVan(id, true);
+        }
+
+        _van = null;
+    }
+    
+    private async Task ReloadVan()
+    {
+        CompareReport? report;
+        
+        if (ProductionService is ProductionService prod)
+        {
+            report = await prod.ForceReloadBoard(_selectedVanId);
+        }
+        else
+        {
+            report = null;
+        }
+
+        if (report is not null)
+        {
+            foreach (string issuesKey in report.Issues.Keys)
+            {
+                foreach (string issue in report.Issues[issuesKey])
+                {
+                    Log.Logger.Warning("{key} - {issue}", issuesKey, issue);
+                }
+            }
+        }
+
+        DialogService.Open(report is null || report.Pass ? "" : "Issues found", RenderCompareReport(report));
+        
+        StateHasChanged();
+    }
+    
+    RenderFragment<DialogService> RenderCompareReport(CompareReport? report)
+    {
+        if (report is null)
+            return _dialogService =>
+                   {
+                       return __builder =>
+                              {
+                                  <RadzenText>No issues Found</RadzenText>
+                              };
+                   };
+        else
+            return _dialogService =>
+                   {
+                       return __builder =>
+                              {
+                                  <RadzenTree>
+                                      @foreach (string key in report.Issues.Keys)
+                                      {
+                                          if (report.Issues[key].Count > 0)
+                                          {
+                                              <RadzenTreeItem Text="@key">
+                                                  @foreach (string issue in report.Issues[key])
+                                                  {
+                                                      <RadzenTreeItem Text="@issue"/>
+                                                  }
+                                              </RadzenTreeItem>
+                                          }
+                                      }
+                                  </RadzenTree>
+                              };
+                   };
+    }
+
+}

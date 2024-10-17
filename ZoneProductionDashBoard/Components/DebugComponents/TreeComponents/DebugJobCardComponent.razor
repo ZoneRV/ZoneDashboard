@@ -1,0 +1,44 @@
+﻿@using ZoneProductionLibrary.Models.BoardObjects
+
+@if (JobCardObject.ChecklistIds.Count > 0)
+{
+    <RadzenTreeItem Text="@($"{JobCardObject.Id} - {JobCardObject.Name} - {Enum.GetName(JobCardObject.CardStatus)} - {Enum.GetName(JobCardObject.AreaOfOrigin)}")">
+    @foreach (string checkListId in JobCardObject.ChecklistIds)
+    {
+        if (CheckLists.Any(x => x.Id == checkListId))
+        {
+            var checkList = CheckLists.First(x => x.Id == checkListId);
+            <BoardBreakDownComponent checklistObject="@checkList" checks="@Checks"/>
+        }
+        else
+        {
+            <RadzenTreeItem Text="@(checkListId + " is missing!")" Style="color: red" Expanded="true"/>
+        }
+    }
+    </RadzenTreeItem>
+}
+else
+{
+    <RadzenTreeItem Text="@(JobCardObject.Id + " - " + JobCardObject.Name)"/>
+}
+
+
+@code {
+    [Parameter, EditorRequired]
+    public JobCardObject JobCardObject { get; set; } = default!;
+    
+    [Parameter, EditorRequired]
+    public IEnumerable<ChecklistObject> CheckLists { get; set; } = default!;
+    
+    [Parameter, EditorRequired]
+    public IEnumerable<CheckObject> Checks { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        ArgumentNullException.ThrowIfNull(JobCardObject);
+        ArgumentNullException.ThrowIfNull(CheckLists);
+        ArgumentNullException.ThrowIfNull(Checks);
+        base.OnInitialized();
+    }
+
+}

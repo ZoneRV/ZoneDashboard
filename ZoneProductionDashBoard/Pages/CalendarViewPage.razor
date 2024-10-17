@@ -1,0 +1,308 @@
+﻿@using System.Drawing;
+@using System.Reflection
+@using PnP.Framework.Modernization.Publishing
+@using Serilog
+@using ZoneProductionDashBoard.Components.VanTreeNodes;
+@using ZoneProductionLibrary.ProductionServices.Main
+
+@inherits ProductionPageBase
+
+@page "/Handover"
+
+<PageTitle>Handover Calendar</PageTitle>
+
+@{ List<VanProductionInfo> overDueVans = ProductionService.ProductionVans.Values.Where(x => x.Handover.HasValue && x.HandoverState == HandoverState.UnhandedOver && x.Handover.Value < DateTimeOffset.Now).OrderBy(x => x.Handover!.Value).ToList(); }
+@{ List<VanProductionInfo> recentChanges = ProductionService.ProductionVans.Values.Where(x => x.HasHandoverDateChanged(TimeSpan.FromDays(7), TimeSpan.FromDays(7))).ToList();}
+
+@if (overDueVans.Count > 0)
+{
+    <RadzenStack Orientation="Orientation.Horizontal" Gap="1em">
+        <RadzenIcon Icon="warning" IconColor="@Colors.Danger" style="font-weight: 400;" MouseEnter="(el) => ShowOverDueVanToolTip(el, overDueVans)" MouseLeave="() => { TooltipService.Close(); }"/>
+        <RadzenText>@overDueVans.Count vans overdue!</RadzenText>
+    </RadzenStack>
+}
+@if (recentChanges.Count > 0)
+{
+    <RadzenStack Orientation="Orientation.Horizontal" Gap="1em">
+        <RadzenIcon Icon="warning" IconColor="@Colors.Danger" style="font-weight: 400;" MouseEnter="(el) => UpdatedDatesToolTip(el, recentChanges)" MouseLeave="() => { TooltipService.Close(); }"/>
+        <RadzenText>@recentChanges.Count Handovers recently modified!</RadzenText>
+    </RadzenStack>
+}
+
+<RadzenScheduler
+    @ref=@_scheduler
+    LoadData="@OnLoadData"
+    AppointmentRender=@OnVanRender
+    SlotRender=@OnSlotRender
+    AppointmentSelect=@OnSelectVan
+    AppointmentMouseEnter="@ShowHandoverInformation"
+    AppointmentMouseLeave="@CloseHandoverInformation"
+    TodaySelect="SelectToday"
+    style="height: 85vh;"
+    Data="@_data"
+    TItem="VanData"
+    StartProperty="Handover"
+    EndProperty="HandoverEnd"
+    TextProperty="Name">
+    <ChildContent>
+        <CustomRadzenWeekView StartTime="TimeSpan.FromHours(5)" EndTime="TimeSpan.FromHours(17)" MinutesPerSlot="30" HeaderFormat="ddd dd/MM" TimeFormat="HH:mm"/>
+        <RadzenMonthView MaxAppointmentsInSlot="5"/>
+        <RadzenYearPlannerView MaxAppointmentsInSlot="5"/>
+    </ChildContent>
+    <Template Context="data">
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="2px">
+            @if (data.Van is null)
+            {
+                <RadzenIcon Icon="question_mark" IconStyle="IconStyle.Info"/>
+            }
+            else
+            {
+                @if (data.Van.JobCards.Any(x => x.CardStatus != CardStatus.Completed) || data.Van.RedCards.Any(x => x.CardStatus != CardStatus.Completed))
+                {
+                    if (data.Handover - TimeSpan.FromDays(3) < DateTime.Now)
+                    {
+                        <RadzenIcon Icon="priority_high" IconStyle="IconStyle.Danger"/>
+                    }
+                    else
+                    {
+                        <RadzenIcon Icon="exclamation" IconStyle="IconStyle.Warning"/>
+                    }
+                }
+                else
+                {
+                    <RadzenIcon Icon="done_all" IconStyle="IconStyle.Success"/>
+                }
+            }
+            @data.Name.ToUpper()
+        </RadzenStack>
+    </Template>
+</RadzenScheduler>
+
+@code {
+    [Inject] 
+    TooltipService TooltipService { get; set; } = default!;
+
+    [Inject] 
+    public IProductionService ProductionService { get; set; } = default!;
+    
+    RadzenScheduler<VanData> _scheduler = default!;
+
+    public class VanData(VanProductionInfo info, VanBoard? van)
+    {
+        public string Name { get; } = info.Name;
+        public string Id { get; } = info.Id;
+        public DateTime Handover { get; } = info.Handover!.Value.LocalDateTime;
+        public DateTime HandoverEnd => Handover + TimeSpan.FromHours(1);
+        public HandoverState HandoverState { get; } = info.HandoverState;
+        public VanModel VanModel { get; } = info.VanModel;
+
+        public VanBoard? Van { get; } = van;
+    }
+
+    VanData[] _data = [];
+
+    protected override void UpdateIfIdSubscribed(object? sender, BoardUpdateInfo e)
+    {
+        bool updated = false;
+        
+        if (e.Type == BoardUpdateType.Hanover)
+        {
+            _scheduler.Reload();
+            updated = true;
+        }
+
+        else if ((e.TotalBoardUpdate || e.Type is BoardUpdateType.JobCard or BoardUpdateType.RedCard) && _data.Any(x => x.Id == e.BoardId))
+        {
+            _scheduler.Reload();
+            updated = true;
+        }
+        
+        if(updated)
+            Log.Logger.Information("{this} has been updated {BoardUpdateInfo}", MethodInfo.GetCurrentMethod()?.DeclaringType is null ? "unknown" : MethodInfo.GetCurrentMethod()!.DeclaringType!.Name, e);
+        
+        // TODO: update overdue and recently updated vans
+    }
+
+    void OnLoadData(SchedulerLoadDataEventArgs args)
+    {
+        var vansToLoad = ProductionService.ProductionVans.Where(x => x.Value.Handover.HasValue && x.Value.Handover.Value.LocalDateTime > args.Start && x.Value.Handover.Value.LocalDateTime < args.End).ToArray();
+
+        _data = new VanData[vansToLoad.Length];
+
+        int i = 0;
+        foreach (var pair in vansToLoad)
+        {
+            if (!pair.Value.Handover.HasValue)
+                throw new ArgumentNullException(nameof(pair.Value.Handover), "Cannot display van with no handover date on calendar.");
+            
+            _data[i] = new VanData(pair.Value, ProductionService.GetBoardById(pair.Value.Id));
+
+            i++;
+        }
+    }
+
+    void OnVanRender(SchedulerAppointmentRenderEventArgs<VanData> args)
+    {
+        if (args.Data.HandoverState == HandoverState.HandedOver)
+        {
+            Color fadedColor = Color.FromArgb(
+                255, 
+                180, 
+                180, 
+                180);
+            
+            args.Attributes["style"] = "background: " + ColorTranslator.ToHtml(fadedColor);
+        }
+        else
+        {
+            args.Attributes["style"] = "background: " + ColorTranslator.ToHtml(args.Data.VanModel.GetTypeColor());
+        }
+    }
+
+    void OnSlotRender(SchedulerSlotRenderEventArgs args)
+    {
+        // Highlight today in month view
+        if (args.View.Text == "Month" && args.Start.Date == DateTime.Today)
+        {
+            args.Attributes["style"] = "background: rgba(255,220,40,.2);";
+        }
+    }
+
+    async Task OnSelectVan(SchedulerAppointmentSelectEventArgs<VanData> args)
+    {
+        var board = await ProductionService.GetBoardAsyncByName(args.Data.Name.ToLower());
+
+        if (board is null)
+        {
+            Log.Logger.Error("Could not find van: {vanName}", args.Data.Name.ToLower());
+            return;
+        }
+
+        await DialogService.OpenAsync<VanView>(
+            args.Data.Name,
+            new Dictionary<string, object>
+            {
+                { "Van", board }
+            },
+            new DialogOptions
+            {
+                Width = "90vw",
+                Height = "100vh",
+                ShowClose = true,
+                CloseDialogOnOverlayClick = true
+            });
+    }
+
+    void SelectToday(SchedulerTodaySelectEventArgs args)
+    {
+        if (args.Today.DayOfWeek == DayOfWeek.Saturday)
+        {
+            args.Today = args.Today.Date.AddDays(2);
+        }
+        else if (args.Today.DayOfWeek == DayOfWeek.Sunday)
+        {
+            args.Today = args.Today.Date.AddDays(1);
+        }
+    }
+
+    void ShowOverDueVanToolTip(ElementReference elementReference, List<VanProductionInfo> vans)
+    {
+        RenderFragment<TooltipService> fragment = TooltipService =>
+          {
+              return __builder =>
+                     {
+                         <RadzenStack Gap="3px">
+                             @foreach (VanProductionInfo van in vans)
+                             {
+                                 <RadzenText>@van.Name.ToUpper() - @van.Handover!.Value.LocalDateTime.ToString("dd/MM/yy")</RadzenText>
+                             }
+                         </RadzenStack>
+                     };
+          };
+
+        TooltipService.Open(elementReference, fragment, new TooltipOptions() { Style = "background: red", Position = TooltipPosition.Right, Duration = null });
+    }
+    
+    void UpdatedDatesToolTip(ElementReference elementReference, List<VanProductionInfo> vans)
+    {
+        RenderFragment<TooltipService> fragment = TooltipService =>
+          {
+              return __builder =>
+                     {
+                         <RadzenStack Gap="3px">
+                             @foreach (VanProductionInfo van in vans.OrderBy(x => x.Handover))
+                             {
+                                 <RadzenText>@van.Name.ToUpper() - @ShortDateString(van.HandoverHistory.TakeLast(2).First().HandoverDate.LocalDateTime) -> @ShortDateString(van.Handover!.Value.LocalDateTime)</RadzenText>
+                             }
+                         </RadzenStack>
+                     };
+          };
+
+        TooltipService.Open(elementReference, fragment, new TooltipOptions() { Style = "background: red", Position = TooltipPosition.Right, Duration = null });
+    }
+
+    void ShowHandoverInformation(SchedulerAppointmentMouseEventArgs<VanData> args)
+    {
+        int? redCardCount = args.Data.Van?.RedCards.Count(x => x.CardStatus != CardStatus.Completed);
+        int? jobCardCount = args.Data.Van?.JobCards.Count(x => x.CardStatus != CardStatus.Completed);
+        
+        if(redCardCount is 0 && jobCardCount is 0)
+            return;
+        
+        RenderFragment<TooltipService> fragment = ts =>
+          {
+              return __builder =>
+                     {
+                         <RadzenStack Gap="3px">
+                             
+                             @if (args.Data.Van is null)
+                             {
+                                 <RadzenText>Click to load</RadzenText>
+                             }
+                             else
+                             {
+                                 @if (redCardCount > 0)
+                                 {
+                                     <RadzenText Style="color: #b32121">@redCardCount Uncompleted Red Cards</RadzenText>
+                                 }
+                                 
+                                 @if (jobCardCount > 0)
+                                 {
+                                     TimeSpan timeRemaining = TimeSpan.FromHours(args.Data.Van.JobCards.Sum(x => x.RemainingTaskTime.TotalHours));
+                                     
+                                     <RadzenText Style="color: #b32121">@jobCardCount Uncompleted Job Cards</RadzenText>
+                                     <RadzenText>@((int)timeRemaining.TotalHours):@timeRemaining.Minutes.ToString("00") Hours Remaining</RadzenText>
+                                 }
+                             }
+                         </RadzenStack>
+                         
+                     };
+          };
+        
+        TooltipService.Open(args.Element, fragment, new TooltipOptions() {Duration = null, Style = "background: #ffffff"});
+    }
+
+    void CloseHandoverInformation(SchedulerAppointmentMouseEventArgs<VanData> args)
+    {
+        TooltipService.Close();
+    }
+
+    string ShortDateString(DateTime dateTime)
+    {
+        string suffix;
+        
+        if (dateTime.Date.Day is 1 or 21 or 31)
+            suffix = "st";
+        
+        else if (dateTime.Date.Day is 2 or 22)
+            suffix = "nd";
+        
+        else if (dateTime.Date.Day is 3 or 23)
+            suffix = "rd";
+        
+        else
+            suffix = "th";
+
+        return dateTime.ToString("ddd d") + suffix + " " + dateTime.ToString("hh tt");
+    }
+}

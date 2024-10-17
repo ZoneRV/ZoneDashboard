@@ -1,0 +1,240 @@
+﻿@using Orientation = Radzen.Orientation
+
+@inherits UpdatableComponent
+
+<RadzenDataGrid
+    @ref="@_grid"
+    TItem="VanBoard"
+    Data="@_boards"
+    HideGroupedColumn="true"
+    Render="@OnRender"
+    Style="height: 70vh"
+    GridLines="DataGridGridLines.Both">
+    
+    <GroupHeaderTemplate>
+        <RadzenText Style="position: sticky; left: 20px">@(context.Data.Key)</RadzenText>
+    </GroupHeaderTemplate>
+
+    <Columns>
+        <RadzenDataGridColumn Title="Van" Property="Name" Frozen="true" Width="100px"/>
+        <RadzenDataGridColumn Title="Position" Property="Position.PositionName">
+        </RadzenDataGridColumn>
+
+
+        <RadzenDataGridColumn TItem="VanBoard" Title="All" Template="van => DepartmentRenderFragment(van)" Width="210px"/>
+        
+        @foreach (ProductionDepartment dep in _departments)
+        {
+            <RadzenDataGridColumn TItem="VanBoard" Title="@dep.Name" Template="van => DepartmentRenderFragment(van, dep)" Width="210px"/>
+        }
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    [Inject] 
+    public StatsService StatsService { get; set; } = default!;
+
+    [Inject]
+    public IProductionService ProductionService { get; set; } = default!;
+
+    [Inject] 
+    public DialogService DialogService { get; set; } = default!;
+
+    [Inject] 
+    public TooltipService TooltipService { get; set; } = default!;
+
+    RadzenDataGrid<VanBoard> _grid = default!;
+    IEnumerable<IProductionPosition> _positions = default!;
+    List<VanBoard> _boards = default!;
+    List<ProductionDepartment> _departments = default!;
+
+    protected override void OnInitialized()
+    { 
+        Update();
+        base.OnInitialized();
+    }
+
+
+    public override void Update()
+    {
+        if (StatsService.SelectedVanType == TypeOfVan.Gen2)
+        {
+            _positions = Gen2ProductionPosition.GetAll();
+            _departments = ProductionService.Gen2ProductionDepartments;
+        }
+
+        else
+        {
+            _positions = ExpoProductionPosition.GetAll();
+            _departments = ProductionService.ExpoProductionDepartments;
+        }
+
+        IEnumerable<string> ids = ProductionService.GetVanIdsInPositions(_positions.ToArray());
+
+        _boards = ProductionService.GetBoards(ids).ToList();
+
+        _boards.Sort(new VanPositionComparer());
+        
+        base.Update();
+    }
+    
+    void OnRender(DataGridRenderEventArgs<VanBoard> args)
+    {
+        if(args.FirstRender)
+        {
+            args.Grid.Groups.Add(new GroupDescriptor(){ Property = "Position.PositionName" });
+            StateHasChanged();
+        }
+    }
+
+    RenderFragment DepartmentRenderFragment(VanBoard van, ProductionDepartment? dep = null)
+    {
+        Dictionary<CardStatus, List<JobCard>> jobCards = [];
+        Dictionary<CardStatus, List<RedCard>> redCards = [];
+
+        IEnumerable<JobCard> jobCardsToSort;
+        IEnumerable<RedCard> redCardsToSort;
+        Department? department = null;
+
+        if (dep != null)
+        {
+            department = van.Departments.Single(x => x.Name == dep.Name);
+
+            jobCardsToSort = department.JobCards.Where(x => x.Position < van.Position || x.Position.Equals(van.Position));
+            redCardsToSort = department.RedCards;
+        }
+        else
+        {
+            jobCardsToSort = van.JobCards.Where(x => x.Position < van.Position || x.Position.Equals(van.Position));
+            redCardsToSort = van.RedCards;
+        }
+
+
+        foreach (JobCard jobCard in jobCardsToSort)
+        {
+            if (jobCards.ContainsKey(jobCard.CardStatus))
+                jobCards[jobCard.CardStatus].Add(jobCard);
+            else
+                jobCards.Add(jobCard.CardStatus, [jobCard]);
+        }
+
+        foreach (RedCard redCard in redCardsToSort)
+        {
+            if (redCards.ContainsKey(redCard.CardStatus))
+                redCards[redCard.CardStatus].Add(redCard);
+            else
+                redCards.Add(redCard.CardStatus, [redCard]);
+        }
+
+        return __builder =>
+               {
+                   @if (jobCards.Count == 0 && redCards.Count == 0)
+                   {
+                       <RadzenText Style="width: auto; text-align: center;"> - </RadzenText>
+                   }
+                   else
+                   {
+                       <RadzenStack Gap="1rem">
+                           <RadzenStack Gap="1px">
+                               @if (jobCards.Count > 0)
+                               {
+                                   <RadzenText>Job Cards:</RadzenText>
+                                   @foreach (CardStatus key in jobCards.Keys)
+                                   {
+                                       <RadzenText MouseEnter="e => MouseOverCards(e, jobCards[key], department is null, key != CardStatus.Completed)" MouseLeave="TooltipService.Close">
+                                           @key.CleanName(): @jobCards[key].Count
+                                       </RadzenText>
+                                   }
+                               }
+                           </RadzenStack>
+                           <RadzenStack Gap="1px">
+                               @if (redCards.Count > 0)
+                               {
+                                   <RadzenText>Red Cards:</RadzenText>
+                                   @foreach (CardStatus key in redCards.Keys)
+                                   {
+                                       <RadzenText MouseEnter="e => MouseOverCards(e, redCards[key], department is null)" MouseLeave="TooltipService.Close">
+                                           @key.CleanName(): @redCards[key].Count
+                                       </RadzenText>
+                                   }
+                               }
+                           </RadzenStack>
+                           @if (department != null)
+                           {
+                               <div style="display: grid; grid-template-columns: auto">
+                                   @if (department.BayLeaderSignOfCards.Count(x => x.Position < van.Position || x.Position.Equals(van.Position)) > 0)
+                                   {
+                                       <RadzenCard Variant="Variant.Flat" Style="@("background: " + (department.BayLeaderSignOfCards.Where(x => x.Position < van.Position || x.Position.Equals(van.Position)).All(x => x.CardStatus == CardStatus.Completed) ? CardStatus.Completed.GetIndicatorColor().ToHex() : CardStatus.InProgress.GetIndicatorColor().ToHex()))">
+                                           <RadzenText Text="Sign Off"/>
+                                       </RadzenCard>
+                                   }
+                                   @if (department.PippsCards.Count(x => x.Position < van.Position || x.Position.Equals(van.Position)) > 0)
+                                   {
+                                       <RadzenCard Variant="Variant.Flat" Style="@("background: " + (department.PippsCards.Where(x => x.Position < van.Position || x.Position.Equals(van.Position)).All(x => x.CardStatus == CardStatus.Completed) ? CardStatus.Completed.GetIndicatorColor().ToHex() : CardStatus.InProgress.GetIndicatorColor().ToHex()))">
+                                           <RadzenText Text="Pipps"/>
+                                       </RadzenCard>
+                                   }
+                               </div>
+                           }
+                       </RadzenStack>
+                   }
+               };
+    }
+
+    private void MouseOverCards(ElementReference elementReference, IEnumerable<IFilterableCard> cards, bool showArea, bool showTimeRemaining = false)
+    {
+        List<JobCard> jobs = cards.OfType<JobCard>().ToList();
+
+        int maxCards = 20;
+        
+        if(cards.Count() > maxCards && !showTimeRemaining)
+            return;
+        
+        RenderFragment<TooltipService> renderFragment = ts =>
+                                                        {
+                                                            return __builder =>
+                                                                   {
+                                                                       <RadzenStack Gap="3px">
+                                                                           @if (showTimeRemaining && jobs.Count > 0)
+                                                                           {
+                                                                               <RadzenText>Hours Remaining: @jobs.TotalTimeRemaining().TotalHours.ToString("N0"):@jobs.TotalTimeRemaining().Minutes</RadzenText>
+                                                                           }
+                                                                           @if(cards.Count() < maxCards)
+                                                                           {
+                                                                               @foreach (var card in cards)
+                                                                               {
+                                                                                   @if (showArea)
+                                                                                   {
+                                                                                       <RadzenText Style="white-space: pre-wrap">@card.Name - @card.AreaOfOrigin.CleanName()</RadzenText>
+                                                                                   }
+                                                                                   else
+                                                                                   {
+                                                                                       <RadzenText Style="white-space: pre-wrap">@card.Name</RadzenText>
+                                                                                   }
+                                                                               }
+                                                                           }
+                                                                       </RadzenStack>
+                                                                   };
+                                                        };
+        
+        TooltipService.Open(elementReference, renderFragment, new TooltipOptions() { Duration = null, Style = "max-width: 30vw"});
+    }
+    
+    private async Task OnSelectVan(VanBoard van)
+    {
+        await DialogService.OpenAsync<VanView>(
+            van.Name,
+            new Dictionary<string, object>
+            {
+                { "Van", van }
+            },
+            new DialogOptions
+            {
+                Width = "90vw",
+                Height = "100vh",
+                ShowClose = true,
+                CloseDialogOnOverlayClick = true
+            });
+    }
+
+}

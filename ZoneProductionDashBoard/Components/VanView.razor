@@ -1,0 +1,59 @@
+﻿@using ZoneProductionLibrary.ProductionServices.Main
+
+@inherits UpdatableComponent
+
+<RadzenTabs>
+    <Tabs>
+        <RadzenTabsItem Text="Job Cards">
+            <JobCardGridComponent JobCards="Van.JobCards" Style="height: 85vh" GroupByAreaOfOrigin="@true" @ref="@_jobCardGrid"/>
+        </RadzenTabsItem>
+        <RadzenTabsItem Text="Red Cards">
+            <RedCardGridComponent RedCards="Van.RedCards" Style="height: 85vh" @ref="@_redCardGrid"/>
+        </RadzenTabsItem>
+        <RadzenTabsItem Text="History">
+            <VanRedLineDeadLineComponent Van="Van" @ref="@_redLineDeadLineComponent"/>
+        </RadzenTabsItem>
+    </Tabs>
+</RadzenTabs>
+
+@code {
+    [Parameter, EditorRequired] 
+    public VanBoard Van { get; set; } = default!;
+
+    [Inject] 
+    public IProductionService ProductionService { get; set; } = default!;
+
+    VanRedLineDeadLineComponent? _redLineDeadLineComponent;
+    RedCardGridComponent? _redCardGrid;
+    JobCardGridComponent? _jobCardGrid;
+
+    protected override void OnInitialized()
+    {
+        ArgumentNullException.ThrowIfNull(Van);
+        ArgumentNullException.ThrowIfNull(ProductionService);
+        
+        if (ProductionService is ProductionService)
+        {
+            ZoneProductionLibrary.ProductionServices.Main.ProductionService.BoardUpdated += UpdateIfIdSubscribed;
+        }
+        
+        base.OnInitialized();
+    }
+    
+    void UpdateIfIdSubscribed(object? sender, BoardUpdateInfo e)
+    {
+        if (e.BoardId == Van.Id)
+        {
+            var updatedVan = ProductionService.GetBoardById(Van.Id);
+
+            if (updatedVan is not null)
+                Van = updatedVan;
+            
+            _jobCardGrid?.Update();
+            _redLineDeadLineComponent?.Update();
+            _redCardGrid?.Update();
+
+            InvokeAsync(StateHasChanged);
+        }
+    }
+}

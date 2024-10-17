@@ -1,0 +1,178 @@
+﻿@using System.Drawing;
+
+@if(ShouldShow(JobCard.IsCompleted))
+{
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start" JustifyContent="JustifyContent.Start" Gap="1px">
+        @if (JobCard.CheckLists.Count == 0)
+        {
+            if ((ShowComments && JobCard.Comments.Count > 0) || (ShowAttachments && JobCard.Attachments.Count > 0))
+            {
+                <RadzenTreeItem Text="@(JobCard.Name)" style="@JobHtmlColorStyleString" >
+                    @if (JobCard.Attachments.Count > 0 && ShowAttachments)
+                    {
+                        <AttachmentTreeNodeComponent Attachments="@JobCard.Attachments" />
+                    }
+                    @if (JobCard.Comments.Count > 0 && ShowComments)
+                    {
+                        @foreach (Comment comment in JobCard.Comments)
+                        {
+                            <CommentTreeNodeComponent Comment="@comment"/>
+                        }
+                    }
+                </RadzenTreeItem>
+            }
+            else
+            {
+                <RadzenTreeItem Text="@(JobCard.Name)" style="@JobHtmlColorStyleString" />
+            }
+        }
+        else if (JobCard.CheckLists.Count == 1 || (HideCompleted && JobCard.CheckLists.Count > 1 && JobCard.CheckLists.Count(x => Math.Abs(x.CompletionRate - 1d) > 0.001) == 1))
+        {
+            if (JobCard.CheckLists.Count != 1)
+            {
+                <RadzenTreeItem Text="@GetNameText(JobCard.Name, JobCard.CompletionRate, JobCard.RemainingTaskTime)" style="@JobHtmlColorStyleString">
+                    @foreach (Check check in JobCard.CheckLists.First(x => Math.Abs(x.CompletionRate - 1d) > 0.001).Checks)
+                    {
+                        @if(ShouldShow(check.IsChecked))
+                        {
+                            <RadzenTreeItem Text="@check.Name" style="@CheckHtmlColorStyleString(check)"/>
+                        }
+                    }
+                    @if (JobCard.Attachments.Count > 0 && ShowAttachments)
+                    {
+                        <AttachmentTreeNodeComponent Attachments="@JobCard.Attachments" />
+                        }
+                            @if (JobCard.Comments.Count > 0 && ShowComments)
+                        {
+                        @foreach (Comment comment in JobCard.Comments)
+                        {
+                            <CommentTreeNodeComponent Comment="@comment"/>
+                        }
+                    }
+                </RadzenTreeItem>
+            }
+            else
+            {
+                <RadzenTreeItem Text="@GetNameText(JobCard.Name, JobCard.CompletionRate, JobCard.RemainingTaskTime)" style="@JobHtmlColorStyleString">
+                    @foreach (Check check in JobCard.CheckLists.First().Checks)
+                    {
+                        @if (ShouldShow(check.IsChecked))
+                        {
+                            <RadzenTreeItem Text="@check.Name" style="@CheckHtmlColorStyleString(check)" />
+                        }
+                    }
+
+                    @if (JobCard.Attachments.Count > 0 && ShowAttachments)
+                    {
+                        <AttachmentTreeNodeComponent Attachments="@JobCard.Attachments" />
+                    }
+                    @if (JobCard.Comments.Count > 0 && ShowComments)
+                    {
+                        @foreach (Comment comment in JobCard.Comments)
+                        {
+                            <CommentTreeNodeComponent Comment="@comment"/>
+                        }
+                    }
+                </RadzenTreeItem>
+            }
+
+        }
+        else
+        {
+            <RadzenTreeItem Text="@GetNameText(JobCard.Name, JobCard.CompletionRate, JobCard.RemainingTaskTime)" style="@JobHtmlColorStyleString">
+                @foreach(Checklist checklist in JobCard.CheckLists)
+                {
+                    if(ShouldShow(Math.Abs(checklist.CompletionRate - 1d) < 0.001))
+                    {
+                        <RadzenTreeItem Text="@GetNameText(checklist.Name, checklist.CompletionRate, TimeSpan.Zero)" style="@ChecklistHtmlColorStyleString(checklist)">
+                            @foreach (Check check in checklist.Checks)
+                            {
+                                @if (ShouldShow(check.IsChecked))
+                                {
+                                    <RadzenTreeItem Text="@check.Name" style="@CheckHtmlColorStyleString(check)" />
+                                }
+                            }
+                        </RadzenTreeItem>
+                    }
+                }
+
+                @if (JobCard.Attachments.Count > 0 && ShowAttachments)
+                {
+                    <AttachmentTreeNodeComponent Attachments="@JobCard.Attachments" />
+                }
+                @if (JobCard.Comments.Count > 0 && ShowComments)
+                {
+                    @foreach (Comment comment in JobCard.Comments)
+                    {
+                        <CommentTreeNodeComponent Comment="@comment"/>
+                    }
+                }
+            </RadzenTreeItem>
+        }
+    </RadzenStack>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public JobCard JobCard { get; set; } = default!;
+    
+    [Parameter, EditorRequired]
+    public IProductionPosition VanPosition { get; set; } = default!;
+
+    [Parameter]
+    public bool HideCompleted { get; set; }
+
+    [Parameter]
+    public bool ShowCompletionRate { get; set; }
+
+    [Parameter]
+    public bool ShowTimeRemaining { get; set; }
+
+    [Parameter]
+    public bool ShowComments { get; set; }
+
+    [Parameter]
+    public bool ShowAttachments { get; set; }
+
+    protected override void OnInitialized()
+    {
+        ArgumentNullException.ThrowIfNull(JobCard);
+        ArgumentNullException.ThrowIfNull(VanPosition);
+        base.OnInitialized();
+    }
+
+    bool ShouldShow(bool isComplete)
+        => !HideCompleted || !isComplete;
+
+    string ChecklistHtmlColorStyleString(Checklist checklist)
+        => "color:" + ColorTranslator.ToHtml(checklist.Color(JobCard.GetTargetStatus(VanPosition)));
+
+    string CheckHtmlColorStyleString(Check check)
+        => "color:" + ColorTranslator.ToHtml(TrelloUtil.GetIndicatorColor(check.IsChecked, JobCard.GetTargetStatus(VanPosition)));
+
+     string JobHtmlColorStyleString
+        => "color:" + ColorTranslator.ToHtml(JobCard.Color(JobCard.GetTargetStatus(VanPosition)));
+
+    string GetNameText(string name, double completionRate, TimeSpan remainingTime)
+    {
+        string result = "";
+
+        if (ShowCompletionRate && Math.Abs(completionRate - 1d) > 0.001 && completionRate != 0d)
+        {
+            result += $"{Double.Round(completionRate * 100, 0)}% - ";
+        }
+
+        result += name;
+
+        if (ShowTimeRemaining && remainingTime > TimeSpan.FromMinutes(1))
+        {
+            if (remainingTime.Hours > 1)
+                result += $" ∼ {double.Round(remainingTime.TotalHours, 0)}h {remainingTime.Minutes.ToString("00")}m";
+
+            else
+                result += $" ∼ {remainingTime.Minutes.ToString("00")}m";
+        }
+
+        return result;
+    }
+}
