@@ -98,6 +98,7 @@ internal class Program
                         WebhookController.CardUpdatedEvent += production.UpdateCard;
                         WebhookController.CardCommentsUpdatedEvent += production.UpdateCommentsOnCard;
                         WebhookController.AttachmentAddedEvent += production.AttachmentAdded;
+                        WebhookController.AttachmentDeletedEvent += production.AttachmentDeleted;
                         WebhookController.MemberAddedToCardEvent += production.MemberAddedToCard;
                         WebhookController.MemberRemovedFromCardEvent += production.MemberRemovedFromCard;
 

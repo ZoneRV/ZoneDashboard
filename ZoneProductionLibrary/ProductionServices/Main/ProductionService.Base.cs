@@ -366,6 +366,8 @@ public partial class ProductionService : IProductionService
             await _trelloClient.AddWebhookAsync(webhook);
             
             _webhooks.Add(webhook);
+            
+            Log.Logger.Information("CC Dashboard webhook added.");
         }
         else if (!ccDahsboardWebhook.Active || ccDahsboardWebhook.CallbackUrl != DashboardConfig.WebhookCallbackUrl)
         {
@@ -373,6 +375,8 @@ public partial class ProductionService : IProductionService
             ccDahsboardWebhook.CallbackUrl = DashboardConfig.WebhookCallbackUrl;
 
             await _trelloClient.UpdateWebhookAsync(ccDahsboardWebhook);
+            
+            Log.Logger.Information("CC Dashboard webhook updated.");
         }
             
         Webhook? lineMoveWebhook = _webhooks.SingleOrDefault(x => x.IdOfTypeYouWishToMonitor == LineMoveBoardId);
@@ -386,6 +390,8 @@ public partial class ProductionService : IProductionService
             _webhooks.Add(webhook);
             
             await _trelloClient.AddWebhookAsync(webhook);
+            
+            Log.Logger.Information("Line move board webhook updated.");
         }
         else if (!lineMoveWebhook.Active || lineMoveWebhook.CallbackUrl != DashboardConfig.WebhookCallbackUrl)
         {
@@ -393,6 +399,39 @@ public partial class ProductionService : IProductionService
             lineMoveWebhook.CallbackUrl = DashboardConfig.WebhookCallbackUrl;
 
             await _trelloClient.UpdateWebhookAsync(lineMoveWebhook);
+            
+            Log.Logger.Information("Line move board webhook updated.");
+        }
+
+        Member clientMember = await _trelloClient.GetTokenMemberAsync();
+        IEnumerable<Organization> memberOrganisations
+            = await _trelloClient.GetOrganizationsForMemberAsync(clientMember.Id);
+
+        foreach (Organization org in memberOrganisations)
+        {
+            Webhook? webhook = _webhooks.FirstOrDefault(x => x.IdOfTypeYouWishToMonitor == org.Id);
+
+            if (webhook is null)
+            {
+                webhook = new Webhook($"{org.Name} webhook", DashboardConfig.WebhookCallbackUrl, org.Id);
+
+                webhook.Active = true;
+                
+                _webhooks.Add(webhook);
+
+                await _trelloClient.AddWebhookAsync(webhook);
+                
+                Log.Logger.Information("Webhook added for {orgName} organisation", org.DisplayName);
+            }
+            else if (!webhook.Active || webhook.CallbackUrl != DashboardConfig.WebhookCallbackUrl)
+            {
+                webhook.Active = true;
+                webhook.CallbackUrl = DashboardConfig.WebhookCallbackUrl;
+
+                await _trelloClient.UpdateWebhookAsync(webhook);
+                
+                Log.Logger.Information("Webhook updated for {orgName} organisation", org.DisplayName);
+            }
         }
     }
 

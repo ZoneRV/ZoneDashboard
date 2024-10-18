@@ -8,13 +8,13 @@ namespace ZoneProductionDashBoard
         public static IConfiguration? Configuration;
 
         public static string TrelloApiKey 
-            => Configuration?.GetValue<string>("TRELLOAPIKEY")?? throw new ArgumentNullException("TrelloApiKey", "TrelloApiKey must be added to config file.");
+            => Configuration?.GetValue<string>("TrelloApiKey")?? throw new ArgumentNullException("TrelloApiKey", "TrelloApiKey must be added to config file.");
         
         public static string TrelloUserToken 
-            => Configuration?["TRELLOUSERTOKEN"]?? throw new ArgumentNullException("TrelloUserToken", "TrelloUserToken must be added to config file.");
+            => Configuration?["TrelloUserToken"]?? throw new ArgumentNullException("TrelloUserToken", "TrelloUserToken must be added to config file.");
         
         public static string WebhookCallbackUrl
-            => Configuration?["WEBHOOKCALLBACKURL"]?? throw new ArgumentNullException("WebhookCallbackURL", "WebhookCallbackURL must be added to config file.");
+            => Configuration?["WebhookCallbackURL"]?? throw new ArgumentNullException("WebhookCallbackURL", "WebhookCallbackURL must be added to config file.");
         
         public static bool EnableWebhooks
             => bool.TryParse(Configuration?["enableWebhooks"], out bool res) ? res : false;

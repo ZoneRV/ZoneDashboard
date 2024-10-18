@@ -65,7 +65,7 @@
 
             InvokeAsync(StateHasChanged);
             
-            Log.Logger.Information("{this} has been updated {BoardUpdateInfo}", MethodInfo.GetCurrentMethod()?.DeclaringType is null ? "unknown" : MethodInfo.GetCurrentMethod()!.DeclaringType!.Name, e);
+            Log.Logger.Debug("{this} has been updated {BoardUpdateInfo}", MethodInfo.GetCurrentMethod()?.DeclaringType is null ? "unknown" : MethodInfo.GetCurrentMethod()!.DeclaringType!.Name, e);
         }
     }
 

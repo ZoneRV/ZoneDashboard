@@ -10,9 +10,13 @@ namespace ZoneProductionLibrary.ProductionServices.Main;
 public partial class ProductionService
 {
     public static event EventHandler<BoardUpdateInfo>? BoardUpdated;
+    public static event EventHandler<string>? VanAddedToProduction;
 
     public void UpdateCheck(object? sender, CheckUpdatedData e)
     {
+        if(!_jobCards.ContainsKey(e.CardId))
+            return;
+        
         if (_checks.TryGetValue(e.CheckId, out CheckObject? check))
         {
             if (check.CheckListId != e.CheckListId)
@@ -28,12 +32,17 @@ public partial class ProductionService
                 Log.Logger.Debug("Check:{checkId} moved to new checklist:{checkListId}", e.CheckId, e.CheckListId);
             }
 
-            check.UpdateStatus(e.IsCompleted, e.DateUpdated);
+            check.UpdateStatus(e.IsChecked, e.DateUpdated);
             check.UpdateName(e.CheckName);
 
             Log.Logger.Debug("Check:{checkId} Updated", e.CheckId);
 
             BoardUpdated?.Invoke(this, new BoardUpdateInfo(e.BoardId, BoardUpdateType.JobCard, e.CardId));
+        }
+        else
+        {
+            Log.Logger.Warning("Check:{id} not found adding to card:{cardId}", e.CheckId, e.CardId);
+            CreateCheck(this, e);
         }
     }
 
@@ -49,8 +58,11 @@ public partial class ProductionService
         }
     }
 
-    public void CreateCheck(object? sender, CheckCreatedData e)
+    public void CreateCheck(object? sender, CheckUpdatedData e)
     {
+        if (!_jobCards.ContainsKey(e.CardId))
+            return;
+        
         if (_checkLists.TryGetValue(e.CheckListId, out ChecklistObject? list))
         {
             _checks.TryAdd(e.CheckId, new CheckObject(e));
@@ -60,6 +72,11 @@ public partial class ProductionService
             Log.Logger.Debug("New Check:{checkId} created added to CheckList:{checkList}", e.CheckId, e.CheckListId);
 
             BoardUpdated?.Invoke(this, new BoardUpdateInfo(e.BoardId, BoardUpdateType.JobCard, e.CardId));
+        }
+        else
+        {
+            Log.Error("Could not find check list: {checklistId} on card. Data will not be up to date", e.CheckListId);
+            // TODO: update checklist
         }
     }
 
@@ -115,6 +132,9 @@ public partial class ProductionService
 
     public void UpdateCheckList(object? sender, CheckListUpdatedData e)
     {
+        if(!_jobCards.ContainsKey(e.CardId))
+            return;
+        
         if (_checkLists.TryGetValue(e.CheckListId, out ChecklistObject? checklist))
         {
             checklist.UpdateName(e.CheckListName);
@@ -122,12 +142,19 @@ public partial class ProductionService
 
             Log.Logger.Debug("Checklist:{checkListId} Updated", e.CheckListId);
         }
+        else
+        {
+            Log.Error("Could not find check list: {checklistId} on card. Data will not be up to date", e.CheckListId);
+            // TODO: update checklist
+        }
     }
 
     public async void CreateCard(object? sender, CardUpdatedData e)
     {
         if (_redCards.ContainsKey(e.CardId) || _jobCards.ContainsKey(e.CardId) || _yellowCards.ContainsKey(e.CardId))
-            return;
+        {
+            UpdateCard(sender, e);
+        }
 
         if (_vanBoards.TryGetValue(e.BoardId, out VanBoardObject? boardObject))
         {
@@ -333,7 +360,7 @@ public partial class ProductionService
                 BoardUpdated?.Invoke(this, new BoardUpdateInfo(e.BoardId, BoardUpdateType.YellowCard, e.CardId));
             }
             else if (VanBoardObject.GetCardType(trelloCard.Name, trelloCard.List.Name) == CardType.JobCard &&
-                     TrelloUtil.ToCardAreaOfOrigin(trelloCard, customFields) == CardAreaOfOrigin.Unknown)
+                     TrelloUtil.ToCardAreaOfOrigin(trelloCard, customFields) != CardAreaOfOrigin.Unknown)
             {
                 CreateCard(null, e);
             }
@@ -459,6 +486,57 @@ public partial class ProductionService
             }
         }
     }
+    
+    public void AttachmentDeleted(object? sender, AttachmentRemovedData e)
+    {
+        if (_vanBoards.TryGetValue(e.BoardId, out VanBoardObject? van))
+        {
+            bool updated = false;
+            
+            if (_jobCards.TryGetValue(e.CardId, out JobCardObject? jobCard))
+            {
+                AttachmentInfo? attachment = jobCard.Attachments.FirstOrDefault(x => x.Id == e.AttachmentId);
+                
+                if(attachment is null)
+                    return;
+                
+                jobCard.Attachments.Remove(attachment);
+                
+                BoardUpdated?.Invoke(this, new BoardUpdateInfo(e.BoardId, BoardUpdateType.JobCard, e.CardId));
+
+                updated = true;
+            }
+            
+            else if (_redCards.TryGetValue(e.CardId, out RedCardObject? redCard))
+            {
+                AttachmentInfo? attachment = redCard.Attachments.FirstOrDefault(x => x.Id == e.AttachmentId);
+                
+                if(attachment is null)
+                    return;
+                
+                redCard.Attachments.Remove(attachment);
+                
+                BoardUpdated?.Invoke(this, new BoardUpdateInfo(e.BoardId, BoardUpdateType.RedCard, e.CardId));
+
+                updated = true;
+            }
+            
+            else if (_yellowCards.TryGetValue(e.CardId, out RedCardObject? yellowCard))
+            {
+                AttachmentInfo? attachment = yellowCard.Attachments.FirstOrDefault(x => x.Id == e.AttachmentId);
+                
+                if(attachment is null)
+                    return;
+                
+                yellowCard.Attachments.Remove(attachment);
+                
+                BoardUpdated?.Invoke(this, new BoardUpdateInfo(e.BoardId, BoardUpdateType.YellowCard, e.CardId));
+            }
+            
+            if(updated)
+                Log.Logger.Debug("Attachment:{id} has been removed from board:{boardId}", e.AttachmentId, e.BoardId);
+        }
+    }
 
     public async void UpdateCCDashboardInfo(object? sender, CardUpdatedData e)
     {
@@ -509,7 +587,7 @@ public partial class ProductionService
 
     public async void UpdatedLineMoveBoardInfo(object? sender, CardUpdatedData e)
     {
-        if (TrelloUtil.TryGetVanName(e.CardName, out VanModel? type, out string name) && type.HasValue)
+        if (TrelloUtil.TryGetVanName(e.CardName, out VanModel? type, out string name))
         {
             Card? trelloCard
                 = await _trelloClient.GetCardAsync(
@@ -533,7 +611,8 @@ public partial class ProductionService
                 {
                     VanProductionInfo newInfo = new VanProductionInfo(search.vanId, name, positionHistory);
                     
-                    ProductionVans.TryAdd(name, newInfo);
+                    if(ProductionVans.TryAdd(name, newInfo))
+                        Log.Logger.Information("New van added to production {vanName}:{id}", newInfo.Name, newInfo.Id);
                 }
             }
         }

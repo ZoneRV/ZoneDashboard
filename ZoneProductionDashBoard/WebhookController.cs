@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
 using TrelloDotNet;
+using TrelloDotNet.Model;
 using TrelloDotNet.Model.Webhook;
+using ZoneProductionLibrary.Models.Trello;
 using ZoneProductionLibrary.Models.UpdateData;
 using ZoneProductionLibrary.ProductionServices.Base;
 using ZoneProductionLibrary.ProductionServices.Main;
@@ -58,7 +60,7 @@ namespace ZoneProductionDashBoard
             receiver.BasicEvents.OnUpdateCard += CardUpdated;
             receiver.BasicEvents.OnUpdateCustomFieldItem += CustomFieldUpdated;
             receiver.BasicEvents.OnAddAttachmentToCard += AttachmentAdded;
-            //receiver.BasicEvents.OnDeleteAttachmentFromCard
+            receiver.BasicEvents.OnDeleteAttachmentFromCard += AttachmentDeleted;
             receiver.BasicEvents.OnAddMemberToCard += MemberAddedToCard;
             receiver.BasicEvents.OnRemoveMemberFromCard += MemberRemovedFromCard;
 
@@ -68,9 +70,9 @@ namespace ZoneProductionDashBoard
             receiver.BasicEvents.OnUpdateComment += CardCommentUpdated;
             
             //User events
-            //receiver.BasicEvents.OnUpdateMember
-            //receiver.BasicEvents.OnRemoveMemberFromOrganization
-            //receiver.BasicEvents.OnAddMemberToOrganization
+            //receiver.BasicEvents.OnUpdateMember 
+            receiver.BasicEvents.OnRemoveMemberFromOrganization += OnMemberRemovedFromOrg;
+            receiver.BasicEvents.OnAddMemberToOrganization += OnMemberAddedToOrg;
             
             // List Events
             //receiver.BasicEvents.OnUpdateList
@@ -129,25 +131,25 @@ namespace ZoneProductionDashBoard
 
         // Check Events
         public static event EventHandler<CheckUpdatedData>? CheckUpdatedEvent;
-        public static event EventHandler<CheckCreatedData>? CreateCheckEvent;
+        public static event EventHandler<CheckUpdatedData>? CreateCheckEvent;
         public static event EventHandler<CheckDeletedData>? CheckDeletedEvent;
 
         private void CreateCheck(WebhookAction args)
         {
             Log.Logger.Debug("{memberName} created new check {checkName}:{cardName}:{boardName}", args.MemberCreator.FullName, args.Data.CheckItem.Name, args.Data.Card.Name, args.Data.Board.Name);
-            CreateCheckEvent?.Invoke(null, new CheckCreatedData(args));
+            CreateCheckEvent?.Invoke(this, new CheckUpdatedData(args));
         }
 
         private void UpdateCheckItem(WebhookAction args)
         {
             Log.Logger.Debug("{memberName} Has updated {checkName}:{boardName} as {state}", args.MemberCreator.FullName, args.Data.CheckItem.Name, args.Data.Board.Name, args.Data.CheckItem.State);
-            CheckUpdatedEvent?.Invoke(null, new CheckUpdatedData(args));
+            CheckUpdatedEvent?.Invoke(this, new CheckUpdatedData(args));
         }
 
         private void DeleteCheck(WebhookAction args)
         {
             Log.Logger.Debug("{memberName} deleted check {checkName}:{cardName}:{boardName}", args.MemberCreator.FullName, args.Data.CheckItem.Name, args.Data.Card.Name, args.Data.Board.Name);
-            CheckDeletedEvent?.Invoke(null, new CheckDeletedData(args));
+            CheckDeletedEvent?.Invoke(this, new CheckDeletedData(args));
         }
 
         // Checklist events
@@ -158,25 +160,25 @@ namespace ZoneProductionDashBoard
         private void DeleteCheckList(WebhookAction args)
         {
             Log.Logger.Debug("{memberName} deleted checklist {checkListName} from {cardName}:{boardName}", args.MemberCreator.FullName, args.Data.Checklist.Name, args.Data.Card, args.Data.Board.Name);
-            CheckListDeletedEvent?.Invoke(null, new CheckListDeletedData(args));
+            CheckListDeletedEvent?.Invoke(this, new CheckListDeletedData(args));
         }
 
         private void UpdateCheckList(WebhookAction args)
         {
             Log.Logger.Debug("{memberName} Updated checklist {checkListName} on {cardName}:{boardName}", args.MemberCreator.FullName, args.Data.Checklist.Name, args.Data.Card.Name, args.Data.Board.Name);
-            CheckListUpdatedEvent?.Invoke(null, new CheckListUpdatedData(args));
+            CheckListUpdatedEvent?.Invoke(this, new CheckListUpdatedData(args));
         }
 
         private void CreateCheckList(WebhookAction args)
         {
             Log.Logger.Debug("{memberName} Created checklist {checkListName} on {cardName}:{boardName}", args.MemberCreator.FullName, args.Data.Checklist.Name, args.Data.Card.Name, args.Data.Board.Name);
-            CheckListCreatedEvent?.Invoke(null, new CheckListCreatedData(args));
+            CheckListCreatedEvent?.Invoke(this, new CheckListCreatedData(args));
         }
 
         private void CopyCheckList(WebhookAction args)
         {
             Log.Logger.Debug("{memberName} copied checklist {checkListName} from {cardName}:{boardName}", args.MemberCreator.FullName, args.Data.Checklist.Name, args.Data.Card.Name, args.Data.Board.Name);
-            CheckListCopiedEvent?.Invoke(null, new CheckListCreatedData(args));
+            CheckListCopiedEvent?.Invoke(this, new CheckListCreatedData(args));
         }
 
         // Card Events
@@ -190,70 +192,111 @@ namespace ZoneProductionDashBoard
         public static event EventHandler<CardUpdatedData>? CardCommentsUpdatedEvent;
         public static event EventHandler<CardUpdatedData>? CustomFieldUpdatedEvent;
         public static event EventHandler<AttachmentAddedData>? AttachmentAddedEvent;
+        public static event EventHandler<AttachmentRemovedData>? AttachmentDeletedEvent;
         private void NewCardCreated(WebhookAction args)
         {
-            CardCreatedEvent?.Invoke(null, new CardUpdatedData(args));
+            CardCreatedEvent?.Invoke(this, new CardUpdatedData(args));
             Log.Logger.Debug("{memberName} Created new card {cardName}:{boardName}", args.MemberCreator.FullName, args.Data.Card.Name, args.Data.Board.Name);
         }
 
         private void CardDeleted(WebhookAction args)
         {
-            CardDeletedEvent?.Invoke(null, new CardUpdatedData(args));
+            CardDeletedEvent?.Invoke(this, new CardUpdatedData(args));
             Log.Logger.Debug("{memberName} Deleted card {cardName}:{boardName}", args.MemberCreator.FullName, args.Data.Card.Name, args.Data.Board.Name);
         }
         
         private void CardCopied(WebhookAction args)
         {
-            CardCreatedEvent?.Invoke(null, new CardUpdatedData(args));
+            CardCreatedEvent?.Invoke(this, new CardUpdatedData(args));
             Log.Logger.Debug("{memberName} Copied new card {cardName}:{boardName}", args.MemberCreator.FullName, args.Data.Card.Name, args.Data.Board.Name);
         }
 
         private void CardUpdated(WebhookAction args)
         {
+            if (args.Display.TranslationKey == "action_sent_card_to_board")
+            {
+                NewCardCreated(args);    
+                return;
+            }
+            
+            if (args.Display.TranslationKey == "action_archived_card")
+            {
+                CardDeleted(args);
+                return;
+            }
+            
             if (args.Data.Board.Id == ProductionService.CCDashboardId)
             {
-                CCDashboardCardUpdatedEvent?.Invoke(null, new CardUpdatedData(args));
+                CCDashboardCardUpdatedEvent?.Invoke(this, new CardUpdatedData(args));
                 Log.Logger.Information("CC Dashboard Card Updated {cardName}", args.Data.Card.Name);
             }
             else if (args.Data.Board.Id == ProductionService.LineMoveBoardId)
             {
-                LineMoveCardUpdatedEvent?.Invoke(null, new CardUpdatedData(args));
+                LineMoveCardUpdatedEvent?.Invoke(this, new CardUpdatedData(args));
                 Log.Logger.Information("Line move Card Updated {cardName}", args.Data.Card.Name);
             }
             else
             {
-                CardUpdatedEvent?.Invoke(null, new CardUpdatedData(args));
+                CardUpdatedEvent?.Invoke(this, new CardUpdatedData(args));
                 Log.Logger.Debug("{memberName} Updated new card {cardName}:{boardName}", args.MemberCreator.FullName, args.Data.Card.Name, args.Data.Board.Name);
             }
         }
 
         private void MemberAddedToCard(WebhookAction args)
         {
-            MemberAddedToCardEvent?.Invoke(null, new MemberAddedToCardData(args));
+            MemberAddedToCardEvent?.Invoke(this, new MemberAddedToCardData(args));
             Log.Logger.Debug("{memberName} added to {cardName}:{boardName}", args.Data.Member.Name, args.Data.Card.Name, args.Data.Board.Name);
         }
             
         private void MemberRemovedFromCard(WebhookAction args)
         {
-            MemberRemovedFromCardEvent?.Invoke(null, new MemberAddedToCardData(args));
+            MemberRemovedFromCardEvent?.Invoke(this, new MemberAddedToCardData(args));
             Log.Logger.Debug("{memberName} removed from {cardName}:{boardName}", args.Data.Member.Name, args.Data.Card.Name, args.Data.Board.Name);
         }
 
         private void CustomFieldUpdated(WebhookAction args)
         {
-            CustomFieldUpdatedEvent?.Invoke(null, new CardUpdatedData(args));
+            CustomFieldUpdatedEvent?.Invoke(this, new CardUpdatedData(args));
             Log.Logger.Debug("{memberName} updated custom field on {cardName}:{boardName}", args.MemberCreator.FullName, args.Data.Card.Name, args.Data.Board.Name);
         }
         private void CardCommentUpdated(WebhookAction args)
         {
-            CardCommentsUpdatedEvent?.Invoke(null, new CardUpdatedData(args));
+            CardCommentsUpdatedEvent?.Invoke(this, new CardUpdatedData(args));
             Log.Logger.Debug("{memberName} modified comments in {cardName}:{boardName}", args.MemberCreator.FullName, args.Data.Card.Name, args.Data.Board.Name);
         }
 
         private void AttachmentAdded(WebhookAction args)
         {
-            AttachmentAddedEvent?.Invoke(null, new AttachmentAddedData(args));
+            AttachmentAddedEvent?.Invoke(this, new AttachmentAddedData(args));
             Log.Logger.Debug("{memberName} added attachment {attachmentName} to {cardName}:{boardName}", args.MemberCreator.FullName, args.Data.Attachment.Name, args.Data.Card.Name, args.Data.Board.Name);
+        }
+
+        private void AttachmentDeleted(WebhookAction args)
+        {
+            AttachmentDeletedEvent?.Invoke(this, new AttachmentRemovedData(args));
+            Log.Logger.Debug("{memberName} deleted attachment {attachmentId} from {cardName}:{boardName}", args.MemberCreator.FullName, args.Data.Attachment.Id, args.Data.Card.Name, args.Data.Board.Name);
+        }
+
+        private async void OnMemberAddedToOrg(WebhookAction args)
+        {
+            Member? member = await args.Data.Member.GetAsync();
+            
+            if(member is null)
+                return;
+
+            var newMember = new TrelloMember(member, args.Data.Organization.Id);
+
+            _productionService.Members.TryAdd(member.Id, newMember);
+            
+            Log.Logger.Information("New member {member} added to organisation.", newMember.FullName);
+        }
+
+        private void OnMemberRemovedFromOrg(WebhookAction args)
+        {
+            if (_productionService.Members.TryRemove(args.Data.Member.Id, out TrelloMember? member))
+            {
+                Log.Logger.Information("Member {member} removed from organisation.", member.FullName);
+            }
         }
     }
 }

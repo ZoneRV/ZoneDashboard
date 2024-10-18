@@ -55,11 +55,11 @@
 
     protected override void UpdateIfIdSubscribed(object? sender, BoardUpdateInfo e)
     {
+        SubscribedIds = ProductionService.ProductionVanIds(true).ToList();
+        
         if( 
             (e.Type is BoardUpdateType.Position or BoardUpdateType.Hanover) ||
-            e.TotalBoardUpdate ||
-            (ProductionService.ProductionVanIds(true).Contains(e.BoardId) && e.Type is BoardUpdateType.JobCard or BoardUpdateType.RedCard)
-                )
+            (e.TotalBoardUpdate || e.Type is BoardUpdateType.JobCard or BoardUpdateType.RedCard && SubscribedIds.Contains(e.BoardId)))
         {
             _redCards = ProductionService.GetRedCards(SubscribedIds);
             _jobCards = ProductionService.GetJobCards(SubscribedIds);

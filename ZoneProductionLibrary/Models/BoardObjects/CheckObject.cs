@@ -26,7 +26,7 @@ namespace ZoneProductionLibrary.Models.BoardObjects
             this.LastModified = lastModified;
         }
 
-        internal CheckObject(CheckCreatedData data)
+        internal CheckObject(CheckUpdatedData data)
         {
             this.BoardId = data.BoardId;
             this.CheckListId = data.CheckListId;

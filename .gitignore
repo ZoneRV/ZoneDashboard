@@ -359,6 +359,9 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 
+# Jetbrains files
+.idea/
+
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /ZoneProductionDashBoard/vanids.json
@@ -368,3 +371,5 @@ FodyWeavers.xsd
 /ZoneProductionDemoApp/appsettings.json
 /ZoneProductionDashBoard/log.json
 /ZoneProductionDashBoard/wwwroot/attachments
+
+/.idea/.idea.ZoneProductionDashBoardApp/.idea/sqlDataSources.xml

@@ -1,4 +1,5 @@
 ﻿using DBLibrary.Models;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Text.RegularExpressions;
 using TrelloDotNet.Model;
@@ -331,7 +332,7 @@ namespace ZoneProductionLibrary
                 return Color.Orange;
         }
 
-        public static bool TryGetVanName(string input, out VanModel? vanType, out string result)
+        public static bool TryGetVanName(string input, [NotNullWhen(true)] out VanModel? vanType, out string result)
         {
             string cleanName = input.ToLower().Replace("-", "").Split(' ')[0];
 
@@ -368,7 +369,9 @@ namespace ZoneProductionLibrary
 
             result = vanNames.First();
             vanType = matchedType;
+#pragma warning disable CS8762 // Parameter must have a non-null value when exiting in some condition.
             return true;
+#pragma warning restore CS8762 // Parameter must have a non-null value when exiting in some condition.
         }
     }
 }
