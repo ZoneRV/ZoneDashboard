@@ -10,7 +10,7 @@
 
 <PageTitle>Debug</PageTitle>
 
-<RadzenTabs>
+<RadzenTabs @ref="_tabs">
     <Tabs>
         <RadzenTabsItem Text="Tools">
             @if (ProductionService is ProductionService prodService)
@@ -74,6 +74,8 @@
 </RadzenTabs>
 
 @code {
+    RadzenTabs _tabs = default!;
+    
     string boardId = "";
     List<string> logLines = [];
     RadzenTextArea _textArea = default!;
@@ -101,6 +103,9 @@
         }
 
         logLines = logContent.Split("<NewLogLine>").Skip(1).ToList();
+        
+        if(_tabs.SelectedTab.Index == 1)
+            StateHasChanged();
     }
 
     string GetLogLevelColor(string line)
@@ -112,12 +117,12 @@
             return Color.OrangeRed.ToHex();
 
         if (line.StartsWith("[INF"))
-            return Color.White.ToHex();
+            return Color.LightGray.ToHex();
 
         if (line.StartsWith("[DBG"))
-            return Color.LightBlue.ToHex();
+            return Color.DodgerBlue.ToHex();
 
-        return Color.LightGray.ToHex();
+        return Color.White.ToHex();
     }
 
     void OnClickReloadReport(MouseEventArgs args, string filePath)
