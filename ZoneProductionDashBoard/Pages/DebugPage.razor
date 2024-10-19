@@ -78,19 +78,29 @@
     List<string> logLines = [];
     RadzenTextArea _textArea = default!;
 
-    protected override void OnInitialized()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            while (true)
+            {
+                await UpdateLogs();
+                await Task.Delay(10000);
+            }
+        }
+    }
+
+    private async Task UpdateLogs()
     {
         string logContent;
         
-        using (var stream = File.Open($"Logs/log-{DateTime.Now.ToString("yyyyMMdd")}.txt", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+        using (var stream = File.Open($"Logs/log.txt", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
         using (var reader = new StreamReader(stream))
         {
-            logContent = reader.ReadToEnd();
+            logContent = await reader.ReadToEndAsync();
         }
 
-        logLines = logContent.Split('[').Skip(1).Select(x => "[" + x).ToList();
-        
-        base.OnInitialized();
+        logLines = logContent.Split("<NewLogLine>").Skip(1).ToList();
     }
 
     string GetLogLevelColor(string line)
@@ -102,6 +112,9 @@
             return Color.OrangeRed.ToHex();
 
         if (line.StartsWith("[INF"))
+            return Color.White.ToHex();
+
+        if (line.StartsWith("[DBG"))
             return Color.LightBlue.ToHex();
 
         return Color.LightGray.ToHex();

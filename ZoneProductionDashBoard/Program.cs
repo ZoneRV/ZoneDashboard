@@ -27,7 +27,7 @@ internal class Program
                          .ReadFrom.Configuration(builder.Configuration)
                          .WriteTo.ApplicationInsights(
                              telemetryConfiguration: TelemetryConfiguration.CreateDefault(), 
-                             telemetryConverter: new TraceTelemetryConverter())
+                             telemetryConverter: TelemetryConverter.Events)
                          .WriteTo.Console(
                              theme: AnsiConsoleTheme.Code,
                              outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {NewLine}{Exception}")
@@ -36,7 +36,8 @@ internal class Program
                              shared: true,
                              flushToDiskInterval: TimeSpan.FromSeconds(10),
                              retainedFileCountLimit: 7,
-                             outputTemplate: "[{Level:u3} {Timestamp:HH:mm:ss}] {Message:lj} {NewLine}{Exception}")
+                             rollOnFileSizeLimit: true,
+                             outputTemplate: "<NewLogLine>[{Level:u3} {Timestamp:HH:mm:ss}] {Message:lj} {NewLine}{Exception}")
                          .CreateLogger();
             
             Log.Logger.Information("Application is starting...");
