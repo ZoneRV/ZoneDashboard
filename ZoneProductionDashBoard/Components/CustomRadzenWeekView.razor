@@ -6,7 +6,10 @@
     {
         get
         {
-            return Scheduler.CurrentDate.Date.StartOfWeek();
+            if (Scheduler.CurrentDate.Date.StartOfWeek().DayOfWeek == DayOfWeek.Sunday)
+                return Scheduler.CurrentDate.Date.StartOfWeek().AddDays(1);
+            else
+                return Scheduler.CurrentDate.Date.StartOfWeek();
         }
     }
 
@@ -15,7 +18,7 @@
     {
         get
         {
-            return StartDate.EndOfWeek().Subtract(TimeSpan.FromDays(1));
+            return StartDate.AddDays(5);
         }
     }
 
