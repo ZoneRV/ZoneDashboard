@@ -1,7 +1,9 @@
 using DBLibrary.Data;
 using DBLibrary.DbAccess;
+using Microsoft.ApplicationInsights.Extensibility;
 using Radzen;
 using Serilog;
+using Serilog.Sinks.ApplicationInsights.TelemetryConverters;
 using Serilog.Sinks.SystemConsole.Themes;
 using System.Globalization;
 using ZoneProductionDashBoard;
@@ -17,23 +19,22 @@ internal class Program
     {
         try
         {
-            //CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-AU");
-            //CultureInfo.DefaultThreadCurrentUICulture= new CultureInfo("en-AU");
-            
             WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
             
             DashboardConfig.AddConfiguration(builder.Configuration);
             
             Log.Logger = new LoggerConfiguration()
                          .ReadFrom.Configuration(builder.Configuration)
+                         .WriteTo.ApplicationInsights(
+                             telemetryConfiguration: TelemetryConfiguration.CreateDefault(), 
+                             telemetryConverter: new TraceTelemetryConverter())
                          .WriteTo.Console(
                              theme: AnsiConsoleTheme.Code,
                              outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {NewLine}{Exception}")
                          .WriteTo.File(
-                             "Logs/log-.txt",
+                             "Logs/log.txt",
                              shared: true,
                              flushToDiskInterval: TimeSpan.FromSeconds(10),
-                             rollingInterval: RollingInterval.Day,
                              retainedFileCountLimit: 7,
                              outputTemplate: "[{Level:u3} {Timestamp:HH:mm:ss}] {Message:lj} {NewLine}{Exception}")
                          .CreateLogger();
