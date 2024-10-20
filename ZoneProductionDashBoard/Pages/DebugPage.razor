@@ -74,7 +74,7 @@
 </RadzenTabs>
 
 @code {
-    RadzenTabs _tabs = default!;
+    RadzenTabs? _tabs = default!;
     
     string boardId = "";
     List<string> logLines = [];
@@ -104,7 +104,7 @@
 
         logLines = logContent.Split("<NewLogLine>").Skip(1).ToList();
         
-        if(_tabs.SelectedTab.Index == 1)
+        if(_tabs is not null && _tabs.SelectedTab.Index == 1)
             StateHasChanged();
     }
 
