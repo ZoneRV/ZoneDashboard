@@ -17,6 +17,16 @@ public partial class ProductionService
 
     public async Task<VanBoard?> GetBoardAsyncById(string id)
     {
+        VanProductionInfo productionInfo;
+
+        if (ProductionVans.Values.Any(x => x.Id == id))
+            productionInfo = ProductionVans.Values.Single(x => x.Id == id);
+        else
+            return null;
+
+        if (_vanBoards.ContainsKey(id)) 
+            return GetBoardFromObject(_vanBoards[productionInfo.Id]);
+        
         if (_currentBoardTasks.TryGetValue(id, out Task<VanBoard?>? existingTask))
         {
             await Task.WhenAll([existingTask]);
@@ -30,21 +40,16 @@ public partial class ProductionService
 
         await newTask.WaitAsync(cancellationToken: default);
 
-        await Task.Delay(50);
+        await Task.Delay(100);
         
         _currentBoardTasks.TryRemove(id, out _);
         
         return newTask.Result;
     }
     
-    private async Task<VanBoard?> _GetBoardAsyncById(string id)
+    private async Task<VanBoard?> _GetBoardAsyncById(string id) // TODO: add system to prevent rate limiting
     {
-        VanProductionInfo productionInfo;
-
-        if (ProductionVans.Values.Any(x => x.Id == id))
-            productionInfo = ProductionVans.Values.Single(x => x.Id == id);
-        else
-            return null;
+        VanProductionInfo productionInfo = ProductionVans.Values.Single(x => x.Id == id);
 
         if (_vanBoards.ContainsKey(id)) 
             return GetBoardFromObject(_vanBoards[productionInfo.Id]);
