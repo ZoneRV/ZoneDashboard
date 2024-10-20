@@ -52,39 +52,51 @@
     List<string> _selectedDepartments = new List<string>();
     List<string> _departments = new List<string>();
 
+    public bool UpdateUri = false;
+
     protected override void OnAfterRender(bool firstRender)
     {
         base.OnAfterRender(firstRender);
         
         if (firstRender)
         {
-            Uri uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
-            bool newIntialFilters = false;
+            if (!LoadFromUriQuery(NavigationManager.Uri))
+            {
+                string newUri = UpdateUriQuery();
+                LoadFromUriQuery(newUri);
+            }
             
-            if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("line", out var lineValue))
-            {
-                string selectedLine = lineValue.FirstOrDefault()!;
-
-                _productionDropDown.SelectItem(Enum.Parse<ProductionLine>(selectedLine));
-            }
-
-            if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("deps", out var depValue))
-            {
-                newIntialFilters = true;
-                IEnumerable<string> selectedDepartments = depValue.FirstOrDefault()!.Split('+').Where(x => !string.IsNullOrEmpty(x) && !string.IsNullOrWhiteSpace(x));
-
-                foreach (string department in selectedDepartments)
-                {
-                    _departmentDropDown.SelectItem(department);
-                }
-            }
-
-            if (newIntialFilters != true)
-                UpdateUriQuery();
+            UpdateUri = true;
         }
     }
+    
+    bool LoadFromUriQuery(string uriString)
+    {
+        Uri uri = NavigationManager.ToAbsoluteUri(uriString);
+        bool newIntialFilters = false;
+            
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("line", out var lineValue))
+        {
+            string selectedLine = lineValue.FirstOrDefault()!;
 
-    void UpdateUriQuery()
+            _productionDropDown.SelectItem(Enum.Parse<ProductionLine>(selectedLine), true);
+        }
+
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("deps", out var depValue))
+        {
+            newIntialFilters = true;
+            IEnumerable<string> selectedDepartments = depValue.FirstOrDefault()!.Split('+').Where(x => !string.IsNullOrEmpty(x) && !string.IsNullOrWhiteSpace(x));
+
+            foreach (string department in selectedDepartments)
+            {
+                _departmentDropDown.SelectItem(department, true);
+            }
+        }
+
+        return newIntialFilters;
+    }
+
+    string UpdateUriQuery()
     {
         Dictionary<string, object?> parameters = [];
                 
@@ -92,9 +104,11 @@
 
         parameters.Add("deps", string.Join("+", StatsService.SelectedDepartments));
 
-        var newUri = NavigationManager.GetUriWithQueryParameters(parameters);
+        string newUri = NavigationManager.GetUriWithQueryParameters(parameters);
                 
-        NavigationManager.NavigateTo(newUri, false, true);
+        NavigationManager.NavigateTo(newUri, false, false);
+
+        return newUri;
     }
 
     void OnProductionSelect(object value)
@@ -159,7 +173,8 @@
 
         StatsService.SelectedDepartments = _selectedDepartments;
         
-        UpdateUriQuery();
+        if(UpdateUri)
+            UpdateUriQuery();
     }
 
     void OnDepartmentSelect(object value)
@@ -200,6 +215,7 @@
 
         StatsService.SelectedDepartments = _selectedDepartments;
         
-        UpdateUriQuery();
+        if(UpdateUri)
+            UpdateUriQuery();
     }
 }

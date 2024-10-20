@@ -65,9 +65,17 @@
             Position = ApexCharts.LegendPosition.Bottom
         };
         
-        GetCountData();
-        
         base.OnInitialized();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            GetCountData();
+            StateHasChanged();
+        }
+        base.OnAfterRender(firstRender);
     }
 
     void GetCountData()

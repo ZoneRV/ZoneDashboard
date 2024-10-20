@@ -29,7 +29,7 @@ else
     DepartmentJobListHeatMapComponent? _heatMap;
     NewProductionLineOverviewComponent? _prodLine;
 
-    IEnumerable<VanBoard> DisplayVans { get; set; } = default!;
+    IEnumerable<VanBoard> DisplayVans { get; set; } = [];
 
     void PopulateDisplayVans()
     {
@@ -79,8 +79,17 @@ else
         
         NavigationManager.LocationChanged += (_, _) => Update();
         
-        PopulateDisplayVans();
         base.OnInitialized();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            PopulateDisplayVans();
+            StateHasChanged();
+        }
+        base.OnAfterRender(firstRender);
     }
 
     public override void Update()

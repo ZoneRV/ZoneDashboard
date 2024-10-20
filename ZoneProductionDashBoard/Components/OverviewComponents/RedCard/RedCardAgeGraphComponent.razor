@@ -69,9 +69,17 @@
             
         };
 
-        LoadDataPoints();
-
         base.OnInitialized();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            LoadDataPoints();
+            StateHasChanged();
+        }
+        base.OnAfterRender(firstRender);
     }
 
     public override void Update()

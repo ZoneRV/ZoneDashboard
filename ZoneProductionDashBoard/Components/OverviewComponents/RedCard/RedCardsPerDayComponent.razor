@@ -48,10 +48,19 @@
         _redCardDateChart.UpdateSeriesAsync();
     }
 
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+
+        if (firstRender)
+        {
+            _redCardDateData = LoadRedCardDateData();
+            StateHasChanged();
+        }
+    }
+
     protected override void OnInitialized()
     {
-        _redCardDateData = LoadRedCardDateData();
-        
         _options.Chart.Animations = new Animations
         {
             Enabled = false

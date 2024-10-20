@@ -89,12 +89,20 @@ else
         {
             Width = 1
         };
-
-        _chartData = LoadData();
         
         NavigationManager.LocationChanged += (_, _) => Update();
 
         base.OnInitialized();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _chartData = LoadData();
+            StateHasChanged();
+        }
+        base.OnAfterRender(firstRender);
     }
 
     private Dictionary<CardAreaOfOrigin, List<BoxPlotDataItem>> LoadData()

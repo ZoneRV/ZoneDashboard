@@ -44,23 +44,24 @@
         
         NavigationManager.LocationChanged += (_, _) => Update();
         
-        _vans = ProductionService.GetNextHandoverVans(StatsService.BoardFilterOptions.vanTypes, 10);
-        
         base.OnInitialized();
     }
 
     public override void Update()
     {
         _vans = ProductionService.GetNextHandoverVans(StatsService.BoardFilterOptions.vanTypes, 10);
-        base.Update();
+        _grid.Reload();
+        StateHasChanged();
     }
 
     protected override Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
+            _vans = ProductionService.GetNextHandoverVans(StatsService.BoardFilterOptions.vanTypes, 10);
             _grid.Sorts.Add(new SortDescriptor() { Property = "Handover", SortOrder = SortOrder.Ascending });
             _grid.Reload();
+            StateHasChanged();
         }
 
         return base.OnAfterRenderAsync(firstRender);
