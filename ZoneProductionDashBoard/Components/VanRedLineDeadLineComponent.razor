@@ -5,35 +5,46 @@
 
 @inherits UpdatableComponent
 
-<div style="height: 70vh; overflow: hidden">
-    <ApexChart
-        TItem="DateDataItem"
-        Options="_options"
-        XAxisType="XAxisType.Datetime"
-        Title="@(Van.Name + " - " + Van.Position.PositionName)"
-        Height="@("100%")">
-        @foreach (CardAreaOfOrigin area in Enum.GetValues<CardAreaOfOrigin>())
-        {
-            if (_jobData.TryGetValue(area, out List<DateDataItem>? dataItems) && dataItems.Count > 0)
+@if (!Van.JobCards.Any() || _jobData.Sum(x => x.Value.Count) < MinDataPoints)
+{
+    <RadzenText>Not Enough data to load graph</RadzenText>
+}
+else
+{
+    <div style="height: 70vh; overflow: hidden">
+        <ApexChart
+            TItem="DateDataItem"
+            Options="_options"
+            XAxisType="XAxisType.Datetime"
+            Title="@Van.Name.ToUpper()"
+            Height="@("100%")"
+            @ref="_chart">
+            @foreach (CardAreaOfOrigin area in Enum.GetValues<CardAreaOfOrigin>())
             {
-                <ApexPointSeries
-                    TItem="DateDataItem"
-                    Items="@dataItems"
-                    XValue="e => e.Key"
-                    YValue="e => e.Value"
-                    Name="@area.CleanName()"
-                    Color="@area.ToChartColor()"/>
+                if (_jobData.TryGetValue(area, out List<DateDataItem>? dataItems) && dataItems.Count > 0)
+                {
+                    <ApexPointSeries
+                        TItem="DateDataItem"
+                        Items="@dataItems"
+                        XValue="e => e.Key"
+                        YValue="e => e.Value"
+                        Name="@area.CleanName()"
+                        Color="@area.ToChartColor()"/>
+                }
             }
-        }
-        
-    </ApexChart>
-</div>
+        </ApexChart>
+    </div>
+}
 @code {
     [Inject] 
     public IProductionService ProductionService { get; set; } = default!;
 
     [Parameter, EditorRequired] 
     public VanBoard Van { get; set; } = default!;
+
+    private ApexChart<DateDataItem>? _chart;
+    
+    private const int MinDataPoints = 20;
 
     ApexChartOptions<DateDataItem> _options = new ApexChartOptions<DateDataItem>();
     Dictionary<CardAreaOfOrigin, List<DateDataItem>> _jobData = [];
@@ -87,7 +98,24 @@
             }
         };
 
+        _jobData = GetData();
+        
+        base.OnInitialized();
+    }
+
+    private Dictionary<CardAreaOfOrigin, List<DateDataItem>> GetData()
+    {
         _options.Xaxis = new XAxis { };
+        
+        var updatedVan = ProductionService.GetBoardById(Van.Id);
+
+        if (updatedVan is null)
+        {
+            _options.Annotations = new Annotations { Xaxis = new List<AnnotationsXAxis>() };
+            return [];
+        }
+
+        Van = updatedVan;
 
         if (Van.PositionHistory.Count() > 0)
             _options.Xaxis.Min = (Van.PositionHistory.First().date.LocalDateTime - TimeSpan.FromDays(1)).ToUnixTimeMilliseconds();
@@ -117,26 +145,37 @@
         if (Van.Handover.HasValue)
         {
             _options.Annotations.Xaxis.Add(new AnnotationsXAxis
+            {
+                Label = new Label
                 {
-                    Label = new Label
-                    {
-                        Text = "Handover",
-                        BorderColor = "red"
-                    },
-                    X = Van.Handover.Value.LocalDateTime.ToUnixTimeMilliseconds(),
+                    Text = "Handover",
                     BorderColor = "red"
-                });
+                },
+                X = Van.Handover.Value.LocalDateTime.ToUnixTimeMilliseconds(),
+                BorderColor = "red"
+            });
         }
+
+        Dictionary<CardAreaOfOrigin, List<DateDataItem>> jobData = [];
 
         foreach (CardAreaOfOrigin area in Enum.GetValues<CardAreaOfOrigin>())
         {
-            _jobData.Add(area, GetJobCompletedDates(area).ToList());
+            jobData.Add(area, GetJobCompletedDates(area).ToList());
         }
         
         if (Van.Handover.HasValue && (Van.Handover.Value - DateTimeOffset.Now) < TimeSpan.FromDays(5))
-            _options.Xaxis.Max = System.Math.Max(_jobData.SelectMany(x => x.Value).Max(x => x.Key  + TimeSpan.FromDays(1)).ToUnixTimeMilliseconds(), (Van.Handover.Value.LocalDateTime + TimeSpan.FromDays(1)).ToUnixTimeMilliseconds());
+            _options.Xaxis.Max = System.Math.Max(jobData.SelectMany(x => x.Value).Max(x => x.Key  + TimeSpan.FromDays(1)).ToUnixTimeMilliseconds(), (Van.Handover.Value.LocalDateTime + TimeSpan.FromDays(1)).ToUnixTimeMilliseconds());
 
-        base.OnInitialized();
+        return jobData;
+    }
+
+    public override void Update() // TODO: always updates to the previous state
+    {
+        _jobData = GetData();
+        
+        _chart?.RenderAsync();
+        
+        base.Update();
     }
 
     private IEnumerable<DateDataItem> GetJobCompletedDates(CardAreaOfOrigin area)
