@@ -83,7 +83,7 @@
     
     private RadzenDataGrid<RedCard> _dataGrid = default!;
     private RadzenTextBox _nameFilterBox = default!;
-    private IEnumerable<string> _statusOptions = ["Completed", "Other"];
+    private IEnumerable<string> _statusOptions = ["Completed", "Not Completed", "Not Started", "In Progress", "Unable To Complete"];
 
     protected override void OnInitialized()
     {
@@ -124,11 +124,29 @@
             column.FilterOperator = FilterOperator.Equals;
             column.FilterValue = CardStatus.Completed;
         }
-        else
+        else if (selection == "Not Completed")
         {
             column.ClearFilters();
             column.FilterOperator = FilterOperator.NotEquals;
             column.FilterValue = CardStatus.Completed;
+        }
+        else if (selection == "Not Started")
+        {
+            column.ClearFilters();
+            column.FilterOperator = FilterOperator.Equals;
+            column.FilterValue = CardStatus.NotStarted;
+        }
+        else if (selection == "In Progress")
+        {
+            column.ClearFilters();
+            column.FilterOperator = FilterOperator.Equals;
+            column.FilterValue = CardStatus.InProgress;
+        }
+        else if (selection == "Unable To Complete")
+        {
+            column.ClearFilters();
+            column.FilterOperator = FilterOperator.Equals;
+            column.FilterValue = CardStatus.UnableToComplete;
         }
     }
     
