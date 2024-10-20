@@ -18,7 +18,7 @@
     Style="@Style">
     <Columns>
 
-        @if (RedCards.Select(x => x.BoardId).Distinct().Count() > 1)
+        @if (!IsSingleVan)
         {
             <RadzenDataGridColumn TItem="RedCard" Property="BoardName" Title="Van" Frozen="true"
                                   Sortable="false" Width="200px">
@@ -74,6 +74,9 @@
     
     [Parameter, EditorRequired]
     public IEnumerable<RedCard> RedCards { get; set; } = default!;
+    
+    [Parameter, EditorRequired]
+    public bool IsSingleVan { get; set; }
 
     [Parameter] 
     public string Style { get; set; } = string.Empty;

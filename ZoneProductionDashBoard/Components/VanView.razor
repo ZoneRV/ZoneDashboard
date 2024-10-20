@@ -37,7 +37,7 @@
             <JobCardGridComponent JobCards="Van.JobCards" Style="height: 85vh" GroupByAreaOfOrigin="@true" @ref="@_jobCardGrid"/>
         </RadzenTabsItem>
         <RadzenTabsItem Text="Red Cards">
-            <RedCardGridComponent RedCards="Van.RedCards" Style="height: 85vh" @ref="@_redCardGrid"/>
+            <RedCardGridComponent RedCards="Van.RedCards" Style="height: 85vh" @ref="@_redCardGrid" IsSingleVan="true"/>
         </RadzenTabsItem>
         <RadzenTabsItem Text="History">
             <VanRedLineDeadLineComponent Van="Van" @ref="@_redLineDeadLineComponent"/>

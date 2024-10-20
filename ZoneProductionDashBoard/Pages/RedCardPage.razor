@@ -7,7 +7,7 @@
 <RadzenTabs>
     <Tabs>
         <RadzenTabsItem Text="Red Cards">
-            <RedCardGridComponent RedCards="@_redCards" Style="height: 80vh" @ref="@_rGrid" />
+            <RedCardGridComponent RedCards="@_redCards" Style="height: 80vh" @ref="@_rGrid" IsSingleVan="false"/>
         </RadzenTabsItem>
         <RadzenTabsItem Text="Job Cards">
             <JobCardGridComponent JobCards="@_jobCards" Style="height: 80vh" @ref="@_jGrid"/>
