@@ -99,7 +99,7 @@
         public VanBoard? Van { get; } = van;
     }
 
-    VanData[] _data = [];
+    List<VanData> _data = [];
 
     protected override void UpdateIfIdSubscribed(object? sender, BoardUpdateInfo e)
     {
@@ -127,17 +127,14 @@
     {
         var vansToLoad = ProductionService.ProductionVans.Where(x => x.Value.Handover.HasValue && x.Value.Handover.Value.LocalDateTime > args.Start && x.Value.Handover.Value.LocalDateTime < args.End).ToArray();
 
-        _data = new VanData[vansToLoad.Length];
+        _data = [];
 
-        int i = 0;
         foreach (var pair in vansToLoad)
         {
             if (!pair.Value.Handover.HasValue)
                 throw new ArgumentNullException(nameof(pair.Value.Handover), "Cannot display van with no handover date on calendar.");
             
-            _data[i] = new VanData(pair.Value, ProductionService.GetBoardById(pair.Value.Id));
-
-            i++;
+            _data.Add(new VanData(pair.Value, ProductionService.GetBoardById(pair.Value.Id)));
         }
     }
 
