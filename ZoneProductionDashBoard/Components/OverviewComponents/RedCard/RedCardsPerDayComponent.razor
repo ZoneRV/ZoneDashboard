@@ -18,7 +18,8 @@
             Name="@name"
             YValue="item => item.Value"
             XValue="item => item.Key"
-            SeriesType="SeriesType.Line"/>
+            SeriesType="SeriesType.Line"
+            Color="@_colorsOfKeys[name]"/>
     }
 </ApexChart>
 
@@ -37,6 +38,7 @@
 
     ApexChartOptions<DataItem> _options = new ApexChartOptions<DataItem>();
 
+    Dictionary<string, string> _colorsOfKeys = [];
    
     public override void Update()
     {
@@ -64,14 +66,14 @@
         {
             Enabled = false
         };
-
-        _options.Colors = ColorExtensions.AltColorStrings;
         
         base.OnInitialized();
     }
 
     private Dictionary<string, IEnumerable<DataItem>> LoadRedCardDateData()
     {
+        _colorsOfKeys = [];
+        
         List<RedCard> redCards = ProductionService.GetRedCards()
                                                   .Where(
                                                       x => 
@@ -92,13 +94,18 @@
             else
                 departments = ProductionService.ExpoProductionDepartments;
 
-            if (StatsService.SelectedDepartments.Count > 1)
-                departments = departments.Where(x => StatsService.SelectedDepartments.Contains(x.Name)).ToList();
-
+            int i = 0;
             foreach (ProductionDepartment department in departments)
             {
-                List<DataItem> data = redCards.FilterCards(department.AreaOfOrigins).RedCardCountByLocalDateData(true, "ddd d/M", DateTime.Today - TimeFrame, DateTime.Today).ToList();
+                i++;
                 
+                if(StatsService.SelectedDepartments.Count != 0 && !StatsService.SelectedDepartments.Contains(department.Name))
+                    continue;
+                
+                _colorsOfKeys.Add(department.Name, ColorExtensions.ColorStrings.ElementAt(i % ColorExtensions.ColorStrings.Count));
+                
+                List<DataItem> data = redCards.FilterCards(department.AreaOfOrigins).RedCardCountByLocalDateData(true, "ddd d/M", DateTime.Today - TimeFrame, DateTime.Today).ToList();
+            
                 if(data.Any(x => x.Value > 0))
                     redCardDateData.Add(department.Name, data);
             }
@@ -109,8 +116,9 @@
             {
                 List<DataItem> data = redCards.Where(x => x.AreaOfOrigin == area).RedCardCountByLocalDateData(true, "ddd d/M", DateTime.Today - TimeFrame, DateTime.Today).ToList();
                 
-                if(data.Any(x => x.Value > 0))
-                    redCardDateData.Add(area.CleanName(), data);
+                redCardDateData.Add(area.CleanName(), data);
+
+                _colorsOfKeys.Add(area.CleanName(), area.ToChartColor());
             }
         }
 

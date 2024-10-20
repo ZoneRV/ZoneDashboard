@@ -3,13 +3,13 @@
 
 @inherits UpdatableComponent
 
-@if (_chartData.Where(x => StatsService.CardFilterOptions.CardAreaOfOrigins.Contains(x.Key)).Sum(x => x.Value.Count) == 0)
-{
-    <RadzenText>Not Enough data to load graph</RadzenText>
-}
-else if (StatsService.SelectedDepartments.Count != 1)
+@if (StatsService.SelectedDepartments.Count != 1)
 {
     <RadzenText>Please select 1 department</RadzenText>
+}
+else if (_chartData.Where(x => StatsService.CardFilterOptions.CardAreaOfOrigins.Contains(x.Key)).Sum(x => x.Value.Count) == 0)
+{
+    <RadzenText>Not Enough data to load graph</RadzenText>
 }
 else
 {

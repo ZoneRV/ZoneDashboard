@@ -199,7 +199,10 @@ namespace ZoneProductionLibrary.Extensions
             IEnumerable<RedCard> enumerable = redCards.ToList();
             
             if (!enumerable.Any())
-                return [];
+            {
+                if(minDate is null && maxDate is null)
+                    return [];
+            }
             
             List<DataItem> results = [];
 
