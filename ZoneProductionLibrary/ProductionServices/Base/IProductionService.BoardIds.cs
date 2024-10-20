@@ -1,4 +1,5 @@
-﻿using TrelloDotNet.Model;
+﻿using System.Diagnostics;
+using TrelloDotNet.Model;
 
 namespace ZoneProductionLibrary.ProductionServices.Base
 {
@@ -8,12 +9,14 @@ namespace ZoneProductionLibrary.ProductionServices.Base
 
         public IEnumerable<string> RequiredBoardIds()
         {
+            int daysOfPrevHandovers = Debugger.IsAttached ? 14 : 31;
+            
             List<string> ids = [];
             
             ids.AddRange(ProductionVanIds(true));
             ids.AddRange(GetNextGen2HanoverIds(10));
             ids.AddRange(GetNextExpoHanoverIds(10));
-            ids.AddRange(GetVanIdsByLocalHandoverDates(DateTime.Now - TimeSpan.FromDays(14), DateTime.Now));
+            ids.AddRange(GetVanIdsByLocalHandoverDates(DateTime.Now - TimeSpan.FromDays(daysOfPrevHandovers), DateTime.Now));
 
             return ids.Distinct();
         }
