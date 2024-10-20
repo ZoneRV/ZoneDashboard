@@ -355,6 +355,8 @@ public partial class ProductionService : IProductionService
 
     public async Task CheckRequiredWebhooksActive()
     {
+        _webhooks = await _trelloClient.GetWebhooksForCurrentTokenAsync();
+        
         Webhook? ccDahsboardWebhook = _webhooks.SingleOrDefault(x => x.IdOfTypeYouWishToMonitor == CCDashboardId);
         
         if (ccDahsboardWebhook is null)
@@ -383,7 +385,7 @@ public partial class ProductionService : IProductionService
         
         if (lineMoveWebhook is null)
         {
-            Webhook webhook = new Webhook("CC Dashboard Webhook", DashboardConfig.WebhookCallbackUrl, LineMoveBoardId);
+            Webhook webhook = new Webhook("Line move board", DashboardConfig.WebhookCallbackUrl, LineMoveBoardId);
 
             webhook.Active = true;
 

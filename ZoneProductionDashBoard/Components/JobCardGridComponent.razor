@@ -31,8 +31,15 @@
             }
         }
         else
-        {
-            <RadzenText Style="position: sticky; left: 20px">@(AreaFromDynamic(context))</RadzenText>
+        {if 
+            (context.Data.Key is CardAreaOfOrigin)
+            {
+                <RadzenText Style="position: sticky; left: 20px">@(AreaFromDynamic(context))</RadzenText>
+            }
+            else
+            {
+                <RadzenText>@(context.Data.Key)</RadzenText>
+            }
         }
     </GroupHeaderTemplate>
 
@@ -44,7 +51,7 @@
                                   Sortable="false" Width="200px">
 
                 <FilterTemplate>
-                    <RadzenTextBox Change="SetVanNameFilters" Style="width: 100%" />
+                    <RadzenTextBox Change="SetVanNameFilters" Style="width: 100%"/>
                 </FilterTemplate>
 
                 <FooterTemplate>
@@ -67,7 +74,12 @@
                 <RadzenText>Showing @($"{_dataGrid.View.Count()} out of {JobCards.Count()}")</RadzenText>
             </FooterTemplate>
         </RadzenDataGridColumn>
-
+        
+        @if(!_isSingleVan)
+        {
+            <RadzenDataGridColumn TItem="JobCard" Title="Van Position" Template="VanPosition" Width="200px" Sortable="false"/>
+        }
+        
         <RadzenDataGridColumn TItem="JobCard" SortProperty="CardStatus" FilterProperty="CardStatus" Title="Status" Template="CardStatusRender" Width="165px">
             <FilterTemplate>
                 <RadzenDropDown TValue="string" Data="_statusOptions" Change="SetStatusFilters" AllowClear="true" Placeholder="Select..."/>
@@ -99,7 +111,7 @@
     
     private RadzenDataGrid<JobCard> _dataGrid = default!;
     private RadzenTextBox _nameFilterBox = default!;
-    private IEnumerable<string> _statusOptions = ["Completed", "Other"];
+    private IEnumerable<string> _statusOptions = ["Completed", "Not Completed", "Not Started", "In Progress", "Unable To Complete"];
 
     private CardAreaOfOrigin AreaFromDynamic(Group area)
     {
@@ -169,11 +181,29 @@
             column.FilterOperator = FilterOperator.Equals;
             column.FilterValue = CardStatus.Completed;
         }
-        else
+        else if (selection == "Not Completed")
         {
             column.ClearFilters();
             column.FilterOperator = FilterOperator.NotEquals;
             column.FilterValue = CardStatus.Completed;
+        }
+        else if (selection == "Not Started")
+        {
+            column.ClearFilters();
+            column.FilterOperator = FilterOperator.Equals;
+            column.FilterValue = CardStatus.NotStarted;
+        }
+        else if (selection == "In Progress")
+        {
+            column.ClearFilters();
+            column.FilterOperator = FilterOperator.Equals;
+            column.FilterValue = CardStatus.InProgress;
+        }
+        else if (selection == "Unable To Complete")
+        {
+            column.ClearFilters();
+            column.FilterOperator = FilterOperator.Equals;
+            column.FilterValue = CardStatus.UnableToComplete;
         }
     }
     
@@ -320,6 +350,16 @@
                    <RadzenCard Style="@("height: 4em; background:" + jobCard.AreaOfOrigin.ToChartColor())">
                        <RadzenText Style="white-space: pre-wrap; text-align: center;">@jobCard.AreaOfOrigin.CleanName()</RadzenText>
                    </RadzenCard>
+               };
+    }
+
+    private RenderFragment VanPosition(JobCard jobCard)
+    {
+        IProductionPosition position = ProductionService.ProductionVans[jobCard.BoardName.ToLower()].Position;
+
+        return __builder =>
+               {
+                   <RadzenText Style="white-space: pre-wrap; text-align: center;">@position.PositionName</RadzenText>
                };
     }
 }

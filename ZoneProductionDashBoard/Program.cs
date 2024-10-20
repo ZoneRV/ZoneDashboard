@@ -5,6 +5,7 @@ using Radzen;
 using Serilog;
 using Serilog.Sinks.ApplicationInsights.TelemetryConverters;
 using Serilog.Sinks.SystemConsole.Themes;
+using System.Diagnostics;
 using System.Globalization;
 using ZoneProductionDashBoard;
 using ZoneProductionLibrary.Jobs;
@@ -79,7 +80,10 @@ internal class Program
 
                 if (productionService is ProductionService production)
                 {
-                    Scheduler.AddTask(new DailyTask(production.ProductionServiceCleanUp, TimeSpan.Zero));
+                    if(!Debugger.IsAttached)
+                    {
+                        Scheduler.AddTask(new DailyTask(production.ProductionServiceCleanUp, TimeSpan.Zero));
+                    }
                     
                     if(DashboardConfig.EnableWebhooks)
                     {
