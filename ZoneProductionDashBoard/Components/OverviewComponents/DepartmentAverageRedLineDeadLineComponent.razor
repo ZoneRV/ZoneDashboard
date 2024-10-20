@@ -1,33 +1,44 @@
-﻿@using ApexCharts;
+﻿@using System.Diagnostics
+@using ApexCharts;
 
 @inherits UpdatableComponent
 
-<ApexChart
-    TItem="BoxPlotDataItem"
-    Options="_options"
-    XAxisType="XAxisType.Category"
-    Height="600"
-    Width="1000"
-    @ref="@_chart">
-    @{ Dictionary<CardAreaOfOrigin, List<BoxPlotDataItem>> chartData = LoadData(); }
-    @foreach (CardAreaOfOrigin area in StatsService.CardFilterOptions.CardAreaOfOrigins)
-    {
-        if (chartData.TryGetValue(area, out List<BoxPlotDataItem>? data) && data.Count > 0)
+@if (_chartData.Where(x => StatsService.CardFilterOptions.CardAreaOfOrigins.Contains(x.Key)).Sum(x => x.Value.Count) == 0)
+{
+    <RadzenText>Not Enough data to load graph</RadzenText>
+}
+else if (StatsService.SelectedDepartments.Count != 1)
+{
+    <RadzenText>Please select 1 department</RadzenText>
+}
+else
+{
+    <ApexChart
+        TItem="BoxPlotDataItem"
+        Options="_options"
+        XAxisType="XAxisType.Category"
+        Height="600"
+        Width="1000"
+        @ref="@_chart"
+        Title="@($"Average work on last {_handoverCount} handovers.")">
+        @foreach (CardAreaOfOrigin area in StatsService.CardFilterOptions.CardAreaOfOrigins)
         {
-            <ApexBoxPlotSeries
-                TItem="BoxPlotDataItem"
-                Name="@Enum.GetName(area)"
-                Items="@data"
-                Max="item => item.Max"
-                Min="item => item.Min"
-                Quantile1="item => item.Q1"
-                Median="item => item.Q2"
-                Quantile3="item => item.Q3"
-                XValue="item => item.Key"/>
-
+            if (_chartData.TryGetValue(area, out List<BoxPlotDataItem>? data) && data.Count > 0)
+            {
+                <ApexBoxPlotSeries
+                    TItem="BoxPlotDataItem"
+                    Name="@Enum.GetName(area)"
+                    Items="@data"
+                    Max="item => item.Max"
+                    Min="item => item.Min"
+                    Quantile1="item => item.Q1"
+                    Median="item => item.Q2"
+                    Quantile3="item => item.Q3"
+                    XValue="item => item.Key"/>
+            }
         }
-    }
-</ApexChart>
+    </ApexChart>
+}
 
 @code {
     [Inject] 
@@ -39,13 +50,15 @@
     [Inject] 
     public NavigationManager NavigationManager { get; set; } = default!;
 
-    ApexChart<BoxPlotDataItem> _chart = default!;
+    ApexChart<BoxPlotDataItem>? _chart = default!;
+    Dictionary<CardAreaOfOrigin, List<BoxPlotDataItem>> _chartData = [];
 
     ApexChartOptions<BoxPlotDataItem> _options = new ApexChartOptions<BoxPlotDataItem>();
 
+    readonly int _handoverCount = Debugger.IsAttached ? 5 : 10;
+
     protected override void OnInitialized()
     {
-        LoadData();
         _options.Chart.Animations = new Animations
         {
             Enabled = false
@@ -76,6 +89,8 @@
         {
             Width = 1
         };
+
+        _chartData = LoadData();
         
         NavigationManager.LocationChanged += (_, _) => Update();
 
@@ -88,9 +103,9 @@
         
         List<IProductionPosition> positions = [new PreProduction()];
 
-        List<string> ids = ProductionService.GetVanIdsByLocalHandoverDates(14, DateTime.Now).ToList();
+        IEnumerable<string> ids = ProductionService.GetLastHanoverIds(StatsService.BoardFilterOptions.vanTypes, _handoverCount);
 
-        IEnumerable<VanBoard> prodVans = ProductionService.GetBoards(ids).FilterVans(StatsService.BoardFilterOptions.vanTypes);
+        IEnumerable<VanBoard> prodVans = ProductionService.GetBoards(ids);
 
         IProductionPosition pos = StatsService.SelectedVanType == TypeOfVan.Gen2 ? Gen2ProductionPosition.First : ExpoProductionPosition.First;
 
@@ -116,9 +131,9 @@
 
     public override void Update()
     {
-        LoadData();
-        _chart.UpdateOptionsAsync(true, false, false);
-        _chart.UpdateSeriesAsync();
+        _chartData = LoadData();
+        _chart?.UpdateOptionsAsync(true, false, false);
+        _chart?.UpdateSeriesAsync();
         base.Update();
     }
 

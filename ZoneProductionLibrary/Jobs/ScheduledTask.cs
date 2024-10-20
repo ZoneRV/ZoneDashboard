@@ -37,7 +37,7 @@
             if(NextExecution < DateTime.Now)
                 NextExecution += TimeSpan.FromDays(1);
             
-            Log.Information("New daily Task Started {name} first execution {NextExecution}", Task.Method.Name, NextExecution);
+            Log.Information("New daily Task added {name} first execution {NextExecution}", Task.Method.Name, NextExecution);
 
             _taskStarted = true;
             
@@ -90,7 +90,7 @@
             
             NextExecution = DateTime.Now + ExecutionTime;
             
-            Log.Information("New Timed Task Started {name}:{executionTime} first execution {NextExecution}", Task.Method.Name, ExecutionTime, NextExecution);
+            Log.Information("New Timed Task added {name}:{executionTime} first execution {NextExecution}", Task.Method.Name, ExecutionTime, NextExecution);
 
             _taskStarted = true;
             

@@ -9,7 +9,7 @@ namespace ZoneProductionLibrary.ProductionServices.Base
 
         public IEnumerable<string> RequiredBoardIds()
         {
-            int daysOfPrevHandovers = Debugger.IsAttached ? 14 : 31;
+            int daysOfPrevHandovers = Debugger.IsAttached ? 7 : 31;
             
             List<string> ids = [];
             
@@ -95,7 +95,7 @@ namespace ZoneProductionLibrary.ProductionServices.Base
         public IEnumerable<string> GetVanIdsByLocalHandoverDates(int days, DateTime end)
         {
             List<DateTime> dates = new List<DateTime>() { end };
-            for (int i = 1; i < days; i++)
+            for (int i = 0; i < days; i++)
             {
                 dates.Add(end - TimeSpan.FromDays(i));
             }
@@ -121,6 +121,26 @@ namespace ZoneProductionLibrary.ProductionServices.Base
                  .OrderBy(x => x.Handover)
                  .Select(x => x.Id)
                  .Take(limit).ToList();
+
+            return ids;
+        }
+
+        public IEnumerable<string> GetLastGen2HandoversIds(int limit)
+            => GetLastHanoverIds(Enum.GetValues<VanModel>().Where(x => x.IsGen2()), limit);
+
+        public IEnumerable<string> GetLastExpoHandoversIds(int limit)
+            => GetLastHanoverIds(Enum.GetValues<VanModel>().Where(x => !x.IsGen2()), limit);
+
+        public IEnumerable<string> GetLastHanoverIds(IEnumerable<VanModel> vanTypes, int limit)
+        {
+            List<string> ids;
+
+            ids = ProductionVans.Values
+                                .Where(x => vanTypes.Contains(x.VanModel) && x.Handover.HasValue &&
+                                            x.HandoverState == HandoverState.HandedOver)
+                                .OrderByDescending(x => x.Handover)
+                                .Select(x => x.Id)
+                                .Take(limit).ToList();
 
             return ids;
         }

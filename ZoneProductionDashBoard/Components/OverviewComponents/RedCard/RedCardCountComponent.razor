@@ -52,7 +52,7 @@
         InvokeAsync(async () =>
                     {
                         StateHasChanged();
-                        await _typeChart.UpdateOptionsAsync(true, false, false);
+                        await _typeChart.UpdateOptionsAsync(true, true, false);
                         await _typeChart.UpdateSeriesAsync();
                     });
         
