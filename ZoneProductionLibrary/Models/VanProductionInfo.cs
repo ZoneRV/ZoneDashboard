@@ -1,6 +1,4 @@
-﻿using TrelloDotNet.Model.Actions;
-
-namespace ZoneProductionLibrary.Models
+﻿namespace ZoneProductionLibrary.Models
 {
     public class VanProductionInfo : IFilterableBoard, IEqualityComparer<VanProductionInfo>, IEquatable<VanProductionInfo>
     {
@@ -18,7 +16,7 @@ namespace ZoneProductionLibrary.Models
         public TimeSpan? TimeToHandover => Handover.HasValue ? Handover.Value - DateTimeOffset.Now : null;
         public bool IsInCarPark => Position.IsInCarPark(HandoverState);
 
-        public override string ToString() => $"{Name}:{Id} {Position} {(Handover.HasValue ? Handover.Value.LocalDateTime.ToString("dd/MM/yy") : "")}";
+        public override string ToString() => $"{Name}:{Id}";
 
         public VanProductionInfo(string id, string name, List<(DateTimeOffset, IProductionPosition)> positionHistory)
         {
@@ -58,12 +56,115 @@ namespace ZoneProductionLibrary.Models
 
             return (HandoverHistory.Last().changeDate + timeSpan > DateTimeOffset.Now );
         }
+
+        public bool Equals(VanProductionInfo? other) => Equals(this, other);
+
         
-        public bool Equals(VanProductionInfo? other) => throw new NotImplementedException();
+        public bool Equals(VanProductionInfo? x, VanProductionInfo? y)
+        {
+            if (ReferenceEquals(x, y)) 
+                return true;
+            
+            if (ReferenceEquals(x, null)) 
+                return false;
+            
+            if (ReferenceEquals(y, null)) 
+                return false;
+            
+            if (x.GetType() != y.GetType()) 
+                return false;
+            
+            return x.Id == y.Id && x.Name == y.Name && x.PositionHistory.Equals(y.PositionHistory) && x.HandoverHistory.Equals(y.HandoverHistory) && x.HandoverState == y.HandoverState;
+        }
 
-        public bool Equals(VanProductionInfo? x, VanProductionInfo? y) => throw new NotImplementedException();
+        public int GetHashCode(VanProductionInfo obj)
+        {
+            return HashCode.Combine(obj.Id, obj.Name, obj.PositionHistory, obj.HandoverHistory, (int)obj.HandoverState);
+        }
 
-        public int GetHashCode(VanProductionInfo obj) => throw new NotImplementedException();
+        public CompareReport? Compare(VanProductionInfo? other)
+        {
+            CompareReport report = new CompareReport(ToString());
+            
+            if (ReferenceEquals(this, other))
+            {
+                return null;
+            }
+
+            if (ReferenceEquals(this, null))
+            {
+                report.Issues[ToString()].Add("This null Reference");
+                report.Pass = false;
+                
+                return report;
+            }
+
+            if (ReferenceEquals(other, null)) 
+            {
+                report.Issues[ToString()].Add("other null Reference");
+                report.Pass = false;
+                
+                return report;
+            }
+
+            if (this.Id != other.Id)
+            {
+                report.Issues[ToString()].Add($"Id: {this.Id} != {other.Id}");
+                report.Pass = false;
+            }
+            if (this.Name != other.Name)
+            {
+                report.Issues[ToString()].Add($"Name: {this.Name} != {other.Name}");
+                report.Pass = false;
+            }
+            if (this.HandoverState != other.HandoverState)
+            {
+                report.Issues[ToString()].Add($"Hand over state: {this.Name} != {other.Name}");
+                report.Pass = false;
+            }
+
+            foreach ((DateTimeOffset changeDate, DateTimeOffset HandoverDate) handoverChange in HandoverHistory)
+            {
+                if (!other.HandoverHistory.Contains(handoverChange))
+                {
+                    report.Issues[ToString()].Add($"Handover change {handoverChange} missing from other");
+                    report.Pass = false;
+                }
+            }
+
+            foreach ((DateTimeOffset changeDate, DateTimeOffset HandoverDate) handoverChange in other.HandoverHistory)
+            {
+                if (!HandoverHistory.Contains(handoverChange))
+                {
+                    report.Issues[ToString()].Add($"Handover change {handoverChange} missing from this");
+                    report.Pass = false;
+                }
+            }
+
+            foreach ((DateTimeOffset date, IProductionPosition position) positionChange in PositionHistory)
+            {
+                if (!other.PositionHistory.Contains(positionChange))
+                {
+                    report.Issues[ToString()].Add($"Position change {positionChange} missing from other");
+                    report.Pass = false;
+                }
+            }
+            
+            foreach ((DateTimeOffset date, IProductionPosition position) positionChange in other.PositionHistory)
+            {
+                if (!PositionHistory.Contains(positionChange))
+                {
+                    report.Issues[ToString()].Add($"Position change {positionChange} missing from this");
+                    report.Pass = false;
+                }
+            }
+            
+            if (report.Pass == false)
+                return report;
+
+            else
+                return null;
+        }
     }
 
     public enum HandoverState
