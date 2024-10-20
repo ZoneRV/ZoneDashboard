@@ -22,6 +22,11 @@
         }
     }
 
+    public override string Title
+    {
+        get => $"{Scheduler.CurrentDate.StartOfWeek().ToString("dd/MM/yy")} - {Scheduler.CurrentDate.EndOfWeek().ToString("dd/MM/yy")}";
+    }
+
     protected override void OnParametersSet()
     {
         if (Scheduler.CurrentDate.DayOfWeek == DayOfWeek.Saturday)
