@@ -38,6 +38,7 @@ namespace ZoneProductionLibrary.Extensions
 
         public static IEnumerable<T> FilterCards<T>(this IEnumerable<T> cards, IEnumerable<CardStatus> cardStatuses) where T : IFilterableCard
             => cards.Where(x => cardStatuses.Contains(x.CardStatus));
+        
         public static IEnumerable<T> FilterCards<T>(this IEnumerable<T> cards, IEnumerable<CardAreaOfOrigin> areaOfOrigins) where T : IFilterableCard
             => cards.Where(x => areaOfOrigins.Contains(x.AreaOfOrigin));
 
@@ -67,6 +68,7 @@ namespace ZoneProductionLibrary.Extensions
     public class CardFilterOptions
     {
         public IEnumerable<CardAreaOfOrigin> CardAreaOfOrigins { get; set; }
+        public IEnumerable<RedFlagIssue> RedFlagIssues { get; set; }
         public IEnumerable<string>? SearchTerms { get; set; }
         public bool SearchExactName { get; set; }
         public IEnumerable<CardStatus> CardStatuses { get; set; }
@@ -74,6 +76,7 @@ namespace ZoneProductionLibrary.Extensions
         public CardFilterOptions()
         {
             CardAreaOfOrigins = Enum.GetValues<CardAreaOfOrigin>();
+            RedFlagIssues = Enum.GetValues<RedFlagIssue>();
             SearchTerms = null;
             SearchExactName = false;
             CardStatuses = Enum.GetValues<CardStatus>();

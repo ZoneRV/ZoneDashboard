@@ -45,6 +45,14 @@
         base.OnInitialized();
     }
 
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if(firstRender)
+            _countComponent.IssueSelected += (_, _) => Update();
+        
+        base.OnAfterRender(firstRender);
+    }
+
     public override void Update()
     {
         base.Update();

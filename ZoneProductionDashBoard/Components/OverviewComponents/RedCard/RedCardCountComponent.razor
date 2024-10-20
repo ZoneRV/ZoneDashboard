@@ -1,6 +1,10 @@
-﻿@using Orientation = Radzen.Orientation
+﻿@using AngleSharp.Common
+@using Orientation = Radzen.Orientation
+@using Serilog
 @using ApexCharts
 @inherits UpdatableComponent
+
+@implements IDisposable
 
 <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center">
     <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center">
@@ -16,7 +20,8 @@
         Height="500"
         Width="250"
         @ref="@_typeChart"
-        Options="@_options">
+        Options="@_options"
+        OnDataPointSelection="DataClicked">
         <ApexPointSeries
             TItem="DataItem"
             Items="@_redCardTypeData"
@@ -24,7 +29,7 @@
             YValue="item => item.Value"
             SeriesType="SeriesType.Donut"
             OrderByDescending="item => item.Y ?? 0"
-            PointColor="item => ((RedFlagIssue)item.Key).ToChartColor()"/>
+            PointColor="item => _colorLookUp[(RedFlagIssue)item.Key]"/>
     </ApexChart>
 </RadzenStack>
 
@@ -37,6 +42,11 @@
     
     [Parameter, EditorRequired]
     public TimeSpan TimeFrame { get; set; }
+
+    public EventHandler<RedFlagIssue?>? IssueSelected;
+    RedFlagIssue? _lastSelectedIssue;
+    Dictionary<string, RedFlagIssue> _stringToIssue = [];
+    Dictionary<RedFlagIssue, string> _colorLookUp = [];
 
     ApexChart<DataItem> _typeChart = default!;
     ApexChartOptions<DataItem> _options = new ApexChartOptions<DataItem>();
@@ -55,7 +65,11 @@
                         await _typeChart.UpdateOptionsAsync(true, true, false);
                         await _typeChart.UpdateSeriesAsync();
                     });
-        
+    }
+
+    public void Dispose()
+    {
+        StatsService.CardFilterOptions.RedFlagIssues = Enum.GetValues<RedFlagIssue>();
     }
 
     protected override void OnInitialized()
@@ -64,6 +78,12 @@
         {
             Position = ApexCharts.LegendPosition.Bottom
         };
+
+        foreach (RedFlagIssue issue in Enum.GetValues<RedFlagIssue>())
+        {
+            _stringToIssue.Add(issue.CleanName(), issue);
+            _colorLookUp.Add(issue, issue.ToChartColor());
+        }
         
         base.OnInitialized();
     }
@@ -88,9 +108,42 @@
                                        x.CreationDate.Value > DateTime.Today - TimeFrame)
                            .ToList();
 
-        _outstandingRedCardCount = redCards.Count(x => x.CardStatus != CardStatus.Completed);
-        _completedRedCardCount = redCards.Count(x => x.CardStatus == CardStatus.Completed);
+        _outstandingRedCardCount = redCards.Count(x => x.CardStatus != CardStatus.Completed && StatsService.CardFilterOptions.RedFlagIssues.Contains(x.RedFlagIssue));
+        _completedRedCardCount = redCards.Count(x => x.CardStatus == CardStatus.Completed && StatsService.CardFilterOptions.RedFlagIssues.Contains(x.RedFlagIssue));
 
         _redCardTypeData = redCards.RedCardByTypeData();
+    }
+
+    private void DataClicked(SelectedData<DataItem> item)
+    {
+        var newIssue = _stringToIssue[(string)item.DataPoint.X];
+        
+        if(_lastSelectedIssue.HasValue && _lastSelectedIssue == newIssue)
+        {
+            _lastSelectedIssue = null;
+            StatsService.CardFilterOptions.RedFlagIssues = _lastSelectedIssue is null ? Enum.GetValues<RedFlagIssue>() : [_lastSelectedIssue.Value!];
+            
+            foreach (RedFlagIssue issue in Enum.GetValues<RedFlagIssue>())
+            {
+                _colorLookUp[issue] = issue.ToChartColor();
+            }
+            
+            IssueSelected?.Invoke(this, null);
+        }
+
+        else
+        {
+            _lastSelectedIssue = newIssue;
+            StatsService.CardFilterOptions.RedFlagIssues = [newIssue];
+            
+            foreach (RedFlagIssue issue in Enum.GetValues<RedFlagIssue>())
+            {
+                 _colorLookUp[issue] =  newIssue == issue ? issue.ToChartColor() : "#808080";
+            }
+            
+            IssueSelected?.Invoke(this, newIssue);
+        }
+        
+        Log.Logger.Debug("{issueType} selected for red card component.", _lastSelectedIssue);
     }
 }

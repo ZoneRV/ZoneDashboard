@@ -172,6 +172,8 @@
             StatsService.CardFilterOptions.CardAreaOfOrigins = filteredAreas;
 
         StatsService.SelectedDepartments = _selectedDepartments;
+
+        StatsService.CardFilterOptions.RedFlagIssues = Enum.GetValues<RedFlagIssue>();
         
         if(UpdateUri)
             UpdateUriQuery();
@@ -214,6 +216,8 @@
             StatsService.CardFilterOptions.CardAreaOfOrigins = filteredAreas;
 
         StatsService.SelectedDepartments = _selectedDepartments;
+
+        StatsService.CardFilterOptions.RedFlagIssues = Enum.GetValues<RedFlagIssue>();
         
         if(UpdateUri)
             UpdateUriQuery();

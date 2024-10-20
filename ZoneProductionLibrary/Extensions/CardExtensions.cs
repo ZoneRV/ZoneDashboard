@@ -264,7 +264,7 @@ namespace ZoneProductionLibrary.Extensions
                 int count = enumerable.Count(x => x.RedFlagIssue == type);
                 
                 if(count > 0)
-                    data.Add(new DataItem(type, count));
+                    data.Add(new DataItem(type, count, type));
             }
 
             return data;

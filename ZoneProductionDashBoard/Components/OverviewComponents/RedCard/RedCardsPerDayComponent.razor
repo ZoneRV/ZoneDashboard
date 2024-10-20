@@ -88,7 +88,8 @@
                                                       x => 
                                                           x.CreationDate.HasValue && 
                                                           x.CreationDate.Value > DateTime.Today - TimeFrame &&
-                                                          x.VanType == StatsService.SelectedVanType
+                                                          x.VanType == StatsService.SelectedVanType &&
+                                                          StatsService.CardFilterOptions.RedFlagIssues.Contains(x.RedFlagIssue)
                                               ).ToList();
 
         Dictionary<string, IEnumerable<DataItem>> redCardDateData = [];
