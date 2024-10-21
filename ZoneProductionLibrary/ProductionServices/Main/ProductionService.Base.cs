@@ -54,7 +54,7 @@ public partial class ProductionService : IProductionService
         new ProductionDepartment("Electrical",    [CardAreaOfOrigin.Electrical]),
         new ProductionDepartment("Bay 1",         [CardAreaOfOrigin.Bay1]),
         new ProductionDepartment("Bay 2",         [CardAreaOfOrigin.Bay2]),
-        new ProductionDepartment("Bay 3-4",       [CardAreaOfOrigin.Bay3, CardAreaOfOrigin.Bay4, CardAreaOfOrigin.Upholstery]),
+        new ProductionDepartment("Bay 3/4",       [CardAreaOfOrigin.Bay3, CardAreaOfOrigin.Bay4, CardAreaOfOrigin.Upholstery]),
         new ProductionDepartment("Sealing",       [CardAreaOfOrigin.Sealing]),
         new ProductionDepartment("Cabs Finishing",[CardAreaOfOrigin.CabsFinishing]),
         new ProductionDepartment("Commissioning", [CardAreaOfOrigin.Commissioning, CardAreaOfOrigin.Detailing]),

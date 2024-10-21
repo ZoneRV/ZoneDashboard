@@ -562,7 +562,7 @@ public partial class ProductionService
                         info.HandoverHistory.Add((action.Date, action.Data.Card.Due!.Value));
                     }
                     
-                    info.HandoverState = trelloCard.Due.HasValue
+                    info.HandoverState = !trelloCard.Due.HasValue
                                              ? HandoverState.Unknown
                                              : (trelloCard.DueComplete
                                                     ? HandoverState.HandedOver

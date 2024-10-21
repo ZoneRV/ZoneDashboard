@@ -8,6 +8,8 @@
 @using ZoneProductionLibrary.Models.BoardObjects
 @inherits ProductionPageBase
 
+@implements IDisposable
+
 <PageTitle>Debug</PageTitle>
 
 <RadzenTabs @ref="_tabs">
@@ -43,7 +45,7 @@
                 <RadzenStack>
                     @foreach (string line in logLines)
                     {
-                        <RadzenCard Style="@("white-space: pre; background: " + GetLogLevelColor(line))" Variant="Variant.Flat">@line</RadzenCard>
+                        <RadzenCard Style="@("white-space: pre-wrap; background: " + GetLogLevelColor(line))" Variant="Variant.Flat">@line</RadzenCard>
                     }
                 </RadzenStack>
             </RadzenCard>
@@ -80,11 +82,20 @@
     List<string> logLines = [];
     RadzenTextArea _textArea = default!;
 
+    bool _refreshLogs = true;
+
+    public new void Dispose()
+    {
+        base.Dispose();
+
+        _refreshLogs = false;
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            while (true)
+            while (_refreshLogs)
             {
                 await UpdateLogs();
                 await Task.Delay(10000);
@@ -104,8 +115,10 @@
 
         logLines = logContent.Split("<NewLogLine>").Skip(1).ToList();
         
-        if(_tabs is not null && _tabs.SelectedTab.Index == 1)
+        if(_tabs is not null && _tabs.SelectedTab is not null && _tabs.SelectedTab.Index == 1)
+        {
             StateHasChanged();
+        }
     }
 
     string GetLogLevelColor(string line)
