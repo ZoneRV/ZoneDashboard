@@ -10,13 +10,13 @@
 
         public DateDataItem(DateTime key, decimal value)
         {
-            Key = key;
+            Key = key + DateTimeOffset.Now.Offset;
             Value = value;
         }
 
         public DateDataItem(DateTime key, decimal value, object info)
         {
-            Key = key;
+            Key = key + DateTimeOffset.Now.Offset;
             Value = value;
             Info = info;
         }

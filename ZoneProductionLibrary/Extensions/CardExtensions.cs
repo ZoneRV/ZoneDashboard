@@ -193,6 +193,45 @@ namespace ZoneProductionLibrary.Extensions
 
             return results;
         }
+
+        public static IEnumerable<DateDataItem> RedCardCountByLocalDateData(this IEnumerable<RedCard> redCards, DateTime minDate, DateTime maxDate)
+        {
+            Dictionary<DateTime, int> countByDay = [];
+            List<DateDataItem> results = [];
+
+            minDate = minDate.Date;
+            maxDate = maxDate.Date;
+
+            foreach (RedCard card in redCards)
+            {
+                if(!card.CreationDate.HasValue)
+                    continue;
+
+                DateTime date = card.CreationDate.Value.LocalDateTime.Date;
+                
+                if(date > maxDate)
+                    continue;
+                
+                if(date < minDate)
+                    continue;
+
+                if (countByDay.ContainsKey(date))
+                    countByDay[date]++;
+                else
+                    countByDay.Add(date, 1);
+            }
+
+            for (; minDate < maxDate; minDate += TimeSpan.FromDays(1))
+            {
+                if(countByDay.TryGetValue(minDate, out int dataPoint))
+                    results.Add(new DateDataItem(minDate, dataPoint));
+                
+                else
+                    results.Add(new DateDataItem(minDate, 0));
+            }
+
+            return results;
+        }
         
         public static IEnumerable<DataItem> RedCardCountByLocalDateData(this IEnumerable<RedCard> redCards, bool ignoreWeekends, string dateTimeStringFormat, DateTime? minDate = null, DateTime? maxDate = null)
         {

@@ -12,7 +12,7 @@
     <RadzenStack Orientation="Orientation.Horizontal">
         <RedCardCountComponent TimeFrame="@_selectedTimeFrame.TimeSpan" @ref="_countComponent"/>
         <RadzenStack Style="display: flex; flex: auto">
-            <RedCardsPerDayComponent TimeFrame="@_selectedTimeFrame.TimeSpan" @ref=@_redCardsPerDay/>
+            <RedCardsPerDayComponent MinDate="@(DateTime.Now - TimeSpan.FromDays(56))" @ref=@_redCardsPerDay/>
             <RedCardAgeGraphComponent TimeFrame="@_selectedTimeFrame.TimeSpan" @ref=@_redCardAgeGraphComponent/>
         </RadzenStack>
     </RadzenStack>

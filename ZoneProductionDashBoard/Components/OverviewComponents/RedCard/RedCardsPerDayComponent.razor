@@ -1,19 +1,21 @@
-﻿@using ApexCharts
+﻿@using Radzen.Blazor.Rendering
+@using Serilog
+@using ApexCharts
 
 @inherits UpdatableComponent
 
 <ApexChart
-    TItem="DataItem"
+    TItem="DateDataItem"
     Title="RedCards/Day"
-    XAxisType="XAxisType.Category"
+    XAxisType="XAxisType.Datetime"
     @ref="@_redCardDateChart"
     Height="300"
-    Options="_options">
+    Options="_mainOptions">
 
     @foreach (string name in _redCardDateData.Keys)
     {
         <ApexPointSeries
-            TItem="DataItem"
+            TItem="DateDataItem"
             Items="@_redCardDateData[name]"
             Name="@name"
             YValue="item => item.Value"
@@ -21,6 +23,24 @@
             SeriesType="SeriesType.Line"
             Color="@_colorsOfKeys[name]"/>
     }
+</ApexChart>
+
+<ApexChart
+    TItem="DateDataItem"
+    XAxisType="XAxisType.Datetime"
+    @ref="@_timeRangeChart"
+    Height="100"
+    Options="_rangeOptions">
+
+    <ApexPointSeries
+        TItem="DateDataItem"
+        Name="Total"
+        Items="_totalCountData"
+        YValue="item => item.Value"
+        XValue="item => item.Key"
+        SeriesType="SeriesType.Line"
+        Color="@Colors.Black"/>
+
 </ApexChart>
 
 @code {
@@ -31,21 +51,27 @@
     public StatsService StatsService { get; set; } = default!;
     
     [Parameter, EditorRequired]
-    public TimeSpan TimeFrame { get; set; }
+    public DateTime MinDate { get; set; }
 
-    Dictionary<string, IEnumerable<DataItem>> _redCardDateData = [];
-    ApexChart<DataItem> _redCardDateChart = default!;
+    Dictionary<string, IEnumerable<DateDataItem>> _redCardDateData = [];
+    IEnumerable<DateDataItem> _totalCountData = [];
 
-    ApexChartOptions<DataItem> _options = new ApexChartOptions<DataItem>();
+    string groupName = "syncedCharts";
+    ApexChart<DateDataItem> _redCardDateChart = default!;
+    ApexChart<DateDataItem> _timeRangeChart = default!;
+
+    ApexChartOptions<DateDataItem> _mainOptions = new ApexChartOptions<DateDataItem>();
+    ApexChartOptions<DateDataItem> _rangeOptions = new ApexChartOptions<DateDataItem>();
 
     Dictionary<string, string> _colorsOfKeys = [];
    
     public override void Update()
     {
         _redCardDateData = LoadRedCardDateData();
+        _totalCountData = GetTotalData(_redCardDateData);
         base.Update();
-        _redCardDateChart.UpdateOptionsAsync(true, false, false);
         _redCardDateChart.UpdateSeriesAsync();
+        _timeRangeChart.UpdateSeriesAsync();
     }
 
     protected override void OnAfterRender(bool firstRender)
@@ -55,31 +81,99 @@
         if (firstRender)
         {
             _redCardDateData = LoadRedCardDateData();
+            _totalCountData = GetTotalData(_redCardDateData);
+
+            _rangeOptions.Annotations = new Annotations()
+            {
+                Xaxis = []
+            };
+
+            for (DateTime date = MinDate; date < DateTime.Now; date += TimeSpan.FromDays(7))
+            {
+                DateTime startOfWeek = default(DateTime);
+                
+                if (date.StartOfWeek().DayOfWeek == DayOfWeek.Sunday)
+                    startOfWeek = date.StartOfWeek() - TimeSpan.FromDays(1) + DateTimeOffset.Now.Offset;
+                
+                else if (date.StartOfWeek().DayOfWeek == DayOfWeek.Monday)
+                    startOfWeek = date.StartOfWeek() - TimeSpan.FromDays(2) + DateTimeOffset.Now.Offset;
+                
+                _rangeOptions.Annotations.Xaxis.Add(new AnnotationsXAxis()
+                {
+                    X = startOfWeek.ToUnixTimeMilliseconds(),
+                    X2 = startOfWeek.AddDays(2).ToUnixTimeMilliseconds()
+                });
+            }
+
+            _timeRangeChart.UpdateOptionsAsync(true, 
+                                               false, 
+                                               true, 
+                                               new ZoomOptions() {
+                                                   Start = (DateTime.Today + DateTimeOffset.Now.Offset).ToUnixTimeMilliseconds(),
+                                                   End = (DateTime.Today - TimeSpan.FromDays(7) + DateTimeOffset.Now.Offset).ToUnixTimeMilliseconds()
+                                               });
+            
             StateHasChanged();
         }
     }
 
     protected override void OnInitialized()
     {
-        _options.Chart.Animations = new Animations
+        _mainOptions.Chart = new Chart() { Group = groupName };
+        
+        _mainOptions.Chart.Animations = new Animations
         {
             Enabled = false
         };
 
-        _options.Chart.Toolbar = new Toolbar
+        _mainOptions.Chart.Id = "main_chart";
+
+        _mainOptions.Chart.Toolbar = new Toolbar
+        {
+            Show = false,
+            AutoSelected = AutoSelected.Pan
+        };
+
+        _mainOptions.Chart.Zoom = new Zoom
+        {
+            Enabled = false
+        };
+        
+        
+        
+        _rangeOptions.Chart = new Chart() { Group = groupName };
+        
+        _rangeOptions.Chart.Toolbar = new Toolbar
         {
             Show = false
         };
 
-        _options.Chart.Zoom = new Zoom
+        _rangeOptions.Chart.Animations = new Animations()
         {
             Enabled = false
+        };
+
+        _rangeOptions.Chart.Selection = new Selection()
+        {
+            Xaxis = new SelectionXaxis()
+            {
+                Max = (DateTime.Today + DateTimeOffset.Now.Offset).ToUnixTimeMilliseconds(),
+                Min = (DateTime.Today - TimeSpan.FromDays(7) + DateTimeOffset.Now.Offset).ToUnixTimeMilliseconds()
+            },
+            Enabled = true, 
+            Type = AxisType.X
+        };
+
+        _rangeOptions.Chart.Brush = new Brush()
+        {
+            Enabled = true,
+            Target = "main_chart"
         };
         
         base.OnInitialized();
     }
 
-    private Dictionary<string, IEnumerable<DataItem>> LoadRedCardDateData()
+    private Dictionary<string, IEnumerable<DateDataItem>> LoadRedCardDateData()
     {
         _colorsOfKeys = [];
         
@@ -87,12 +181,11 @@
                                                   .Where(
                                                       x => 
                                                           x.CreationDate.HasValue && 
-                                                          x.CreationDate.Value > DateTime.Today - TimeFrame &&
                                                           x.VanType == StatsService.SelectedVanType &&
                                                           StatsService.CardFilterOptions.RedFlagIssues.Contains(x.RedFlagIssue)
                                               ).ToList();
 
-        Dictionary<string, IEnumerable<DataItem>> redCardDateData = [];
+        Dictionary<string, IEnumerable<DateDataItem>> redCardDateData = [];
         
         if (StatsService.SelectedDepartments.Count is 0 or > 1)
         {
@@ -114,7 +207,7 @@
                 
                 _colorsOfKeys.Add(department.Name, ColorExtensions.ColorStrings.ElementAt(i % ColorExtensions.ColorStrings.Count));
                 
-                List<DataItem> data = redCards.FilterCards(department.AreaOfOrigins).RedCardCountByLocalDateData(true, "ddd d/M", DateTime.Today - TimeFrame, DateTime.Today).ToList();
+                List<DateDataItem> data = redCards.FilterCards(department.AreaOfOrigins).RedCardCountByLocalDateData(MinDate, DateTime.Today + TimeSpan.FromDays(1)).ToList();
             
                 if(data.Any(x => x.Value > 0))
                     redCardDateData.Add(department.Name, data);
@@ -124,7 +217,7 @@
         {
             foreach (CardAreaOfOrigin area in StatsService.CardFilterOptions.CardAreaOfOrigins)
             {
-                List<DataItem> data = redCards.Where(x => x.AreaOfOrigin == area).RedCardCountByLocalDateData(true, "ddd d/M", DateTime.Today - TimeFrame, DateTime.Today).ToList();
+                List<DateDataItem> data = redCards.Where(x => x.AreaOfOrigin == area).RedCardCountByLocalDateData(MinDate, DateTime.Today + TimeSpan.FromDays(1)).ToList();
                 
                 redCardDateData.Add(area.CleanName(), data);
 
@@ -132,25 +225,26 @@
             }
         }
 
-        _options.Annotations = new Annotations()
+        _mainOptions.Annotations = new Annotations()
         {
             Xaxis = []
         };
 
-        foreach (string key in redCardDateData.Values.SelectMany(data => data.Select(x => (string)x.Key)).Distinct())
+        return redCardDateData;
+    }
+
+    IEnumerable<DateDataItem> GetTotalData(Dictionary<string, IEnumerable<DateDataItem>> data)
+    {
+        Dictionary<DateTime, decimal> totalForDay = [];
+
+        foreach (DateDataItem dataPoint in data.Values.SelectMany(x => x))
         {
-            if (!string.IsNullOrEmpty(key) && !string.IsNullOrWhiteSpace(key) && key.StartsWith("Mon"))
-            {
-                _options.Annotations.Xaxis.Add(
-                    new AnnotationsXAxis()
-                    {
-                        X = key, 
-                        BorderColor = "Grey", 
-                        StrokeDashArray = 4
-                    });
-            }
+            if (!totalForDay.ContainsKey(dataPoint.Key))
+                totalForDay.Add(dataPoint.Key, dataPoint.Value);
+            else
+                totalForDay[dataPoint.Key] += dataPoint.Value;
         }
 
-        return redCardDateData;
+        return totalForDay.Select(x => new DateDataItem(x.Key, x.Value)).OrderBy(x => x.Key);
     }
 }
