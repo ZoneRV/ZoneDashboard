@@ -360,7 +360,8 @@ MigrationBackup/
 .ionide/
 
 # Jetbrains files
-.idea/
+.idea/.idea.ZoneDashboard/
+.idea/.idea.ZoneProductionDashBoardApp/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
