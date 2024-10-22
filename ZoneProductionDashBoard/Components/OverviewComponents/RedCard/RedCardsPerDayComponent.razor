@@ -12,16 +12,16 @@
     Height="300"
     Options="_mainOptions">
 
-    @foreach (string name in _redCardDateData.Keys)
+    @foreach (var series in _redCardDateData.Keys)
     {
         <ApexPointSeries
             TItem="DateDataItem"
-            Items="@_redCardDateData[name]"
-            Name="@name"
+            Items="@_redCardDateData[series]"
+            Name="@series.name"
             YValue="item => item.Value"
             XValue="item => item.Key"
             SeriesType="SeriesType.Line"
-            Color="@_colorsOfKeys[name]"/>
+            Color="@series.color"/>
     }
 </ApexChart>
 
@@ -56,7 +56,7 @@
 
     public event EventHandler<(DateTime, DateTime)>? BrushDateUpdated;
 
-    Dictionary<string, IEnumerable<DateDataItem>> _redCardDateData = [];
+    Dictionary<(string name, string color), IEnumerable<DateDataItem>> _redCardDateData = [];
     IEnumerable<DateDataItem> _totalCountData = [];
 
     string groupName = "syncedCharts";
@@ -65,16 +65,19 @@
 
     ApexChartOptions<DateDataItem> _mainOptions = new ApexChartOptions<DateDataItem>();
     ApexChartOptions<DateDataItem> _rangeOptions = new ApexChartOptions<DateDataItem>();
-
-    Dictionary<string, string> _colorsOfKeys = [];
    
     public override void Update()
     {
         _redCardDateData = LoadRedCardDateData();
         _totalCountData = GetTotalData(_redCardDateData);
         base.Update();
-        _redCardDateChart.UpdateSeriesAsync();
         _timeRangeChart.UpdateSeriesAsync();
+        
+        _redCardDateChart.UpdateSeriesAsync();
+        _redCardDateChart.UpdateOptionsAsync(true,
+                                             false,
+                                             false);
+
     }
 
     protected override void OnAfterRender(bool firstRender)
@@ -197,10 +200,32 @@
         base.OnInitialized();
     }
 
-    private Dictionary<string, IEnumerable<DateDataItem>> LoadRedCardDateData()
+    Dictionary<string, string> GetColorKeys()
     {
-        _colorsOfKeys = [];
+        Dictionary<string, string> colors = [];
         
+        if (StatsService.SelectedDepartments.Count is 0 or > 1)
+        {
+            int i = 0;
+            foreach (ProductionDepartment department in StatsService.SelectedVanType is TypeOfVan.Gen2 ? ProductionService.Gen2ProductionDepartments : ProductionService.ExpoProductionDepartments)
+            {
+                i++;
+                colors.Add(department.Name, ColorExtensions.ColorStrings.ElementAt(i % ColorExtensions.ColorStrings.Count));
+            }
+        }
+        else
+        {
+            foreach (CardAreaOfOrigin area in StatsService.CardFilterOptions.CardAreaOfOrigins)
+            {
+                colors.Add(area.CleanName(), area.ToChartColor());
+            }
+        }
+
+        return colors;
+    }
+
+    private Dictionary<(string name, string color), IEnumerable<DateDataItem>> LoadRedCardDateData()
+    {
         List<RedCard> redCards = ProductionService.GetRedCards()
                                                   .Where(
                                                       x => 
@@ -209,7 +234,7 @@
                                                           StatsService.CardFilterOptions.RedFlagIssues.Contains(x.RedFlagIssue)
                                               ).ToList();
 
-        Dictionary<string, IEnumerable<DateDataItem>> redCardDateData = [];
+        Dictionary<(string name, string color), IEnumerable<DateDataItem>> redCardDateData = [];
         
         if (StatsService.SelectedDepartments.Count is 0 or > 1)
         {
@@ -229,12 +254,12 @@
                 if(StatsService.SelectedDepartments.Count != 0 && !StatsService.SelectedDepartments.Contains(department.Name))
                     continue;
                 
-                _colorsOfKeys.Add(department.Name, ColorExtensions.ColorStrings.ElementAt(i % ColorExtensions.ColorStrings.Count));
+                string color = ColorExtensions.ColorStrings.ElementAt(i % ColorExtensions.ColorStrings.Count);
                 
                 List<DateDataItem> data = redCards.FilterCards(department.AreaOfOrigins).RedCardCountByLocalDateData(TimeSpan.FromHours(24) ,TotalMinDate, DateTime.Today + TimeSpan.FromDays(1)).ToList();
             
                 if(data.Any(x => x.Value > 0))
-                    redCardDateData.Add(department.Name, data);
+                    redCardDateData.Add((department.Name, color), data);
             }
         }
         else
@@ -243,16 +268,16 @@
             {
                 List<DateDataItem> data = redCards.Where(x => x.AreaOfOrigin == area).RedCardCountByLocalDateData(TimeSpan.FromHours(24), TotalMinDate, DateTime.Today + TimeSpan.FromDays(1)).ToList();
                 
-                redCardDateData.Add(area.CleanName(), data);
-
-                _colorsOfKeys.Add(area.CleanName(), area.ToChartColor());
+                string color = area.ToChartColor();
+                
+                redCardDateData.Add((area.CleanName(), color), data);
             }
         }
         
         return redCardDateData;
     }
 
-    IEnumerable<DateDataItem> GetTotalData(Dictionary<string, IEnumerable<DateDataItem>> data)
+    IEnumerable<DateDataItem> GetTotalData(Dictionary<(string name, string color), IEnumerable<DateDataItem>> data)
     {
         Dictionary<DateTime, decimal?> totalForDay = [];
 
@@ -275,13 +300,10 @@
 
     async Task TriggerBrushEvent(SelectionData<DateDataItem> data, CancellationToken token)
     {
-        Log.Logger.Information("Brush Updated.");
-
         await Task.Delay(500);
         
         if (token.IsCancellationRequested)
         {
-            Log.Logger.Information("Brush canceled.");
             return;
         }
 
@@ -292,8 +314,6 @@
         }
 
         var result = (DateTimeOffset.FromUnixTimeMilliseconds((long)data.XAxis.Min).LocalDateTime, DateTimeOffset.FromUnixTimeMilliseconds((long)data.XAxis.Max).LocalDateTime);
-        
-        Log.Logger.Information("Brush completed {min} - {max}.", result.Item1, result.Item2);
         
         BrushDateUpdated?.Invoke(data.Chart, result);
     }

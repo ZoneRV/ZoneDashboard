@@ -5,7 +5,7 @@
 <RadzenCard>
     <RadzenStack Orientation="Orientation.Horizontal">
         <RedCardCountComponent MinDate="_minDate" MaxDate="_maxDate" @ref="_countComponent"/>
-        <RadzenStack Style="display: flex; flex: auto">
+        <RadzenStack Style="flex: auto">
             <RedCardsPerDayComponent TotalMinDate="@(DateTime.Now - TimeSpan.FromDays(56))" @ref=@_redCardsPerDay/>
             <RedCardAgeGraphComponent MinDate="_minDate" MaxDate="_maxDate" @ref=@_redCardAgeGraphComponent/>
         </RadzenStack>

@@ -221,6 +221,9 @@ namespace ZoneProductionLibrary.Extensions
                     countByDay.Add(date, 1);
             }
 
+            if (countByDay.Count == 0)
+                return [];
+
             for (var startDate = countByDay.Keys.Min(); startDate < maxDate; startDate += timeStep)
             {
                 if(countByDay.TryGetValue(startDate, out int dataPoint))
@@ -306,7 +309,7 @@ namespace ZoneProductionLibrary.Extensions
                 int count = enumerable.Count(x => x.RedFlagIssue == type);
                 
                 if(count > 0)
-                    data.Add(new DataItem(type, count, type));
+                    data.Add(new DataItem(type, count, count));
             }
 
             return data;
