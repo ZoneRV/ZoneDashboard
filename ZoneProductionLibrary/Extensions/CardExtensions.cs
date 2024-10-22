@@ -194,7 +194,7 @@ namespace ZoneProductionLibrary.Extensions
             return results;
         }
 
-        public static IEnumerable<DateDataItem> RedCardCountByLocalDateData(this IEnumerable<RedCard> redCards, DateTime minDate, DateTime maxDate)
+        public static IEnumerable<DateDataItem> RedCardCountByLocalDateData(this IEnumerable<RedCard> redCards, TimeSpan timeStep, DateTime minDate, DateTime maxDate)
         {
             Dictionary<DateTime, int> countByDay = [];
             List<DateDataItem> results = [];
@@ -207,7 +207,7 @@ namespace ZoneProductionLibrary.Extensions
                 if(!card.CreationDate.HasValue)
                     continue;
 
-                DateTime date = card.CreationDate.Value.LocalDateTime.Date;
+                DateTime date = card.CreationDate.Value.LocalDateTime - TimeSpan.FromTicks(card.CreationDate.Value.LocalDateTime.TimeOfDay.Ticks % timeStep.Ticks);
                 
                 if(date > maxDate)
                     continue;
@@ -221,13 +221,16 @@ namespace ZoneProductionLibrary.Extensions
                     countByDay.Add(date, 1);
             }
 
-            for (; minDate < maxDate; minDate += TimeSpan.FromDays(1))
+            for (var startDate = countByDay.Keys.Min(); startDate < maxDate; startDate += timeStep)
             {
-                if(countByDay.TryGetValue(minDate, out int dataPoint))
-                    results.Add(new DateDataItem(minDate, dataPoint));
+                if(countByDay.TryGetValue(startDate, out int dataPoint))
+                    results.Add(new DateDataItem(startDate, dataPoint));
+                
+                else if(startDate.DayOfWeek is DayOfWeek.Saturday or  DayOfWeek.Sunday)
+                    results.Add(new DateDataItem(startDate, null));
                 
                 else
-                    results.Add(new DateDataItem(minDate, 0));
+                    results.Add(new DateDataItem(startDate, 0));
             }
 
             return results;

@@ -41,7 +41,10 @@
     public StatsService StatsService { get; set; } = default!;
     
     [Parameter, EditorRequired]
-    public TimeSpan TimeFrame { get; set; }
+    public DateTime MinDate { get; set; }
+    
+    [Parameter, EditorRequired]
+    public DateTime MaxDate { get; set; }
 
     public EventHandler<RedFlagIssue?>? IssueSelected;
     RedFlagIssue? _lastSelectedIssue;
@@ -105,10 +108,14 @@
         redCards = redCards.FilterCards(StatsService.CardFilterOptions)
                            .Where(x => StatsService.SelectedVanType == x.VanType
                                        && x.CreationDate.HasValue &&
-                                       x.CreationDate.Value > DateTime.Today - TimeFrame)
+                                       x.CreationDate.Value > MinDate &&
+                                       x.CreationDate.Value < MaxDate)
                            .ToList();
 
-        _outstandingRedCardCount = redCards.Count(x => x.CardStatus != CardStatus.Completed && StatsService.CardFilterOptions.RedFlagIssues.Contains(x.RedFlagIssue));
+        _outstandingRedCardCount = redCards.Count(x => 
+                                                      x.CardStatus != CardStatus.Completed && 
+                                                      StatsService.CardFilterOptions.RedFlagIssues.Contains(x.RedFlagIssue));
+        
         _completedRedCardCount = redCards.Count(x => x.CardStatus == CardStatus.Completed && StatsService.CardFilterOptions.RedFlagIssues.Contains(x.RedFlagIssue));
 
         _redCardTypeData = redCards.RedCardByTypeData();

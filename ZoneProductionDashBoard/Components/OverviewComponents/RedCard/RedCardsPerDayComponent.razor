@@ -30,7 +30,8 @@
     XAxisType="XAxisType.Datetime"
     @ref="@_timeRangeChart"
     Height="100"
-    Options="_rangeOptions">
+    Options="_rangeOptions"
+    OnBrushScrolled="OnBrushScrolled">
 
     <ApexPointSeries
         TItem="DateDataItem"
@@ -51,7 +52,9 @@
     public StatsService StatsService { get; set; } = default!;
     
     [Parameter, EditorRequired]
-    public DateTime MinDate { get; set; }
+    public DateTime TotalMinDate { get; set; }
+
+    public event EventHandler<(DateTime, DateTime)>? BrushDateUpdated;
 
     Dictionary<string, IEnumerable<DateDataItem>> _redCardDateData = [];
     IEnumerable<DateDataItem> _totalCountData = [];
@@ -88,22 +91,35 @@
                 Xaxis = []
             };
 
-            for (DateTime date = MinDate; date < DateTime.Now; date += TimeSpan.FromDays(7))
+            _mainOptions.Annotations = new Annotations()
+            {
+                Xaxis = []
+            };
+
+            for (DateTime date = TotalMinDate; date < DateTime.Now; date += TimeSpan.FromDays(7))
             {
                 DateTime startOfWeek = default(DateTime);
                 
                 if (date.StartOfWeek().DayOfWeek == DayOfWeek.Sunday)
-                    startOfWeek = date.StartOfWeek() - TimeSpan.FromDays(1) + DateTimeOffset.Now.Offset;
+                    startOfWeek = date.StartOfWeek() - TimeSpan.FromDays(1);
                 
                 else if (date.StartOfWeek().DayOfWeek == DayOfWeek.Monday)
-                    startOfWeek = date.StartOfWeek() - TimeSpan.FromDays(2) + DateTimeOffset.Now.Offset;
+                    startOfWeek = date.StartOfWeek() - TimeSpan.FromDays(2);
                 
                 _rangeOptions.Annotations.Xaxis.Add(new AnnotationsXAxis()
                 {
                     X = startOfWeek.ToUnixTimeMilliseconds(),
                     X2 = startOfWeek.AddDays(2).ToUnixTimeMilliseconds()
                 });
+                
+                _mainOptions.Annotations.Xaxis.Add(new AnnotationsXAxis()
+                {
+                    X = startOfWeek.ToUnixTimeMilliseconds(),
+                    X2 = startOfWeek.AddDays(2).ToUnixTimeMilliseconds()
+                });
             }
+
+            _redCardDateChart.UpdateOptionsAsync(true, false, false);
 
             _timeRangeChart.UpdateOptionsAsync(true, 
                                                false, 
@@ -137,6 +153,14 @@
         _mainOptions.Chart.Zoom = new Zoom
         {
             Enabled = false
+        };
+
+        _mainOptions.Stroke = new Stroke()
+        {
+            Curve = new CurveSelections()
+            {
+                Curve.Straight
+            }
         };
         
         
@@ -207,7 +231,7 @@
                 
                 _colorsOfKeys.Add(department.Name, ColorExtensions.ColorStrings.ElementAt(i % ColorExtensions.ColorStrings.Count));
                 
-                List<DateDataItem> data = redCards.FilterCards(department.AreaOfOrigins).RedCardCountByLocalDateData(MinDate, DateTime.Today + TimeSpan.FromDays(1)).ToList();
+                List<DateDataItem> data = redCards.FilterCards(department.AreaOfOrigins).RedCardCountByLocalDateData(TimeSpan.FromHours(24) ,TotalMinDate, DateTime.Today + TimeSpan.FromDays(1)).ToList();
             
                 if(data.Any(x => x.Value > 0))
                     redCardDateData.Add(department.Name, data);
@@ -217,34 +241,69 @@
         {
             foreach (CardAreaOfOrigin area in StatsService.CardFilterOptions.CardAreaOfOrigins)
             {
-                List<DateDataItem> data = redCards.Where(x => x.AreaOfOrigin == area).RedCardCountByLocalDateData(MinDate, DateTime.Today + TimeSpan.FromDays(1)).ToList();
+                List<DateDataItem> data = redCards.Where(x => x.AreaOfOrigin == area).RedCardCountByLocalDateData(TimeSpan.FromHours(24), TotalMinDate, DateTime.Today + TimeSpan.FromDays(1)).ToList();
                 
                 redCardDateData.Add(area.CleanName(), data);
 
                 _colorsOfKeys.Add(area.CleanName(), area.ToChartColor());
             }
         }
-
-        _mainOptions.Annotations = new Annotations()
-        {
-            Xaxis = []
-        };
-
+        
         return redCardDateData;
     }
 
     IEnumerable<DateDataItem> GetTotalData(Dictionary<string, IEnumerable<DateDataItem>> data)
     {
-        Dictionary<DateTime, decimal> totalForDay = [];
+        Dictionary<DateTime, decimal?> totalForDay = [];
 
         foreach (DateDataItem dataPoint in data.Values.SelectMany(x => x))
         {
             if (!totalForDay.ContainsKey(dataPoint.Key))
                 totalForDay.Add(dataPoint.Key, dataPoint.Value);
+            
+            else if (totalForDay[dataPoint.Key] is null)
+                totalForDay[dataPoint.Key] = dataPoint.Value;
+            
             else
                 totalForDay[dataPoint.Key] += dataPoint.Value;
         }
 
-        return totalForDay.Select(x => new DateDataItem(x.Key, x.Value)).OrderBy(x => x.Key);
+        return totalForDay.OrderBy(x => x.Key).Select(x => new DateDataItem(x.Key, x.Value));
+    }
+    
+    CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+
+    async Task TriggerBrushEvent(SelectionData<DateDataItem> data, CancellationToken token)
+    {
+        Log.Logger.Information("Brush Updated.");
+
+        await Task.Delay(500);
+        
+        if (token.IsCancellationRequested)
+        {
+            Log.Logger.Information("Brush canceled.");
+            return;
+        }
+
+        if (!data.XAxis.Min.HasValue || !data.XAxis.Max.HasValue)
+        {
+            Log.Logger.Warning("Chart brush has no date range value.");
+            return;
+        }
+
+        var result = (DateTimeOffset.FromUnixTimeMilliseconds((long)data.XAxis.Min).LocalDateTime, DateTimeOffset.FromUnixTimeMilliseconds((long)data.XAxis.Max).LocalDateTime);
+        
+        Log.Logger.Information("Brush completed {min} - {max}.", result.Item1, result.Item2);
+        
+        BrushDateUpdated?.Invoke(data.Chart, result);
+    }
+
+    async Task OnBrushScrolled(SelectionData<DateDataItem> data)
+    {
+        await _cancellationTokenSource.CancelAsync();
+
+        _cancellationTokenSource = new CancellationTokenSource();
+
+        await TriggerBrushEvent(data, _cancellationTokenSource.Token);
     }
 }

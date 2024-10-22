@@ -3,17 +3,11 @@
 @inherits UpdatableComponent
 
 <RadzenCard>
-    <RadzenDropDown
-        TValue="TimeFrame"
-        Data="_timeFrames"
-        bind-Value="_selectedTimeFrame"
-        Change="TimeFrameSelected"
-        Placeholder="2 Weeks"/>
     <RadzenStack Orientation="Orientation.Horizontal">
-        <RedCardCountComponent TimeFrame="@_selectedTimeFrame.TimeSpan" @ref="_countComponent"/>
+        <RedCardCountComponent MinDate="_minDate" MaxDate="_maxDate" @ref="_countComponent"/>
         <RadzenStack Style="display: flex; flex: auto">
-            <RedCardsPerDayComponent MinDate="@(DateTime.Now - TimeSpan.FromDays(56))" @ref=@_redCardsPerDay/>
-            <RedCardAgeGraphComponent TimeFrame="@_selectedTimeFrame.TimeSpan" @ref=@_redCardAgeGraphComponent/>
+            <RedCardsPerDayComponent TotalMinDate="@(DateTime.Now - TimeSpan.FromDays(56))" @ref=@_redCardsPerDay/>
+            <RedCardAgeGraphComponent MinDate="_minDate" MaxDate="_maxDate" @ref=@_redCardAgeGraphComponent/>
         </RadzenStack>
     </RadzenStack>
 </RadzenCard>
@@ -25,16 +19,9 @@
     RedCardAgeGraphComponent _redCardAgeGraphComponent = default!;
     RedCardCountComponent _countComponent = default!;
     RedCardsPerDayComponent _redCardsPerDay = default!;
-    
-    private TimeFrame _selectedTimeFrame = new TimeFrame("2 Weeks", TimeSpan.FromDays(14));
 
-    IEnumerable<TimeFrame> _timeFrames =
-    [
-        new TimeFrame("1 Week", TimeSpan.FromDays(7)),
-        new TimeFrame("2 Weeks", TimeSpan.FromDays(14)),
-        new TimeFrame("3 Weeks", TimeSpan.FromDays(21)),
-        new TimeFrame("1 Month", TimeSpan.FromDays(30)),
-    ];
+    private DateTime _minDate = DateTime.Now - TimeSpan.FromDays(7);
+    private DateTime _maxDate = DateTime.Now;
 
     protected override void OnInitialized()
     {
@@ -48,7 +35,15 @@
     protected override void OnAfterRender(bool firstRender)
     {
         if(firstRender)
+        {
             _countComponent.IssueSelected += (_, _) => Update();
+            _redCardsPerDay.BrushDateUpdated += (_, tuple) =>
+                                                {
+                                                    _minDate = tuple.Item1;
+                                                    _maxDate = tuple.Item2;
+                                                    UpdateAllButCardsPerDay();
+                                                };
+        }
         
         base.OnAfterRender(firstRender);
     }
@@ -61,17 +56,10 @@
         _redCardsPerDay.Update();
     }
 
-    private void TimeFrameSelected(object value)
+    void UpdateAllButCardsPerDay()
     {
-        _selectedTimeFrame = (TimeFrame)value;
-        Update();
-    }
-
-    protected class TimeFrame(string name, TimeSpan timeSpan)
-    {
-        public override string ToString() => Name;
-
-        private string Name { get; set; } = name;
-        protected internal TimeSpan TimeSpan { get; set; } = timeSpan;
+        base.Update();
+        _redCardAgeGraphComponent.Update();
+        _countComponent.Update();
     }
 }

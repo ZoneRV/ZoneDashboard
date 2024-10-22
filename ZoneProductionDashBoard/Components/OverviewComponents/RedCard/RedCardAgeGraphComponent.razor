@@ -31,7 +31,10 @@
     public StatsService StatsService { get; set; } = default!;
     
     [Parameter, EditorRequired]
-    public TimeSpan TimeFrame { get; set; }
+    public DateTime MinDate { get; set; }
+    
+    [Parameter, EditorRequired]
+    public DateTime MaxDate { get; set; }
     
     ApexChart<BoxPlotDataItem> _chart = default!;
 
@@ -102,7 +105,8 @@
                                                                     x.VanType == StatsService.SelectedVanType && 
                                                                     x.CardStatus == CardStatus.Completed &&
                                                                     x.CardStatusLastUpdated.HasValue && 
-                                                                    x.CardStatusLastUpdated.Value > DateTime.Today - TimeFrame &&
+                                                                    x.CardStatusLastUpdated.Value > MinDate &&
+                                                                    x.CardStatusLastUpdated.Value < MaxDate &&
                                                                     StatsService.CardFilterOptions.RedFlagIssues.Contains(x.RedFlagIssue));
 
         foreach (RedCard redCard in redCards)
