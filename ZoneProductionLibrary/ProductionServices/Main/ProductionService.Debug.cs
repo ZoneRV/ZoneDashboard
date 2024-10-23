@@ -218,15 +218,18 @@ namespace ZoneProductionLibrary.ProductionServices.Main
                 if (!report.Pass && saveReport)
                 {
                     string filePath = $"Logs/CompareReports/{oldBoard.Name}-{DateTime.Now.ToString("dd-MM-yyyy")}.json";
+                    string content = JsonConvert.SerializeObject(report, Formatting.Indented);
                     
                     if(File.Exists(filePath))
                         File.Delete(filePath);
 
                     await using (FileStream fs = File.Create(filePath))
                     {
-                        byte[] text = new UTF8Encoding(true).GetBytes(JsonConvert.SerializeObject(report, Formatting.Indented));
+                        byte[] text = new UTF8Encoding(true).GetBytes(content);
                         await fs.WriteAsync(text);
                     }
+                    
+                    Log.Warning("Board reload failed test: {results}", content);
                     
                     BoardUpdated?.Invoke(this, new BoardUpdateInfo(id));
                     

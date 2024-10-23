@@ -6,32 +6,34 @@
 
 @implements IDisposable
 
-<RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center">
+<div class="flex flex-col items-center justify-between">
     <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center">
-        <RadzenText>Outstanding Red Cards:</RadzenText>
-        <RadzenText Style="color:red" TextStyle="TextStyle.H2">@_outstandingRedCardCount</RadzenText>
-    </RadzenStack>
-    <RadzenStack AlignItems="AlignItems.Center">
-        <RadzenText>Completed Red Cards:</RadzenText>
-        <RadzenText Style="color:limegreen" TextStyle="TextStyle.H2">@_completedRedCardCount</RadzenText>
-    </RadzenStack>
-    <ApexChart
-        TItem="DataItem"
-        Height="500"
-        Width="250"
-        @ref="@_typeChart"
-        Options="@_options"
-        OnDataPointSelection="DataClicked">
-        <ApexPointSeries
+        <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center">
+            <RadzenText>Outstanding Red Cards:</RadzenText>
+            <RadzenText Style="color:red" TextStyle="TextStyle.H2">@_outstandingRedCardCount</RadzenText>
+        </RadzenStack>
+        <RadzenStack AlignItems="AlignItems.Center">
+            <RadzenText>Completed Red Cards:</RadzenText>
+            <RadzenText Style="color:limegreen" TextStyle="TextStyle.H2">@_completedRedCardCount</RadzenText>
+        </RadzenStack>
+        <ApexChart
             TItem="DataItem"
-            Items="@_redCardTypeData"
-            XValue="item => ((RedFlagIssue)item.Key).CleanName()"
-            YValue="item => item.Value"
-            SeriesType="SeriesType.Donut"
-            OrderByDescending="item => item.Y ?? 0"
-            PointColor="item => _colorLookUp[(RedFlagIssue)item.Key]"/>
-    </ApexChart>
-</RadzenStack>
+            Height="500"
+            Width="230"
+            @ref="@_typeChart"
+            Options="@_options"
+            OnDataPointSelection="DataClicked">
+            <ApexPointSeries
+                TItem="DataItem"
+                Items="@_redCardTypeData"
+                XValue="item => ((RedFlagIssue)item.Key).CleanName()"
+                YValue="item => item.Value"
+                SeriesType="SeriesType.Donut"
+                OrderByDescending="item => item.Y ?? 0"
+                PointColor="item => _colorLookUp[(RedFlagIssue)item.Key]"/>
+        </ApexChart>
+    </RadzenStack>
+</div>
 
 @code {
     [Inject]

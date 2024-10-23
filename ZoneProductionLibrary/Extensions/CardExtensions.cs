@@ -223,8 +223,10 @@ namespace ZoneProductionLibrary.Extensions
 
             if (countByDay.Count == 0)
                 return [];
+            
+            var startDate = minDate - TimeSpan.FromTicks(minDate.TimeOfDay.Ticks % timeStep.Ticks); 
 
-            for (var startDate = countByDay.Keys.Min(); startDate < maxDate; startDate += timeStep)
+            for (; startDate < maxDate; startDate += timeStep)
             {
                 if(countByDay.TryGetValue(startDate, out int dataPoint))
                     results.Add(new DateDataItem(startDate, dataPoint));

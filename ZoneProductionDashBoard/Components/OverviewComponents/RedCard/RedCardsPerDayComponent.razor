@@ -55,6 +55,7 @@
     public DateTime TotalMinDate { get; set; }
 
     public event EventHandler<(DateTime, DateTime)>? BrushDateUpdated;
+    (DateTime min, DateTime max) LastZoom = (DateTime.Now, DateTime.Now);
 
     Dictionary<(string name, string color), IEnumerable<DateDataItem>> _redCardDateData = [];
     IEnumerable<DateDataItem> _totalCountData = [];
@@ -74,9 +75,9 @@
         _timeRangeChart.UpdateSeriesAsync();
         
         _redCardDateChart.UpdateSeriesAsync();
-        _redCardDateChart.UpdateOptionsAsync(true,
+        /*_redCardDateChart.UpdateOptionsAsync(true,
                                              false,
-                                             false);
+                                             true);*/
 
     }
 
@@ -313,9 +314,9 @@
             return;
         }
 
-        var result = (DateTimeOffset.FromUnixTimeMilliseconds((long)data.XAxis.Min).LocalDateTime, DateTimeOffset.FromUnixTimeMilliseconds((long)data.XAxis.Max).LocalDateTime);
+        LastZoom = (DateTimeOffset.FromUnixTimeMilliseconds((long)data.XAxis.Min).LocalDateTime, DateTimeOffset.FromUnixTimeMilliseconds((long)data.XAxis.Max).LocalDateTime);
         
-        BrushDateUpdated?.Invoke(data.Chart, result);
+        BrushDateUpdated?.Invoke(data.Chart, LastZoom);
     }
 
     async Task OnBrushScrolled(SelectionData<DateDataItem> data)
