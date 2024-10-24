@@ -142,9 +142,6 @@ namespace ZoneProductionLibrary.Extensions
                         results[pos.PositionName] += taskMinutes / divisor;
                     }
                 }
-                
-                if(results.First().Value > 0)
-                    Console.WriteLine("test");
             }
 
             return results;

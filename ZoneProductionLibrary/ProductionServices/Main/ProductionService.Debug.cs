@@ -229,7 +229,7 @@ namespace ZoneProductionLibrary.ProductionServices.Main
                         await fs.WriteAsync(text);
                     }
                     
-                    Log.Warning("Board reload failed test: {results}", content);
+                    Log.Warning("Board reload failed test:\n{results}", content);
                     
                     BoardUpdated?.Invoke(this, new BoardUpdateInfo(id));
                     

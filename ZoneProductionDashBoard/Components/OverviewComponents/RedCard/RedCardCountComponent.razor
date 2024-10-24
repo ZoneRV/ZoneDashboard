@@ -27,7 +27,7 @@
                 TItem="DataItem"
                 Items="@_redCardTypeData"
                 XValue="item => ((RedFlagIssue)item.Key).CleanName()"
-                YValue="item => item.Value"
+                YValue="item => item.Value" 
                 SeriesType="SeriesType.Donut"
                 OrderByDescending="item => item.Y ?? 0"
                 PointColor="item => _colorLookUp[(RedFlagIssue)item.Key]"/>
@@ -110,8 +110,8 @@
         redCards = redCards.FilterCards(StatsService.CardFilterOptions)
                            .Where(x => StatsService.SelectedVanType == x.VanType
                                        && x.CreationDate.HasValue &&
-                                       x.CreationDate.Value > MinDate &&
-                                       x.CreationDate.Value < MaxDate)
+                                       x.CreationDate.Value.LocalDateTime.Date >= MinDate.Date &&
+                                       x.CreationDate.Value.LocalDateTime.Date <= MaxDate.Date)
                            .ToList();
 
         _outstandingRedCardCount = redCards.Count(x => 

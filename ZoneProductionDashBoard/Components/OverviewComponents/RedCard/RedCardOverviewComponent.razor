@@ -1,4 +1,5 @@
-﻿@using Orientation = Radzen.Orientation
+﻿@using System.Diagnostics
+@using Orientation = Radzen.Orientation
 
 @inherits UpdatableComponent
 
@@ -6,8 +7,10 @@
     <RadzenStack Orientation="Orientation.Horizontal">
         <RedCardCountComponent MinDate="_minDate" MaxDate="_maxDate" @ref="_countComponent"/>
         <RadzenStack Style="flex: auto">
-            <RedCardsPerDayComponent TotalMinDate="@(DateTime.Now - TimeSpan.FromDays(28))" @ref=@_redCardsPerDay/>
-            <RedCardAgeGraphComponent MinDate="_minDate" MaxDate="_maxDate" @ref=@_redCardAgeGraphComponent/>
+            <div style="padding-right: 50px">
+                <RedCardsPerDayComponent TotalMinDate="@(DateTime.Now - TimeSpan.FromDays(31))" @ref=@_redCardsPerDay/>
+                <RedCardAgeGraphComponent MinDate="_minDate" MaxDate="_maxDate" @ref=@_redCardAgeGraphComponent/>
+            </div>
         </RadzenStack>
     </RadzenStack>
 </RadzenCard>

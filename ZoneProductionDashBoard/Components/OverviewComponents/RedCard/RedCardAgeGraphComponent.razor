@@ -104,10 +104,10 @@
                                                          .Where(x => 
                                                                     x.VanType == StatsService.SelectedVanType && 
                                                                     x.CardStatus == CardStatus.Completed &&
+                                                                    StatsService.CardFilterOptions.RedFlagIssues.Contains(x.RedFlagIssue) &&
                                                                     x.CardStatusLastUpdated.HasValue && 
-                                                                    x.CardStatusLastUpdated.Value > MinDate &&
-                                                                    x.CardStatusLastUpdated.Value < MaxDate &&
-                                                                    StatsService.CardFilterOptions.RedFlagIssues.Contains(x.RedFlagIssue));
+                                                                    x.CardStatusLastUpdated.Value.LocalDateTime.Date >= MinDate.Date &&
+                                                                    x.CardStatusLastUpdated.Value.LocalDateTime.Date <= MaxDate.Date);
 
         foreach (RedCard redCard in redCards)
         {

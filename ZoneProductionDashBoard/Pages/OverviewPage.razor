@@ -17,7 +17,7 @@
             <RadzenTabsItem Text="Production">
                 <VanProductionOverviewComponent @ref="_production"/>
             </RadzenTabsItem>
-            <RadzenTabsItem Text="Redline Deadline">
+            <RadzenTabsItem Text="Redline Deadline" Disabled="true">
                 <DepartmentAverageRedLineDeadLineComponent @ref="_redLine"/>
             </RadzenTabsItem>
             <RadzenTabsItem Text="Handover View">
@@ -69,7 +69,6 @@ else
             
             if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("tab", out var value))
             {
-                string tab = value.FirstOrDefault()!;
 
                 if (value == "Red Cards")
                 {

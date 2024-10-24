@@ -72,18 +72,22 @@
         _redCardDateData = LoadRedCardDateData();
         _totalCountData = GetTotalData(_redCardDateData);
         base.Update();
-        _timeRangeChart.UpdateSeriesAsync();
-        
         _redCardDateChart.UpdateSeriesAsync();
-        /*_redCardDateChart.UpdateOptionsAsync(true,
-                                             false,
-                                             true);*/
+        _timeRangeChart.UpdateSeriesAsync();
 
+        /*_timeRangeChart.UpdateOptionsAsync(true,
+                                                 false,
+                                                 true,
+                                                 new ZoomOptions()
+                                                 {
+                                                     Start = (LastZoom.min).ToUnixTimeMilliseconds(),
+                                                     End = (LastZoom.max).ToUnixTimeMilliseconds()
+                                                 });*/
     }
 
-    protected override void OnAfterRender(bool firstRender)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        base.OnAfterRender(firstRender);
+        await base.OnAfterRenderAsync(firstRender);
 
         if (firstRender)
         {
@@ -123,15 +127,14 @@
                 });
             }
 
-            _redCardDateChart.UpdateOptionsAsync(true, false, false);
-
-            _timeRangeChart.UpdateOptionsAsync(true, 
-                                               false, 
-                                               true, 
-                                               new ZoomOptions() {
-                                                   Start = (DateTime.Today + DateTimeOffset.Now.Offset).ToUnixTimeMilliseconds(),
-                                                   End = (DateTime.Today - TimeSpan.FromDays(7) + DateTimeOffset.Now.Offset).ToUnixTimeMilliseconds()
-                                               });
+            await _redCardDateChart.UpdateOptionsAsync(true, false, false);
+            await _timeRangeChart.UpdateOptionsAsync(true, 
+                                                     false, 
+                                                     true, 
+                                                     new ZoomOptions() {
+                                                         Start = (DateTime.Today + DateTimeOffset.Now.Offset).ToUnixTimeMilliseconds(),
+                                                         End = (DateTime.Today - TimeSpan.FromDays(7) + DateTimeOffset.Now.Offset).ToUnixTimeMilliseconds()
+                                                     });
             
             StateHasChanged();
         }
@@ -189,7 +192,12 @@
                 Min = (DateTime.Today - TimeSpan.FromDays(7) + DateTimeOffset.Now.Offset).ToUnixTimeMilliseconds()
             },
             Enabled = true, 
-            Type = AxisType.X
+            Type = AxisType.X, 
+            Fill = new SelectionFill()
+            {
+                Opacity = .5, 
+                Color = "#add8e6"
+            }
         };
 
         _rangeOptions.Chart.Brush = new Brush()
@@ -294,7 +302,7 @@
                 totalForDay[dataPoint.Key] += dataPoint.Value;
         }
 
-        return totalForDay.OrderBy(x => x.Key).Select(x => new DateDataItem(x.Key, x.Value));
+        return totalForDay.OrderBy(x => x.Key).Select(x => new DateDataItem(x.Key - DateTimeOffset.Now.Offset, x.Value));
     }
     
     CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
