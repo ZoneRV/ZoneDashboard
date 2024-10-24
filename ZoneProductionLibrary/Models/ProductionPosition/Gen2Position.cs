@@ -72,7 +72,7 @@ public class Gen2ProductionPosition : IProductionPosition
             this.PositionId = Positions.Single(x => x.name == name).id;
 
         else
-            this.PositionId = BoardPositions.Single(x => x.name == name).id;
+            this.PositionId = BoardPositions.First(x => x.name == name).id;
     }
 
     public static bool TryGetGen2Position(ProductionPositionEntryType type, string name, out IProductionPosition? position)
@@ -98,7 +98,7 @@ public class Gen2ProductionPosition : IProductionPosition
             return true;
         }
         
-        Log.Logger.Verbose("{listName} is not a valid Gen 2 list name", name);
+        Log.Logger.Debug("{listName} is not a valid Gen 2 list name", name);
 
         position = null;
         return false;
@@ -123,6 +123,7 @@ public class Gen2ProductionPosition : IProductionPosition
     public static readonly (string name, int id)[] BoardPositions =
     [
         ("CHASSIS MODULE", 0),
+        ("[QC] Chassis Checklist", 0),
         ("WELDING", 0),
         ("SUB ASSAMBLY", 0),
         ("SUB ASSAMBLY (REV001)", 0),
@@ -130,6 +131,7 @@ public class Gen2ProductionPosition : IProductionPosition
         ("SUB ASSAMBLY (REV003)", 0),
         ("CABS PREP", 0),
         ("PAINT BAY", 0),
+        ("[QC] Paint Bay Checklist", 0),
         ("CABs MODULE", 0),
         ("CABs MODULE (REV001)", 0),
         ("CABs MODULE (REV002)", 0),
@@ -138,10 +140,12 @@ public class Gen2ProductionPosition : IProductionPosition
         ("CABs MODULE (REV005)", 0),
         ("QA Cabs Gen2 Checklist (REV002)", 1),
         ("QA Cabs Gen2 Checklist", 1),
+        ("[QA] Cabs Gen2 Checklist", 1),
         ("BAY 1 FURNITURE INSTALL (REV001)", 2),
         ("BAY 1 FURNITURE INSTALL (REV002)", 2),
         ("BAY 1 FURNITURE INSTALL (REV003)", 2),
         ("BAY 1 FURNITURE INSTALL", 2),
+        ("[QC] Bay1 Checklist", 2),
         ("Bay Leader Inspection Bay1", 2),
         ("BAY 1 FURNITURE INSTALL changed", 2),
         ("BAY 2 ELECTRICAL(REV001)", 3),
@@ -152,13 +156,17 @@ public class Gen2ProductionPosition : IProductionPosition
         ("BAY 2 ELECTRICAL (REV003)", 3),
         ("BAY 2 ELECTRICAL", 3),
         ("BAY 2 ELECTRICAL ", 3),
+        ("[QC] Bay2 Checklist", 3),
+        ("[QA] Cabs Gen2 Checklist", 3),
         ("WALL/ROOF MOD (REV001)", 3),
         ("WALL/ROOF MOD (REV002)", 3),
         ("WALL/ROOF MOD (REV003)", 3),
         ("WALL/ROOF MOD", 3),
+        ("[QC] Wall/Roof Mod Checklist", 3),
         ("WALL/ROOF MOD QC", 3),
         ("Bay Leader Inspection Wall/Roof Mod", 3),
         ("BAY 3 WALL/ROOF INSTALL", 4),
+        ("[QC] Bay3 Checklist", 4),
         ("BAY 3 WALL/ROOF INSTALL changed", 4),
         ("BAY 4 SEALING & ELECTRICAL (REV001)", 5),
         ("BAY 4 SEALING & ELECTRICAL (REV002)", 5),
@@ -170,6 +178,9 @@ public class Gen2ProductionPosition : IProductionPosition
         ("BAY 5 (REV003)", 6),
         ("BAY 5", 6),
         ("Upholstery", 6),
+        ("Bay 6 Upholstery", 7),
+        ("BAY 6 Upholstery", 7),
+        ("[QC] Bay6 Upholstery Checklist", 7),
         ("BAY 5 SEALING", 6),
         ("BAY 6 COMMISSIONING REPORT - PTI's", 7),
         ("BAY 6 COMMISSIONING", 7),

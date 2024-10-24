@@ -74,7 +74,7 @@ public class ExpoProductionPosition : IProductionPosition
             this.PositionId = Positions.Single(x => x.name == name).id;
 
         else
-            this.PositionId = BoardPositions.Single(x => x.name == name).id;
+            this.PositionId = BoardPositions.First(x => x.name == name).id;
     }
 
     public static bool TryGetExpoPosition(ProductionPositionEntryType type, string name, out IProductionPosition? position)
@@ -100,7 +100,7 @@ public class ExpoProductionPosition : IProductionPosition
             return true;
         }
         
-        Log.Logger.Verbose("{listName} is not a valid Expo list name", name);
+        Log.Logger.Debug("{listName} is not a valid Expo list name", name);
 
         position = null;
         return false;
