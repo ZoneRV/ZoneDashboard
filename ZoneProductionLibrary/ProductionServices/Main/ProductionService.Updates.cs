@@ -272,15 +272,23 @@ public partial class ProductionService
             if (TryRemoveCard(e.CardId, out CardType cardType))
             {
                 if (cardType == CardType.JobCard)
+                {
+                    BoardUpdated?.Invoke(this, new BoardUpdateInfo(e.BoardId, BoardUpdateType.JobCard, e.CardId));
                     Log.Logger.Debug("Job Card deleted from {cardName}:{boardId}", e.CardName, e.BoardId);
+                }
 
                 if (cardType == CardType.RedCard)
+                {
+                    BoardUpdated?.Invoke(this, new BoardUpdateInfo(e.BoardId, BoardUpdateType.RedCard, e.CardId));
                     Log.Logger.Debug("Red Card deleted from {cardName}:{boardId}", e.CardName, e.BoardId);
+                }
 
                 if (cardType == CardType.YellowCard)
+                {
+                    BoardUpdated?.Invoke(this, new BoardUpdateInfo(e.BoardId, BoardUpdateType.YellowCard, e.CardId));
                     Log.Logger.Debug("Yellow Card deleted from {cardName}:{boardId}", e.CardName, e.BoardId);
+                }
 
-                BoardUpdated?.Invoke(this, new BoardUpdateInfo(e.BoardId, BoardUpdateType.JobCard, e.CardId));
             }
         }
     }
