@@ -32,9 +32,9 @@ public class ExpoProductionPosition : IProductionPosition
     public static ExpoProductionPosition First => new ExpoProductionPosition(0);
     public static ExpoProductionPosition Last => new ExpoProductionPosition(Positions.Last().id);
 
-    public static IEnumerable<ExpoProductionPosition> GetAll()
+    public static IEnumerable<IProductionPosition> GetAll()
     {
-        List<ExpoProductionPosition> results = [];
+        List<IProductionPosition> results = [];
 
         foreach ((string name, int id) position in Positions)
         {

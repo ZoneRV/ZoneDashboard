@@ -54,9 +54,9 @@ public class Gen2ProductionPosition : IProductionPosition
     public static Gen2ProductionPosition First => new Gen2ProductionPosition(0);
     public static Gen2ProductionPosition Last => new Gen2ProductionPosition(Positions.Last().id);
 
-    public static IEnumerable<Gen2ProductionPosition> GetAll()
+    public static IEnumerable<IProductionPosition> GetAll()
     {
-        List<Gen2ProductionPosition> results = [];
+        List<IProductionPosition> results = [];
 
         foreach ((string name, int id) position in Positions)
         {

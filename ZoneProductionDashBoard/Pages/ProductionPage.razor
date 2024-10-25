@@ -1,0 +1,55 @@
+﻿@page "/production/"
+
+@inherits ProductionPageBase
+
+<PageTitle>Production</PageTitle>
+
+<RadzenStack Wrap="FlexWrap.Wrap" Gap="1rem">
+    <ProductionLineViewComponent TypeOfVan="TypeOfVan.Gen2" Vans="_gen2Boards" @ref="_gen2Line"></ProductionLineViewComponent>
+    <ProductionLineViewComponent TypeOfVan="TypeOfVan.Expo" Vans="_expoBoards" @ref="_expoLine"></ProductionLineViewComponent>
+</RadzenStack>
+
+@code {
+    List<VanBoard> _gen2Boards = [];
+    List<VanBoard> _expoBoards = [];
+
+    ProductionLineViewComponent _gen2Line = default!;
+    ProductionLineViewComponent _expoLine = default!;
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (firstRender)
+        {
+            ShowLoadingDialog();
+
+            SubscribedIds = ProductionService.ProductionVanIds(false).ToList();
+
+            var boards = await ProductionService.GetBoardsAsync(Progress, SubscribedIds);
+
+            _gen2Boards = boards.Where(x => x.VanModel.IsGen2()).ToList();
+            _expoBoards = boards.Where(x => !x.VanModel.IsGen2()).ToList();
+
+            CloseLoadingDialog();
+            
+            _gen2Line.Update();
+            _expoLine.Update();
+            
+            StateHasChanged();
+        }
+    }
+
+    protected override void UpdateIfIdSubscribed(object? sender, BoardUpdateInfo e)
+    {
+        SubscribedIds = ProductionService.ProductionVanIds(false).ToList();
+        
+        if( 
+            (e.Type is BoardUpdateType.Position or BoardUpdateType.Hanover) ||
+            (e.TotalBoardUpdate || e.Type is BoardUpdateType.JobCard or BoardUpdateType.RedCard && SubscribedIds.Contains(e.BoardId)))
+        {
+            _gen2Line.Update();
+            _expoLine.Update();
+        }
+    }
+}

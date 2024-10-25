@@ -7,12 +7,13 @@
     <div class="top-row" style="position: relative; z-index: 10">
         <div style="flex: auto">
             <RadzenMenu Style="width: min-content">
-                <RadzenMenuItem Text="Handover" Path="handover" Icon="event_upcoming"></RadzenMenuItem>
-                <RadzenMenuItem Text="Overview" Path="overview" Icon="assessment"></RadzenMenuItem>
-                <RadzenMenuItem Text="Cards" Path="cards" Icon="stack"></RadzenMenuItem>
+                <RadzenMenuItem Text="Handover" Path="handover" Icon="event_upcoming"/>
+                <RadzenMenuItem Text="Production" Path="production" Icon="factory" />
+                <RadzenMenuItem Text="Overview" Path="overview" Icon="assessment"/>
+                <RadzenMenuItem Text="Cards" Path="cards" Icon="stack"/>
                 @if (Debugger.IsAttached)
                 {
-                    <RadzenMenuItem Text="Debug" Icon="bug_report" Path="debug"></RadzenMenuItem>
+                    <RadzenMenuItem Text="Debug" Icon="bug_report" Path="debug"/>
                 }
             </RadzenMenu>
         </div>
