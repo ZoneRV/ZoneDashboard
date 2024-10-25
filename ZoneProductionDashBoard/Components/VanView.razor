@@ -39,6 +39,9 @@
         <RadzenTabsItem Text="Red Cards">
             <RedCardGridComponent RedCards="Van.RedCards" Style="height: 85vh" @ref="@_redCardGrid" IsSingleVan="true"/>
         </RadzenTabsItem>
+        <RadzenTabsItem Text="Yellow Cards">
+            <YellowCardGridComponent YellowCards="Van.YellowCards" Style="height: 85vh" IsSingleVan="true"/>
+        </RadzenTabsItem>
         <RadzenTabsItem Text="History">
             <VanRedLineDeadLineComponent Van="Van" @ref="@_redLineDeadLineComponent"/>
         </RadzenTabsItem>

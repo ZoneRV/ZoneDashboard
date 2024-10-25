@@ -552,6 +552,11 @@ public partial class ProductionService : IProductionService
                            GetTrelloMembers(redCardObject.MemberIds), GetComments(redCardObject.CommentIds));
     }
 
+    private YellowCard GetYellowCard(RedCardObject redCardObject)
+    {
+        return new YellowCard(redCardObject, ProductionVans.Values.Single(x => x.Id == redCardObject.BoardId), GetComments(redCardObject.CommentIds));
+    }
+
     private JobCard? GetJobCard(JobCardObject cardObject)
     {
         if (ProductionVans.Values.Single(x => x.Id == cardObject.BoardId).VanModel.IsGen2())

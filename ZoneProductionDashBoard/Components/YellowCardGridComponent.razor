@@ -1,0 +1,266 @@
+﻿@using System.Collections
+@using System.Text.RegularExpressions
+@using Microsoft.AspNetCore.WebUtilities
+@using Serilog
+@using ZoneProductionDashBoard.Components.VanTreeNodes
+@inherits UpdatableComponent
+
+<RadzenDataGrid
+    @ref="@_dataGrid"
+    Data="@YellowCards"
+    TItem="YellowCard"
+    AllowVirtualization="false"
+    AllowSorting="true"
+    AllowColumnResize="true"
+    AllowFiltering="true"
+    FilterMode="FilterMode.SimpleWithMenu"
+    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+    Render="OnRender"
+    GroupRowRender="OnGroupRender"
+    Style="@Style">
+    
+    <GroupHeaderTemplate>
+        <RadzenText>@context.Data.Key - @(context.Data.Items.Cast<YellowCard>().Count(x => x.CardStatus == CardStatus.Completed))/@context.Data.Count</RadzenText>
+    </GroupHeaderTemplate>
+    
+    <Columns>
+        @if (!IsSingleVan)
+        {
+            <RadzenDataGridColumn TItem="YellowCard" Property="BoardName" Title="Van" Frozen="true"
+                                  Sortable="false" Width="200px">
+
+                <FilterTemplate>
+                    <RadzenTextBox Change="SetVanNameFilters" Style="width: 100%"/>
+                </FilterTemplate>
+
+                <FooterTemplate>
+                    <RadzenText>Number Of Vans: @($"{_dataGrid.View.Select(x => x.BoardName.ToLower()).Distinct().Count()}")</RadzenText>
+                </FooterTemplate>
+            </RadzenDataGridColumn>
+        }
+
+        <RadzenDataGridColumn TItem="YellowCard" Property="Name" Title="Name"
+                              Sortable="false" Template="YellowCardNameRenderFragment" MinWidth="500px">
+            <FilterTemplate>
+                <RadzenTextBox @ref="@_nameFilterBox" Change="SetNameFilters" Style="width: 100%"/>
+            </FilterTemplate>
+
+            <FooterTemplate>
+                <RadzenText>Showing @($"{_dataGrid.View.Count()} out of {YellowCards.Count()}")</RadzenText>
+            </FooterTemplate>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn TItem="YellowCard" Visible="false" Property="PartName"></RadzenDataGridColumn>
+
+        <RadzenDataGridColumn TItem="YellowCard" SortProperty="CardStatus" FilterProperty="CardStatus" Title="Status" Template="CardStatusRender" Width="165px">
+            <FilterTemplate>
+                <RadzenDropDown TValue="string" Data="_statusOptions" Change="SetStatusFilters" AllowClear="true" Placeholder="Select..."></RadzenDropDown>
+            </FilterTemplate>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn TItem="YellowCard" SortProperty="AreaOfOrigin" FilterProperty="AreaOfOrigin" Title="Area Of Origin" Template="CardAreaRender" Width="165px"/>
+
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    [Inject] 
+    public NavigationManager NavigationManager { get; set; } = default!;
+    
+    [Parameter, EditorRequired]
+    public IEnumerable<YellowCard> YellowCards { get; set; } = default!;
+    
+    [Parameter, EditorRequired]
+    public bool IsSingleVan { get; set; }
+
+    [Parameter] 
+    public string Style { get; set; } = string.Empty;
+    
+    private RadzenDataGrid<YellowCard> _dataGrid = default!;
+    private RadzenTextBox _nameFilterBox = default!;
+    private IEnumerable<string> _statusOptions = ["Completed", "Not Completed", "Not Started", "In Progress", "Unable To Complete"];
+
+    protected override void OnInitialized()
+    {
+        ArgumentNullException.ThrowIfNull(YellowCards);
+        ArgumentNullException.ThrowIfNull(NavigationManager);
+        
+        NavigationManager.LocationChanged += HandleLocationChanged;
+        
+        base.OnInitialized();
+    }
+    
+    void OnRender(DataGridRenderEventArgs<YellowCard> args)
+    {
+        if(args.FirstRender && !IsSingleVan)
+        {
+            args.Grid.Groups.Add(new GroupDescriptor(){ Property = "PartName" });
+            
+            StateHasChanged();
+        }
+    }
+
+    void OnGroupRender(GroupRowRenderEventArgs args)
+    {
+        if(args.FirstRender)
+            args.Expanded = false;
+    }
+    
+    void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        foreach (RadzenDataGridColumn<YellowCard> column in _dataGrid.ColumnsCollection)
+        {
+            _dataGrid.ClearFilter(column, false, false);
+        }
+
+        SetFiltersFromQuery();
+        StateHasChanged();
+    }
+
+    void SetStatusFilters(object? value)
+    {
+        RadzenDataGridColumn<YellowCard>? column = _dataGrid.ColumnsCollection.Single(x => x.Title == "Status");
+
+        if (value is null)
+        {
+            column.ClearFilters();
+            return;
+        }
+
+        string selection = (string)value;
+
+        if (selection == "Completed")
+        {
+            column.ClearFilters();
+            column.FilterOperator = FilterOperator.Equals;
+            column.FilterValue = CardStatus.Completed;
+        }
+        else if (selection == "Not Completed")
+        {
+            column.ClearFilters();
+            column.FilterOperator = FilterOperator.NotEquals;
+            column.FilterValue = CardStatus.Completed;
+        }
+        else if (selection == "Not Started")
+        {
+            column.ClearFilters();
+            column.FilterOperator = FilterOperator.Equals;
+            column.FilterValue = CardStatus.NotStarted;
+        }
+        else if (selection == "In Progress")
+        {
+            column.ClearFilters();
+            column.FilterOperator = FilterOperator.Equals;
+            column.FilterValue = CardStatus.InProgress;
+        }
+        else if (selection == "Unable To Complete")
+        {
+            column.ClearFilters();
+            column.FilterOperator = FilterOperator.Equals;
+            column.FilterValue = CardStatus.UnableToComplete;
+        }
+    }
+    
+    void SetNameFilters(object? value)
+    {
+        RadzenDataGridColumn<YellowCard>? column = _dataGrid.ColumnsCollection.Single(x => x.Title == "Name");
+
+        if (value is null)
+        {
+            column.ClearFilters();
+            return;
+        }
+
+        string selection = (string)value;
+        
+        if (string.IsNullOrEmpty(selection) || string.IsNullOrWhiteSpace(selection))
+        {
+            column.ClearFilters();
+            return;
+        }
+
+        column.ClearFilters();
+        column.FilterOperator = FilterOperator.Contains;
+        column.FilterValue = selection;
+    }
+    
+    void SetVanNameFilters(object? value)
+    {
+        RadzenDataGridColumn<YellowCard>? column = _dataGrid.ColumnsCollection.Single(x => x.Title == "Van");
+
+        if (value is null)
+        {
+            column.ClearFilters();
+            return;
+        }
+
+        string selection = (string)value;
+        
+        if (string.IsNullOrEmpty(selection) || string.IsNullOrWhiteSpace(selection))
+        {
+            column.ClearFilters();
+            return;
+        }
+
+        column.ClearFilters();
+        column.FilterOperator = FilterOperator.Contains;
+        column.FilterValue = selection;
+    }
+
+    void SetFiltersFromQuery()
+    {
+        Uri uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+
+        if(QueryHelpers.ParseQuery(uri.Query).TryGetValue("name", out var redCardNames))
+        {
+            string? redCardName = redCardNames.FirstOrDefault();
+
+            if (!string.IsNullOrEmpty(redCardName))
+            {
+                _nameFilterBox.Value = redCardName.ToLower();
+            }
+        }
+
+        _dataGrid.Reload();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            SetFiltersFromQuery();
+        }
+        
+        base.OnAfterRender(firstRender);
+    }
+
+    private RenderFragment YellowCardNameRenderFragment(YellowCard yellowCard)
+    {
+        return __builder =>
+               {
+                   <RadzenTree Style="overflow: hidden">
+                       <YellowCardTreeNodeComponent YellowCard="yellowCard" HideCompleted="false" ShowComments="true" ShowAttachments="true" />
+                   </RadzenTree>
+               };
+    }
+    
+    private RenderFragment CardStatusRender(YellowCard yellowCard)
+    {
+        return __builder =>
+               {
+                   <RadzenCard Style="@("height: 4em; background:" + yellowCard.CardStatus.GetIndicatorColor().ToHex())">
+                       <RadzenText Style="white-space: pre-wrap; text-align: center;">@yellowCard.CardStatus.CleanName()</RadzenText>
+                   </RadzenCard>
+               };
+    }
+
+    private RenderFragment CardAreaRender(YellowCard yellowCard)
+    {
+        return __builder =>
+               {
+                    <RadzenCard Style="@("height: 4em; background:" + yellowCard.AreaOfOrigin.ToChartColor())">
+                        <RadzenText Style="white-space: pre-wrap; text-align: center;">@yellowCard.AreaOfOrigin.CleanName()</RadzenText>
+                    </RadzenCard>
+               };
+    }
+}

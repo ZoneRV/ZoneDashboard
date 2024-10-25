@@ -5,11 +5,12 @@ namespace ZoneProductionLibrary.Models.Boards
     public class Department
     {
         public string Name { get; }
-        public List<JobCard> JobCards { get; } = new List<JobCard>();
+        public List<JobCard> JobCards { get; } = [];
         public List<JobCard> PippsCards => JobCards.Where(x => x.Name == "Team Leader PIPP").ToList();
         public List<JobCard> BayLeaderSignOfCards => JobCards.Where(x => x.Name == "Bay-Leader -- Quality Sign-Off").ToList();
-        public List<RedCard> RedCards { get; private set; } = new List<RedCard>();
-        public List<CardAreaOfOrigin> RedcardsResponsibleFor { get; } = new List<CardAreaOfOrigin>();
+        public List<RedCard> RedCards { get; private set; } = [];
+        public List<YellowCard> YellowCards { get; } = [];
+        public List<CardAreaOfOrigin> RedcardsResponsibleFor { get; } = [];
 
 
         public double RedcardCompletionRate => RedCards.Count == 0 ? 1d : RedCards.Count(x => x.CardStatus == CardStatus.Completed) / (double)RedCards.Count;
@@ -20,11 +21,12 @@ namespace ZoneProductionLibrary.Models.Boards
 
         public override string ToString() => Name;
 
-        internal Department(string name, IEnumerable<JobCard> jobCards, IEnumerable<RedCard> redCards, IEnumerable<CardAreaOfOrigin> redcardsResponisbleFor)
+        internal Department(string name, IEnumerable<JobCard> jobCards, IEnumerable<RedCard> redCards, IEnumerable<YellowCard> yellowCards,IEnumerable<CardAreaOfOrigin> redcardsResponisbleFor)
         {
             Name = name;
             JobCards = jobCards.ToList();
-            RedCards = redCards.Where(x => redcardsResponisbleFor.Contains(x.AreaOfOrigin)).ToList(); ;
+            RedCards = redCards.Where(x => redcardsResponisbleFor.Contains(x.AreaOfOrigin)).ToList();
+            YellowCards = yellowCards.Where(x => redcardsResponisbleFor.Contains(x.AreaOfOrigin)).ToList();
             RedcardsResponsibleFor = redcardsResponisbleFor.ToList();
         }
 

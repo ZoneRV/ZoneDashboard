@@ -19,6 +19,7 @@ namespace ZoneProductionLibrary.Models.Boards
         public double CompletionRate => Departments.Average(d => d.CompletionRate);
         public IEnumerable<JobCard> JobCards => Departments.SelectMany(x => x.JobCards);
         public IEnumerable<RedCard> RedCards => Departments.SelectMany(x => x.RedCards).Concat(UnallocatedRedCards);
+        public IEnumerable<YellowCard> YellowCards => Departments.SelectMany(x => x.YellowCards);
 
         public VanBoard(
             VanBoardObject boardObject,
@@ -125,6 +126,33 @@ namespace ZoneProductionLibrary.Models.Boards
                     redCards.Add(new RedCard(redCard, Name, Handover, redCardMembers, comments));
                 }
             }
+            
+            List<YellowCard> yellowCards = new List<YellowCard>();
+
+            foreach (var yellowCardId in boardObject.YellowCardIds)
+            {
+                if (productionService._yellowCards.TryGetValue(yellowCardId, out var yellowCard))
+                {
+                    List<Comment> comments = new List<Comment>();
+
+                    foreach (var commentId in yellowCard.CommentIds)
+                    {
+                        if(productionService._comments.TryGetValue(commentId, out var comment))
+                        {
+                            if (productionService.Members.TryGetValue(comment.CreatorMemberId, out var member))
+                                comments.Add(new Comment(comment, member));
+
+                            else
+                                Log.Logger.Error("Could not find comment with id:{memberId}", comment.CreatorMemberId);
+
+                        }
+                        else
+                            Log.Logger.Error("Could not find comment with id:{commentId}", commentId);
+                    }
+
+                    yellowCards.Add(new YellowCard(yellowCard, Name, comments));
+                }
+            }
 
             foreach (ProductionDepartment productionDepartment in productionDepartments)
             {
@@ -134,6 +162,7 @@ namespace ZoneProductionLibrary.Models.Boards
                     new Department(productionDepartment.Name,
                         depCards,
                         redCards,
+                        yellowCards,
                         productionDepartment.AreaOfOrigins));
             }
         }
@@ -153,6 +182,7 @@ namespace ZoneProductionLibrary.Models.Boards
                     new Department(productionDepartment.Name,
                         depCards,
                         redCards,
+                        [],
                         productionDepartment.AreaOfOrigins));
             }
         }

@@ -9,6 +9,9 @@
         <RadzenTabsItem Text="Red Cards">
             <RedCardGridComponent RedCards="@_redCards" Style="height: 80vh" @ref="@_rGrid" IsSingleVan="false"/>
         </RadzenTabsItem>
+        <RadzenTabsItem Text="Yellow Cards">
+            <YellowCardGridComponent YellowCards="@_yellowCards" Style="height: 80vh" @ref="@_yGrid" IsSingleVan="false"/>
+        </RadzenTabsItem>
         <RadzenTabsItem Text="Job Cards">
             <JobCardGridComponent JobCards="@_jobCards" Style="height: 80vh" @ref="@_jGrid"/>
         </RadzenTabsItem>
@@ -19,8 +22,13 @@
     IEnumerable<RedCard> _redCards = [];
     RedCardGridComponent? _rGrid;
     
+    IEnumerable<YellowCard> _yellowCards = [];
+    YellowCardGridComponent? _yGrid;
+    
     IEnumerable<JobCard> _jobCards = [];
     JobCardGridComponent? _jGrid;
+
+    bool _initialLoadComplete = false;
     
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -29,21 +37,21 @@
         if (firstRender)
         {
             ShowLoadingDialog();
-        
-            if(_rGrid is not null && !UpdatableComponents.Contains(_rGrid))
-                UpdatableComponents.Add(_rGrid);
-        
-            if(_jGrid is not null && !UpdatableComponents.Contains(_jGrid))
-                UpdatableComponents.Add(_jGrid);
 
             SubscribedIds = ProductionService.ProductionVanIds(true).ToList();
 
             _redCards = await ProductionService.GetRedCardsAsync(Progress, SubscribedIds);
+            _yellowCards = ProductionService.GetYellowCards(SubscribedIds);
             _jobCards = ProductionService.GetJobCards(SubscribedIds);
+
+            _initialLoadComplete = true;
             
             if(_rGrid is not null)
                 _rGrid.Update();
         
+            if(_yGrid is not null)
+                _yGrid.Update();
+            
             if(_jGrid is not null)
                 _jGrid.Update();
 
@@ -55,6 +63,9 @@
 
     protected override void UpdateIfIdSubscribed(object? sender, BoardUpdateInfo e)
     {
+        if(!_initialLoadComplete)
+            return;
+        
         SubscribedIds = ProductionService.ProductionVanIds(true).ToList();
         
         if( 
@@ -62,9 +73,11 @@
             (e.TotalBoardUpdate || e.Type is BoardUpdateType.JobCard or BoardUpdateType.RedCard && SubscribedIds.Contains(e.BoardId)))
         {
             _redCards = ProductionService.GetRedCards(SubscribedIds);
+            _yellowCards = ProductionService.GetYellowCards(SubscribedIds);
             _jobCards = ProductionService.GetJobCards(SubscribedIds);
             
             _rGrid?.Update();
+            _yGrid?.Update();
             _jGrid?.Update();
         }
     }

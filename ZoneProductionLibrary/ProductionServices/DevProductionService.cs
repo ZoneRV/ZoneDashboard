@@ -123,7 +123,7 @@ namespace ZoneProductionLibrary.ProductionServices
 
         public int RedCardCount => boards.Sum(x => x.RedCards.Count());
 
-        public int YellowCount => throw new NotImplementedException();
+        public int YellowCount => boards.Sum(x => x.YellowCards.Count());
 
         public int JobCardCount => boards.Sum(x => x.JobCards.Count());
         public int CheckCount => boards.Sum(x => x.JobCards.Sum(y => y.TotalChecks));
@@ -437,6 +437,18 @@ namespace ZoneProductionLibrary.ProductionServices
             return cards;
         }
 
+        public IEnumerable<YellowCard> GetYellowCards()
+        {
+            List<YellowCard> cards = new List<YellowCard>();
+
+            foreach (var board in boards)
+            {
+                cards.AddRange(board.YellowCards);
+            }
+
+            return cards;
+        }
+
         public IEnumerable<RedCard> GetRedCards(IEnumerable<VanModel> vanTypes)
         {
             List<RedCard> cards = new List<RedCard>();
@@ -444,6 +456,18 @@ namespace ZoneProductionLibrary.ProductionServices
             foreach (var board in boards.Where(x => vanTypes.Contains(x.VanModel)))
             {
                 cards.AddRange(board.RedCards);
+            }
+
+            return cards;
+        }
+
+        public IEnumerable<YellowCard> GetYellowCards(IEnumerable<VanModel> vanTypes)
+        {
+            List<YellowCard> cards = new List<YellowCard>();
+
+            foreach (var board in boards.Where(x => vanTypes.Contains(x.VanModel)))
+            {
+                cards.AddRange(board.YellowCards);
             }
 
             return cards;
@@ -460,7 +484,19 @@ namespace ZoneProductionLibrary.ProductionServices
 
             return cards;
         }
+        
+        public IEnumerable<YellowCard> GetYellowCards(IEnumerable<string> boardIds)
+        {
+            List<YellowCard> cards = new List<YellowCard>();
 
+            foreach (var board in boards.Where(x => boardIds.ToList().Contains(x.Id)))
+            {
+                cards.AddRange(board.YellowCards);
+            }
+
+            return cards;
+        }
+        
         public Task<IEnumerable<RedCard>> GetRedCardsAsync(IProgress<double> _, IEnumerable<string> boardIds)
         {
             List<RedCard> cards = new List<RedCard>();
@@ -471,6 +507,18 @@ namespace ZoneProductionLibrary.ProductionServices
             }
 
             return Task.FromResult((IEnumerable<RedCard>)cards);
+        }
+        
+        public Task<IEnumerable<YellowCard>> GetYellowCardsAsync(IProgress<double> _, IEnumerable<string> boardIds)
+        {
+            List<YellowCard> cards = [];
+
+            foreach (var board in boards.Where(x => boardIds.ToList().Contains(x.Id)))
+            {
+                cards.AddRange(board.YellowCards);
+            }
+
+            return Task.FromResult((IEnumerable<YellowCard>)cards);
         }
 
         IEnumerable<RedCard> GetRedCards(IEnumerable<VanModel> vanTypes, IEnumerable<string>? boardIds)

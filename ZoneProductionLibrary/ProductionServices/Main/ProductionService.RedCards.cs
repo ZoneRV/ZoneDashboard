@@ -6,6 +6,11 @@ public partial class ProductionService
     {
         return _redCards.Values.Select(redCard => GetRedCard(redCard)).ToList();
     }
+    
+    public IEnumerable<YellowCard> GetYellowCards()
+    {
+        return _yellowCards.Values.Select(yellowCard => GetYellowCard(yellowCard)).ToList();
+    }
 
     public IEnumerable<RedCard> GetRedCards(IEnumerable<VanModel> vanTypes)
     {
@@ -19,6 +24,19 @@ public partial class ProductionService
 
         return redCardObjects.Select(redCard => GetRedCard(redCard));
     }
+
+    public IEnumerable<YellowCard> GetYellowCards(IEnumerable<VanModel> vanTypes)
+    {
+        List<RedCardObject> yellowCardObjects = new List<RedCardObject>();
+        IEnumerable<string> boardNames        = ProductionVans.Keys.Where(x => vanTypes.Contains(x.ToVanType()));
+
+        foreach (string name in boardNames)
+        {
+            yellowCardObjects.AddRange(_yellowCards.Values.Where(x => x.BoardId == ProductionVans[name].Id));
+        }
+
+        return yellowCardObjects.Select(yellowCard => GetYellowCard(yellowCard));
+    }
     
     public IEnumerable<RedCard> GetRedCards(IEnumerable<string> boardIds)
     {
@@ -31,20 +49,35 @@ public partial class ProductionService
 
         return _redCards.Values.Where(x => enumerable.Contains(x.BoardId)).Select(redCard => GetRedCard(redCard)).ToList();
     }
-
-    public async Task<IEnumerable<RedCard>> GetRedCardsAsync(IProgress<double> progress, IEnumerable<string> boardIds)
+    
+    public IEnumerable<YellowCard> GetYellowCards(IEnumerable<string> boardIds)
     {
-        double       report     = 0;
         List<string> enumerable = boardIds.ToList();
             
         foreach (string boardId in enumerable.Where(boardId => !_vanBoards.ContainsKey(boardId)))
         {
-            report += 100d / enumerable.Count;
-            progress.Report(report);
-            await GetBoardAsyncById(boardId);
+            Log.Logger.Error("{id} has not been initialized, could not be added in non async task method.", boardId);
         }
 
+        return _yellowCards.Values.Where(x => enumerable.Contains(x.BoardId)).Select(yellowCard => GetYellowCard(yellowCard)).ToList();
+    }
+
+    public async Task<IEnumerable<RedCard>> GetRedCardsAsync(IProgress<double> progress, IEnumerable<string> boardIds)
+    {
+        List<string> enumerable = boardIds.ToList();
+
+        await GetBoardsAsync(progress, enumerable);
+
         return _redCards.Values.Where(x => enumerable.Contains(x.BoardId)).Select(redCard => GetRedCard(redCard)).ToList();
+    }
+
+    public async Task<IEnumerable<YellowCard>> GetYellowCardsAsync(IProgress<double> progress, IEnumerable<string> boardIds)
+    {
+        List<string> enumerable = boardIds.ToList();
+
+        await GetBoardsAsync(progress, enumerable);
+        
+        return _yellowCards.Values.Where(x => enumerable.Contains(x.BoardId)).Select(yellowCard => GetYellowCard(yellowCard)).ToList();
     }
         
     public Dictionary<CardAreaOfOrigin, List<RedCard>> GetRedCardsByAreaOfOrigin(IEnumerable<VanModel> vanTypes, IEnumerable<string>? boardIds)

@@ -112,6 +112,26 @@ namespace ZoneProductionLibrary.Models.BoardObjects
 
                         this.RedCardIds.Add(card.Id);
                     }
+                    else if (cardType == CardType.YellowCard)
+                    {
+                        IEnumerable<string> commentIds =
+                            AddComments(productionService, cardActions.Where(x => x.ActionType == "commentCard").ToList());
+
+                        string? cardCreatorId = actions
+                                                .SingleOrDefault(
+                                                    x => x.CardId == card.Id && x.ActionType == "createCard")
+                                                ?.MemberId;
+
+                        RedCardObject newCard = new RedCardObject(card,
+                                                                  customFields,
+                                                                  cardActions,
+                                                                  commentIds,
+                                                                  cardCreatorId);
+
+                        productionService._yellowCards.TryAdd(card.Id, newCard);
+
+                        this.YellowCardIds.Add(card.Id);
+                    }
                     else if (cardType == CardType.JobCard &&
                              TrelloUtil.ToCardAreaOfOrigin(card, customFields) != CardAreaOfOrigin.Unknown)
                     {
