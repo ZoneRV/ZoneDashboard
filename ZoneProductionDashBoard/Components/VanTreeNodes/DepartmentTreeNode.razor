@@ -8,7 +8,7 @@
             <RadzenTreeItem Text="Jobcards" style="@("color:" + ColorTranslator.ToHtml(Department.Color(VanPosition)))">
                 @foreach (var job in Department.JobCards)
                 {
-                    <JobCardTreeNodeComponent JobCard="job" HideCompleted="HideCompleted" ShowCompletionRate="false" ShowTimeRemaining="false" VanPosition="VanPosition"/>
+                    <JobCardTreeNode JobCard="job" HideCompleted="HideCompleted" ShowCompletionRate="false" ShowTimeRemaining="false" VanPosition="VanPosition"/>
                 }
             </RadzenTreeItem>
         }
@@ -17,7 +17,7 @@
             <RadzenTreeItem Text="Redcards" style="@("color:" + ColorTranslator.ToHtml(Department.RedcardColor))">
                 @foreach (var card in Department.RedCards)
                 {
-                    <RedCardTreeNodeComponent RedCard="card" HideCompleted="HideCompleted" ShowAttachments="true" ShowComments="true"/>
+                    <RedCardTreeNode RedCard="card" HideCompleted="HideCompleted" ShowAttachments="true" ShowComments="true"/>
                 }
             </RadzenTreeItem>
         }

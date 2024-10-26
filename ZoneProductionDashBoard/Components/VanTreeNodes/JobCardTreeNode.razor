@@ -1,4 +1,5 @@
 ﻿@using System.Drawing;
+@using Markdig;
 
 @if(ShouldShow(JobCard.IsCompleted))
 {
@@ -10,13 +11,13 @@
                 <RadzenTreeItem Text="@(JobCard.Name)" style="@JobHtmlColorStyleString" >
                     @if (JobCard.Attachments.Count > 0 && ShowAttachments)
                     {
-                        <AttachmentTreeNodeComponent Attachments="@JobCard.Attachments" />
+                        <AttachmentTreeNode Attachments="@JobCard.Attachments" />
                     }
                     @if (JobCard.Comments.Count > 0 && ShowComments)
                     {
                         @foreach (Comment comment in JobCard.Comments)
                         {
-                            <CommentTreeNodeComponent Comment="@comment"/>
+                            <CommentTreeNode Comment="@comment"/>
                         }
                     }
                 </RadzenTreeItem>
@@ -35,18 +36,18 @@
                     {
                         @if(ShouldShow(check.IsChecked))
                         {
-                            <RadzenTreeItem Text="@check.Name" style="@CheckHtmlColorStyleString(check)"/>
+                            <CheckItemTreeNode Check="check" Style="@CheckHtmlColorStyleString(check)"/>
                         }
                     }
                     @if (JobCard.Attachments.Count > 0 && ShowAttachments)
                     {
-                        <AttachmentTreeNodeComponent Attachments="@JobCard.Attachments" />
+                        <AttachmentTreeNode Attachments="@JobCard.Attachments" />
                         }
                             @if (JobCard.Comments.Count > 0 && ShowComments)
                         {
                         @foreach (Comment comment in JobCard.Comments)
                         {
-                            <CommentTreeNodeComponent Comment="@comment"/>
+                            <CommentTreeNode Comment="@comment"/>
                         }
                     }
                 </RadzenTreeItem>
@@ -56,21 +57,21 @@
                 <RadzenTreeItem Text="@GetNameText(JobCard.Name, JobCard.CompletionRate, JobCard.RemainingTaskTime)" style="@JobHtmlColorStyleString">
                     @foreach (Check check in JobCard.CheckLists.First().Checks)
                     {
-                        @if (ShouldShow(check.IsChecked))
+                        @if(ShouldShow(check.IsChecked))
                         {
-                            <RadzenTreeItem Text="@check.Name" style="@CheckHtmlColorStyleString(check)" />
+                            <CheckItemTreeNode Check="check" Style="@CheckHtmlColorStyleString(check)"/>
                         }
                     }
 
                     @if (JobCard.Attachments.Count > 0 && ShowAttachments)
                     {
-                        <AttachmentTreeNodeComponent Attachments="@JobCard.Attachments" />
+                        <AttachmentTreeNode Attachments="@JobCard.Attachments" />
                     }
                     @if (JobCard.Comments.Count > 0 && ShowComments)
                     {
                         @foreach (Comment comment in JobCard.Comments)
                         {
-                            <CommentTreeNodeComponent Comment="@comment"/>
+                            <CommentTreeNode Comment="@comment"/>
                         }
                     }
                 </RadzenTreeItem>
@@ -84,27 +85,19 @@
                 {
                     if(ShouldShow(Math.Abs(checklist.CompletionRate - 1d) < 0.001))
                     {
-                        <RadzenTreeItem Text="@GetNameText(checklist.Name, checklist.CompletionRate, TimeSpan.Zero)" style="@ChecklistHtmlColorStyleString(checklist)">
-                            @foreach (Check check in checklist.Checks)
-                            {
-                                @if (ShouldShow(check.IsChecked))
-                                {
-                                    <RadzenTreeItem Text="@check.Name" style="@CheckHtmlColorStyleString(check)" />
-                                }
-                            }
-                        </RadzenTreeItem>
+                        <ChecklistTreeNode Checklist="checklist" HideCompleted="HideCompleted" VanPosition="VanPosition" JobCard="JobCard" Title="@GetNameText(checklist.Name, checklist.CompletionRate, TimeSpan.Zero)"></ChecklistTreeNode>
                     }
                 }
 
                 @if (JobCard.Attachments.Count > 0 && ShowAttachments)
                 {
-                    <AttachmentTreeNodeComponent Attachments="@JobCard.Attachments" />
+                    <AttachmentTreeNode Attachments="@JobCard.Attachments" />
                 }
                 @if (JobCard.Comments.Count > 0 && ShowComments)
                 {
                     @foreach (Comment comment in JobCard.Comments)
                     {
-                        <CommentTreeNodeComponent Comment="@comment"/>
+                        <CommentTreeNode Comment="@comment"/>
                     }
                 }
             </RadzenTreeItem>
@@ -143,9 +136,6 @@
 
     bool ShouldShow(bool isComplete)
         => !HideCompleted || !isComplete;
-
-    string ChecklistHtmlColorStyleString(Checklist checklist)
-        => "color:" + ColorTranslator.ToHtml(checklist.Color(JobCard.GetTargetStatus(VanPosition)));
 
     string CheckHtmlColorStyleString(Check check)
         => "color:" + ColorTranslator.ToHtml(TrelloUtil.GetIndicatorColor(check.IsChecked, JobCard.GetTargetStatus(VanPosition)));

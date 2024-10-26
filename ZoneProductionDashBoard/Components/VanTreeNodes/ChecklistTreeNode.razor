@@ -1,0 +1,46 @@
+@using System.Drawing
+@using Markdig
+
+<RadzenTreeItem Template="ChecklistRenderFragment">
+    @foreach (Check check in Checklist.Checks)
+    {
+        @if (ShouldShow(check.IsChecked))
+        {
+            <CheckItemTreeNode Check="check" Style="@CheckHtmlColorStyleString(check)"/>
+        }
+    }
+</RadzenTreeItem>
+
+@code {
+    [Parameter, EditorRequired]
+    public JobCard JobCard { get; set; } = default!;
+    
+    [Parameter, EditorRequired]
+    public IProductionPosition VanPosition { get; set; } = default!;
+    
+    [Parameter, EditorRequired] 
+    public Checklist Checklist { get; set; } = default!;
+
+    [Parameter, EditorRequired] 
+    public string Title { get; set; } = default!;
+
+    [Parameter]
+    public bool HideCompleted { get; set; }
+    
+    bool ShouldShow(bool isComplete)
+        => !HideCompleted || !isComplete;
+
+    string ChecklistHtmlColorStyleString(Checklist checklist)
+        => "color:" + ColorTranslator.ToHtml(checklist.Color(JobCard.GetTargetStatus(VanPosition)));
+
+    string CheckHtmlColorStyleString(Check check)
+        => "color:" + ColorTranslator.ToHtml(TrelloUtil.GetIndicatorColor(check.IsChecked, JobCard.GetTargetStatus(VanPosition)));
+    
+    private RenderFragment ChecklistRenderFragment(RadzenTreeItem item)
+    {
+        return __builder =>
+               {
+                   <div style="@ChecklistHtmlColorStyleString(Checklist)">@((MarkupString) Markdown.ToHtml(Title))</div>
+               };
+    }
+}

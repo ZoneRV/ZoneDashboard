@@ -16,7 +16,9 @@
                     <RadzenStack>
                         @foreach (var van in Vans.Where(x => x.Position.Equals(pos)))
                         {
-                            <RadzenText>@van.Name</RadzenText>
+                            <RadzenCard>
+                                <VanButton VanName="@van.Name"/>
+                            </RadzenCard>
                         }
                     </RadzenStack>
                 </ChildContent>

@@ -69,8 +69,7 @@ public partial class ProductionService
                                                                         CardFieldsType.ChecklistIds,
                                                                         CardFieldsType.Closed,
                                                                         CardFieldsType.ListId,
-                                                                        CardFieldsType.MemberIds
-                                                                       )
+                                                                        CardFieldsType.MemberIds)
                                         };
         
         using (LogContext.PushProperty("BoardLink", "https://trello.com/b/" + productionInfo.Id))

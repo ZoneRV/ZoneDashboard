@@ -1,0 +1,151 @@
+@using Serilog
+<RadzenCard Style="@($"padding: 1px; background-color: {Color}; width: min-content; height: min-content")">
+    <RadzenSplitButton
+        Text="@VanName.ToUpper()"
+        Variant="Variant.Text"
+        @ref="_button"
+        AlwaysOpenPopup="true"
+        Click="OnClick"
+        BusyText="Loading..."
+        Icon="@IconName()" 
+        Shade="Shade.Darker">
+        <ChildContent>
+            @if (_van is null)
+            {
+                <RadzenSplitButtonItem Text="Load Van"/>
+            }
+            else
+            {
+                <RadzenStack Gap="3px">
+                    <p>
+                        Position: @_van.Position.PositionName<br/>
+                        Handover:<br/>
+
+                        @{ var jobCards = _van.JobCards.Where(x => (x.Position < _van.Position || x.Position.Equals(_van.Position)) && x.CardStatus is not CardStatus.Completed); }
+                        @{ var redCards = _van.RedCards.Where(x => x.CardStatus is not CardStatus.Completed); }
+                        @{ var yellowCards = _van.YellowCards.Where(x => x.CardStatus is not CardStatus.Completed); }
+
+                        @if (jobCards.Any())
+                        {
+                            <a>Job Cards Overdue: @jobCards.Count()<br/></a>
+                        }
+                        @if (redCards.Any())
+                        {
+                            <a>Red Cards Uncompleted: @redCards.Count()<br/></a>
+                        }
+                        @if (yellowCards.Any())
+                        {
+                            <a>Yellow Cards Uncompleted: @yellowCards.Count()</a>
+                        }
+                    </p>
+                </RadzenStack>
+                <RadzenSplitButtonItem Text="More Info"/>
+            }
+            <RadzenSplitButtonItem Text="Open In Trello"/>
+        </ChildContent>
+    </RadzenSplitButton>
+</RadzenCard>
+@code {
+    [Inject] 
+    public IProductionService ProductionService { get; set; } = default!;
+    
+    [Inject] 
+    public IJSRuntime JsRuntime { get; set; } = default!;
+    
+    [Inject] 
+    public DialogService DialogService { get; set; } = default!;
+    
+    [Parameter, EditorRequired] 
+    public string VanName { get; set; } = default!;
+
+    [Parameter] 
+    public string Color { get; set; } = "#FFFFFF";
+    
+    private VanBoard? _van = null;
+    private VanProductionInfo _info = default!;
+    private RadzenSplitButton _button = default!;
+
+    protected override void OnInitialized()
+    {
+        ArgumentNullException.ThrowIfNull(VanName);
+        ArgumentNullException.ThrowIfNull(ProductionService);
+
+        _info = ProductionService.ProductionVans[VanName.ToLower()];
+        _van = ProductionService.GetBoardByName(VanName.ToLower());
+        
+        base.OnInitialized();
+    }
+
+    async Task OnClick(RadzenSplitButtonItem item)
+    {
+        if (item.Text == "Load Van")
+        {
+            _button.IsBusy = true;
+            _van = await ProductionService.GetBoardAsyncByName(VanName);
+            _button.IsBusy = false;
+        }
+        else if(item.Text == "Open In Trello")
+        {
+            await JsRuntime.InvokeVoidAsync("open", $"https://trello.com/{_info.Id}/6ijFTCyN/", "_blank");
+        }
+        else if (item.Text == "More Info")
+        {
+            if (_van is null)
+            {
+                Log.Logger.Warning("Could not load van {van}", VanName);
+                item.Disabled = true;
+                return;
+            }
+            
+            await DialogService.OpenAsync<VanView.VanView>(
+                VanName.ToUpper(),
+                new Dictionary<string, object>
+                {
+                    { "Van", _van }
+                },
+                new DialogOptions
+                {
+                    Width = "90vw",
+                    Height = "100vh",
+                    ShowClose = true,
+                    CloseDialogOnOverlayClick = true, 
+                    CloseDialogOnEsc = true,
+                    TitleContent = ds => TitleFragment(ds, _van)
+                });
+        }
+    }
+    
+    RenderFragment TitleFragment(DialogService d, VanBoard board)
+    {
+        return __builder =>
+               {
+                   <VanTitleComponent Van="@board"/>
+               };
+    }
+
+    string IconName()
+    {
+        @if (_van is null)
+        {
+            return "question_mark";
+        }
+        else
+        {
+            @if (_van.JobCards.Any(x => (x.Position < _van.Position || x.Position.Equals(_van.Position)) && x.CardStatus != CardStatus.Completed) || _van.RedCards.Any(x => x.CardStatus != CardStatus.Completed))
+            {
+                if (_info.Handover - TimeSpan.FromDays(3) < DateTime.Now)
+                {
+                    return "priority_high";
+                }
+                else
+                {
+                    return "exclamation";
+                }
+            }
+            else
+            {
+                return "done_all";
+            }
+        }
+    }
+}

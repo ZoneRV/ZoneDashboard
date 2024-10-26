@@ -146,7 +146,7 @@
                 <RadzenTree Style="display:flex; flex-direction: column; flex: auto; max-height: 400px;">
                     @foreach(var card in cards)
                     {
-                        <RedCardTreeNodeComponent RedCard="card" HideCompleted="true" ShowComments="true" ShowAttachments="true"/> 
+                        <RedCardTreeNode RedCard="card" HideCompleted="true" ShowComments="true" ShowAttachments="true"/> 
                     }
                 </RadzenTree>
             }
@@ -170,7 +170,7 @@
                 <RadzenTree Style="display: flex; flex-direction: column; flex: 1; max-height: 400px;">
                     @foreach (var card in cards)
                     {
-                        <JobCardTreeNodeComponent JobCard="card" HideCompleted="true" ShowCompletionRate="true" ShowTimeRemaining="false" VanPosition="board.Position" ShowComments="true" ShowAttachments="true"/>
+                        <JobCardTreeNode JobCard="card" HideCompleted="true" ShowCompletionRate="true" ShowTimeRemaining="false" VanPosition="board.Position" ShowComments="true" ShowAttachments="true"/>
                     }
                 </RadzenTree>
             }

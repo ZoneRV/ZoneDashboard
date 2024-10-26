@@ -11,73 +11,47 @@
 
 <PageTitle>Handover Calendar</PageTitle>
 
-@{ List<VanProductionInfo> overDueVans = ProductionService.ProductionVans.Values.Where(x => x.Handover.HasValue && x.HandoverState == HandoverState.UnhandedOver && x.Handover.Value < DateTimeOffset.Now).OrderBy(x => x.Handover!.Value).ToList(); }
-@{ List<VanProductionInfo> recentChanges = ProductionService.ProductionVans.Values.Where(x => x.HasHandoverDateChanged(TimeSpan.FromDays(7), TimeSpan.FromDays(7))).ToList();}
+<div style="height: calc(100vh - 4rem);">
+    @{ List<VanProductionInfo> overDueVans = ProductionService.ProductionVans.Values.Where(x => x.Handover.HasValue && x.HandoverState == HandoverState.UnhandedOver && x.Handover.Value < DateTimeOffset.Now).OrderBy(x => x.Handover!.Value).ToList(); }
+    @{ List<VanProductionInfo> recentChanges = ProductionService.ProductionVans.Values.Where(x => x.HasHandoverDateChanged(TimeSpan.FromDays(7), TimeSpan.FromDays(7))).ToList();}
 
-@if (overDueVans.Count > 0)
-{
-    <RadzenStack Orientation="Orientation.Horizontal" Gap="1em">
-        <RadzenIcon Icon="warning" IconColor="@Colors.Danger" style="font-weight: 400;" MouseEnter="(el) => ShowOverDueVanToolTip(el, overDueVans)" MouseLeave="() => { TooltipService.Close(); }"/>
-        <RadzenText>@overDueVans.Count vans overdue!</RadzenText>
-    </RadzenStack>
-}
-@if (recentChanges.Count > 0)
-{
-    <RadzenStack Orientation="Orientation.Horizontal" Gap="1em">
-        <RadzenIcon Icon="warning" IconColor="@Colors.Danger" style="font-weight: 400;" MouseEnter="(el) => UpdatedDatesToolTip(el, recentChanges)" MouseLeave="() => { TooltipService.Close(); }"/>
-        <RadzenText>@recentChanges.Count Handovers recently modified!</RadzenText>
-    </RadzenStack>
-}
-
-<RadzenScheduler
-    @ref=@_scheduler
-    LoadData="@OnLoadData"
-    AppointmentRender=@OnVanRender
-    SlotRender=@OnSlotRender
-    AppointmentSelect=@OnSelectVan
-    AppointmentMouseEnter="@ShowHandoverInformation"
-    AppointmentMouseLeave="@CloseHandoverInformation"
-    TodaySelect="SelectToday"
-    style="height: 85vh;"
-    Data="@_data"
-    TItem="VanData"
-    StartProperty="Handover"
-    EndProperty="HandoverEnd"
-    TextProperty="Name">
-    <ChildContent>
-        <CustomRadzenWeekView StartTime="TimeSpan.FromHours(5)" EndTime="TimeSpan.FromHours(17)" MinutesPerSlot="30" HeaderFormat="ddd dd/MM" TimeFormat="HH:mm"/>
-        <RadzenMonthView MaxAppointmentsInSlot="5"/>
-        <RadzenYearPlannerView MaxAppointmentsInSlot="5"/>
-    </ChildContent>
-    <Template Context="data">
-        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="2px">
-            @if (data.Van is null)
-            {
-                <RadzenIcon Icon="question_mark" IconStyle="IconStyle.Info"/>
-            }
-            else
-            {
-                @if (data.Van.JobCards.Any(x => x.CardStatus != CardStatus.Completed) || data.Van.RedCards.Any(x => x.CardStatus != CardStatus.Completed))
-                {
-                    if (data.Handover - TimeSpan.FromDays(3) < DateTime.Now)
-                    {
-                        <RadzenIcon Icon="priority_high" IconStyle="IconStyle.Danger"/>
-                    }
-                    else
-                    {
-                        <RadzenIcon Icon="exclamation" IconStyle="IconStyle.Warning"/>
-                    }
-                }
-                else
-                {
-                    <RadzenIcon Icon="done_all" IconStyle="IconStyle.Success"/>
-                }
-            }
-            @data.Name.ToUpper()
+    @if (overDueVans.Count > 0)
+    {
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="1em">
+            <RadzenIcon Icon="warning" IconColor="@Colors.Danger" style="font-weight: 400;" MouseEnter="(el) => ShowOverDueVanToolTip(el, overDueVans)" MouseLeave="() => { TooltipService.Close(); }"/>
+            <RadzenText>@overDueVans.Count vans overdue!</RadzenText>
         </RadzenStack>
-    </Template>
-</RadzenScheduler>
+    }
+    @if (recentChanges.Count > 0)
+    {
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="1em">
+            <RadzenIcon Icon="warning" IconColor="@Colors.Danger" style="font-weight: 400;" MouseEnter="(el) => UpdatedDatesToolTip(el, recentChanges)" MouseLeave="() => { TooltipService.Close(); }"/>
+            <RadzenText>@recentChanges.Count Handovers recently modified!</RadzenText>
+        </RadzenStack>
+    }
 
+    <RadzenScheduler
+        @ref=@_scheduler 
+        LoadData="@OnLoadData"
+        AppointmentRender=@OnVanRender
+        SlotRender=@OnSlotRender
+        TodaySelect="SelectToday"
+        style="height: 100%" 
+        Data="@_data"
+        TItem="VanData"
+        StartProperty="Handover"
+        EndProperty="HandoverEnd"
+        TextProperty="Name">
+        <ChildContent>
+            <CustomRadzenWeekView StartTime="TimeSpan.FromHours(3)" EndTime="TimeSpan.FromHours(17)" HeaderFormat="ddd dd/MM" TimeFormat="HH:mm"/>
+            <RadzenMonthView MaxAppointmentsInSlot="5"/>
+            <RadzenYearPlannerView MaxAppointmentsInSlot="5"/>
+        </ChildContent>
+        <Template Context="data">
+            <VanButton VanName="@data.Name" Color="@ColorTranslator.ToHtml(data.HandoverState is HandoverState.HandedOver ? Color.FromArgb(255, 180, 180, 180) : data.VanModel.GetTypeColor())" />
+        </Template>
+    </RadzenScheduler>
+</div>
 @code {
     [Inject] 
     TooltipService TooltipService { get; set; } = default!;
@@ -140,20 +114,7 @@
 
     void OnVanRender(SchedulerAppointmentRenderEventArgs<VanData> args)
     {
-        if (args.Data.HandoverState == HandoverState.HandedOver)
-        {
-            Color fadedColor = Color.FromArgb(
-                255, 
-                180, 
-                180, 
-                180);
-            
-            args.Attributes["style"] = "background: " + ColorTranslator.ToHtml(fadedColor);
-        }
-        else
-        {
-            args.Attributes["style"] = "background: " + ColorTranslator.ToHtml(args.Data.VanModel.GetTypeColor());
-        }
+        args.Attributes["style"] = "background: rgba(0,0,0,.01)";
     }
 
     void OnSlotRender(SchedulerSlotRenderEventArgs args)
@@ -164,32 +125,7 @@
             args.Attributes["style"] = "background: rgba(255,220,40,.2);";
         }
     }
-
-    async Task OnSelectVan(SchedulerAppointmentSelectEventArgs<VanData> args)
-    {
-        var board = await ProductionService.GetBoardAsyncByName(args.Data.Name.ToLower());
-
-        if (board is null)
-        {
-            Log.Logger.Error("Could not find van: {vanName}", args.Data.Name.ToLower());
-            return;
-        }
-
-        await DialogService.OpenAsync<VanView>(
-            args.Data.Name.ToUpper(),
-            new Dictionary<string, object>
-            {
-                { "Van", board }
-            },
-            new DialogOptions
-            {
-                Width = "90vw",
-                Height = "100vh",
-                ShowClose = true,
-                CloseDialogOnOverlayClick = true
-            });
-    }
-
+    
     void SelectToday(SchedulerTodaySelectEventArgs args)
     {
         if (args.Today.DayOfWeek == DayOfWeek.Saturday)
@@ -236,52 +172,6 @@
           };
 
         TooltipService.Open(elementReference, fragment, new TooltipOptions() { Style = "background: red", Position = TooltipPosition.Right, Duration = null });
-    }
-
-    void ShowHandoverInformation(SchedulerAppointmentMouseEventArgs<VanData> args)
-    {
-        int? redCardCount = args.Data.Van?.RedCards.Count(x => x.CardStatus != CardStatus.Completed);
-        int? jobCardCount = args.Data.Van?.JobCards.Count(x => x.CardStatus != CardStatus.Completed);
-        
-        if(redCardCount is 0 && jobCardCount is 0)
-            return;
-        
-        RenderFragment<TooltipService> fragment = ts =>
-          {
-              return __builder =>
-                     {
-                         <RadzenStack Gap="3px">
-                             
-                             @if (args.Data.Van is null)
-                             {
-                                 <RadzenText>Click to load</RadzenText>
-                             }
-                             else
-                             {
-                                 @if (redCardCount > 0)
-                                 {
-                                     <RadzenText Style="color: #b32121">@redCardCount Uncompleted Red Cards</RadzenText>
-                                 }
-                                 
-                                 @if (jobCardCount > 0)
-                                 {
-                                     TimeSpan timeRemaining = TimeSpan.FromHours(args.Data.Van.JobCards.Sum(x => x.RemainingTaskTime.TotalHours));
-                                     
-                                     <RadzenText Style="color: #b32121">@jobCardCount Uncompleted Job Cards</RadzenText>
-                                     <RadzenText>@((int)timeRemaining.TotalHours):@timeRemaining.Minutes.ToString("00") Hours Remaining</RadzenText>
-                                 }
-                             }
-                         </RadzenStack>
-                         
-                     };
-          };
-        
-        TooltipService.Open(args.Element, fragment, new TooltipOptions() {Duration = null, Style = "background: #ffffff"});
-    }
-
-    void CloseHandoverInformation(SchedulerAppointmentMouseEventArgs<VanData> args)
-    {
-        TooltipService.Close();
     }
 
     string ShortDateString(DateTime dateTime)

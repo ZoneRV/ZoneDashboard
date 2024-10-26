@@ -1,4 +1,6 @@
-﻿<RadzenTreeItem Template="CommentRenderFragment"/>
+﻿@using Markdig
+
+<RadzenTreeItem Template="CommentRenderFragment"/>
 
 @code {
     [Parameter, EditorRequired]
@@ -21,7 +23,7 @@
                 </RadzenStack>
                 <RadzenCard Variant="Variant.Flat" class="rz-mx-au" Style="white-space: pre-wrap; margin:1px">
                     <RadzenStack AlignItems="AlignItems.Start" JustifyContent="JustifyContent.Start" Gap="1px" >
-                        <RadzenText style="color: black">@Comment.Content</RadzenText>
+                        <div style="color: black">@((MarkupString) Markdown.ToHtml(Comment.Content))</div>
                         <RadzenText TextStyle="TextStyle.Caption" Text="@Comment.DateCreated.ToString("dd/MM/yy hh:mm tt")" />
                     </RadzenStack>
                 </RadzenCard>

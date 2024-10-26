@@ -15,6 +15,8 @@ namespace ZoneProductionLibrary.ProductionServices.Base
         public int JobCardCount { get; }
         public int CheckCount { get; }
 
+        public VanProductionInfo GetVanInfo(VanBoard van) => ProductionVans[van.Name];
+
         Task InitializeProductionService();
 
         List<ProductionDepartment> Gen2ProductionDepartments { get; set; }

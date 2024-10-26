@@ -4,14 +4,14 @@
     <RadzenTreeItem  Text="@($"{Van.Name} - {Van.Position.PositionName}")">
     @foreach(var dep in Van.Departments)
     {
-        <DepartmentTreeNodeComponent Department=@dep VanPosition="@Van.Position" HideCompleted="HideCompleted" ShowCompletionRate="ShowCompletionRate" ShowTimeRemaining="ShowTimeRemaining" ShowRedCards="ShowRedCards"/>
+        <DepartmentTreeNode Department=@dep VanPosition="@Van.Position" HideCompleted="HideCompleted" ShowCompletionRate="ShowCompletionRate" ShowTimeRemaining="ShowTimeRemaining" ShowRedCards="ShowRedCards"/>
     }
     @if (ShowRedCards && Van.UnallocatedRedCards.Count > 1)
     {
         <RadzenTreeItem Text="Unallocated Red Cards">
         @foreach (RedCard redCard in Van.UnallocatedRedCards)
         {
-            <RedCardTreeNodeComponent RedCard="redCard" HideCompleted="HideCompleted" ShowComments="true" ShowAttachments="true" />
+            <RedCardTreeNode RedCard="redCard" HideCompleted="HideCompleted" ShowComments="true" ShowAttachments="true" />
         }
         </RadzenTreeItem>
     }

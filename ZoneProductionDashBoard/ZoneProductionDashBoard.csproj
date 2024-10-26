@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="Blazor-ApexCharts" Version="3.4.0" />
     <PackageReference Include="Blazor.Bootstrap" Version="2.2.0" />
+    <PackageReference Include="Markdig" Version="0.38.0" />
     <PackageReference Include="Microsoft.ApplicationInsights" Version="2.22.0" />
     <PackageReference Include="Radzen.Blazor" Version="5.1.1" />
     <PackageReference Include="Serilog" Version="4.0.1" />
@@ -29,10 +30,10 @@
     <Content Update="Components\OverviewComponents\HandoverOverViewComponent.razor">
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>
-    <Content Update="Components\VanTreeNodes\RedCardTreeNodeComponent.razor">
+    <Content Update="Components\VanTreeNodes\RedCardTreeNode.razor">
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>
-    <Content Update="Components\VanTreeNodes\DepartmentTreeNodeComponent.razor">
+    <Content Update="Components\VanTreeNodes\DepartmentTreeNode.razor">
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>
     <Content Update="appsettings.json.old">

@@ -1,0 +1,45 @@
+<RadzenText Style="font-weight: bold;">@Van.Name.ToUpper() - @Van.Position.PositionName - @GetHandoverString()</RadzenText>
+
+@code {
+    [Inject] 
+    public IProductionService ProductionService { get; set; } = default!;
+    
+    [Parameter, EditorRequired] 
+    public VanBoard Van { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        ArgumentNullException.ThrowIfNull(ProductionService);
+        ArgumentNullException.ThrowIfNull(Van);
+        
+        base.OnInitialized();
+    }
+
+    string GetHandoverString()
+    {
+        var info = ProductionService.GetVanInfo(Van);
+        
+        if (info.HandoverState is HandoverState.HandedOver)
+            return "Handed Over.";
+        
+        if(Van.Handover.HasValue)
+        {
+            if (Van.Handover.Value - DateTimeOffset.Now < TimeSpan.Zero)
+            {
+                if(Van.Handover.Value - DateTimeOffset.Now < - TimeSpan.FromDays(1))
+                    return $"Handover: {((Van.Handover.Value - DateTimeOffset.Now) * -1).TotalDays.ToString("N0")} days ago";
+                
+                else
+                    return "Handover over due";
+            }
+            
+            if(Van.Handover.Value - DateTimeOffset.Now > TimeSpan.FromDays(3))
+                return $"Handover: {Van.Handover.Value.LocalDateTime.ToString("dd/MM/yy")}";
+
+            else
+                return $"Handover: {Van.Handover.Value.LocalDateTime.ToString("ddd hh:mm tt")}";
+        }
+
+        return "";
+    }
+}

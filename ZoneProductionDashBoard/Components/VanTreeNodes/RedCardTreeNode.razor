@@ -12,13 +12,13 @@
         <RadzenTreeItem Text="@RedCard.Name" style="@("white-space: pre-wrap; " + RedCardHtmlColorStyleString)">
             @if (RedCard.Attachments.Count > 0 && ShowAttachments)
             {
-                <AttachmentTreeNodeComponent Attachments="@RedCard.Attachments" />
+                <AttachmentTreeNode Attachments="@RedCard.Attachments" />
             }
             @if (RedCard.Comments.Count > 0 && ShowComments)
             {
                 @foreach (Comment comment in RedCard.Comments)
                 {
-                    <CommentTreeNodeComponent Comment="@comment"/>
+                    <CommentTreeNode Comment="@comment"/>
                 }
             }
         </RadzenTreeItem>

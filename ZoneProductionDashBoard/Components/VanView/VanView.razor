@@ -4,35 +4,6 @@
 
 <RadzenTabs>
     <Tabs>
-        <RadzenTabsItem Text="Info">
-            <RadzenText>@Van.Name.ToUpper()</RadzenText>
-            
-            <RadzenText>@Van.Position</RadzenText>
-            
-            @if(Van.Handover.HasValue)
-            {
-                @if (Van.Handover.Value - DateTimeOffset.Now < TimeSpan.Zero)
-                {
-                    if(Van.Handover.Value - DateTimeOffset.Now < - TimeSpan.FromDays(1))
-                    {
-                        <RadzenText>Handover: @( ((Van.Handover.Value - DateTimeOffset.Now) * -1).TotalDays.ToString("N0")) days ago</RadzenText>
-                    }
-                    else
-                    {
-                        <RadzenText>Handover over due</RadzenText>
-                    }
-                }
-                @if(Van.Handover.Value - DateTimeOffset.Now > TimeSpan.FromDays(3))
-                {
-                    <RadzenText>Handover: @Van.Handover.Value.LocalDateTime.ToString("dd/MM/yy")</RadzenText>
-                }
-                
-                else
-                {
-                    <RadzenText>Handover: @Van.Handover.Value.LocalDateTime.ToString("ddd hh:mm tt")</RadzenText>
-                }
-            }
-        </RadzenTabsItem>
         <RadzenTabsItem Text="Job Cards">
             <JobCardGridComponent JobCards="Van.JobCards" Style="height: 85vh" GroupByAreaOfOrigin="@true" @ref="@_jobCardGrid"/>
         </RadzenTabsItem>
@@ -40,7 +11,7 @@
             <RedCardGridComponent RedCards="Van.RedCards" Style="height: 85vh" @ref="@_redCardGrid" IsSingleVan="true"/>
         </RadzenTabsItem>
         <RadzenTabsItem Text="Yellow Cards">
-            <YellowCardGridComponent YellowCards="Van.YellowCards" Style="height: 85vh" IsSingleVan="true"/>
+            <YellowCardGridComponent YellowCards="Van.YellowCards" Style="height: 85vh" @ref="_yellowCardGrid" IsSingleVan="true"/>
         </RadzenTabsItem>
         <RadzenTabsItem Text="History">
             <VanRedLineDeadLineComponent Van="Van" @ref="@_redLineDeadLineComponent"/>
@@ -57,6 +28,7 @@
 
     VanRedLineDeadLineComponent? _redLineDeadLineComponent;
     RedCardGridComponent? _redCardGrid;
+    YellowCardGridComponent? _yellowCardGrid;
     JobCardGridComponent? _jobCardGrid;
 
     protected override void OnInitialized()
@@ -82,8 +54,9 @@
                 Van = updatedVan;
             
             _jobCardGrid?.Update();
-            _redLineDeadLineComponent?.Update();
             _redCardGrid?.Update();
+            _yellowCardGrid?.Update();
+            _redLineDeadLineComponent?.Update();
 
             InvokeAsync(StateHasChanged);
         }

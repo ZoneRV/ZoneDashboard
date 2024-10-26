@@ -5,7 +5,7 @@
     <RadzenTreeItem Text="@ListName" style="@JobListHtmlColorStyleString">
         @foreach (var card in Jobs)
         {
-            <JobCardTreeNodeComponent JobCard="card" VanPosition="VanPosition" HideCompleted="HideCompleted" ShowCompletionRate="ShowCompletionRate" ShowTimeRemaining="ShowTimeRemaining"/>
+            <JobCardTreeNode JobCard="card" VanPosition="VanPosition" HideCompleted="HideCompleted" ShowCompletionRate="ShowCompletionRate" ShowTimeRemaining="ShowTimeRemaining"/>
         }
     </RadzenTreeItem>
 </RadzenStack>

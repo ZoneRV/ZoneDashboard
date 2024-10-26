@@ -25,11 +25,11 @@ namespace ZoneProductionLibrary.ProductionServices.Base
         {
             VanProductionInfo productionInfo;
 
-            if (ProductionVans.ContainsKey(name))
-                productionInfo = ProductionVans[name];
+            if (ProductionVans.ContainsKey(name.ToLower()))
+                productionInfo = ProductionVans[name.ToLower()];
             else
             {
-                Log.Logger.Error("Van with name {name} does not exist", name);
+                Log.Logger.Error("Van with name {name} does not exist", name.ToLower());
                 return null;
             }
 
@@ -40,11 +40,11 @@ namespace ZoneProductionLibrary.ProductionServices.Base
         {
             VanProductionInfo productionInfo;
 
-            if (ProductionVans.ContainsKey(name))
-                productionInfo = ProductionVans[name];
+            if (ProductionVans.ContainsKey(name.ToLower()))
+                productionInfo = ProductionVans[name.ToLower()];
             else
             {
-                Log.Logger.Error("Van with name {name} does not exist", name);
+                Log.Logger.Error("Van with name {name} does not exist", name.ToLower());
                 return null;
             }
 

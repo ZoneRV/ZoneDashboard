@@ -80,10 +80,10 @@
                     else
                         isChecked = Random.Next(6) != 0;
 
-                    checks.Add(new Check($"Check {j + 1}", isChecked));
+                    checks.Add(new Check($"Check **{j + 1}**", isChecked));
                 }
 
-                checklists.Add(new Boards.Checklist($"Checklist {i + 1}", checks));
+                checklists.Add(new Boards.Checklist($"Checklist **{i + 1}**", checks));
             }
 
             bool isComplete;
@@ -200,7 +200,7 @@
 
                 for (int j = 0; j < commentCount; j++)
                 {
-                    comments.Add(new Comment(ranMembers[0], creationDate.LocalDateTime + TimeSpan.FromMinutes((j * 46) + random.Next(5, 50)), $"Comment {j} has lots of text aaaaaaaa aaaaaaaaaa aaaa aaaaaa aaaaaaaaaaaa aaaaaaa aaaaaaa"));
+                    comments.Add(new Comment(ranMembers[0], creationDate.LocalDateTime + TimeSpan.FromMinutes((j * 46) + random.Next(5, 50)), $"Comment {j} has lots of text __aaaaaaaa aaaaaaaaaa aaaa__ aaaaaa aaaaaaaaaaaa aaaaaaa aaaaaaa **bold text AAAHHHHH**"));
                 }
 
                 cards.Add(new RedCard(CardId.ToString(), boardId, boardName, RedcardOptions[option].name, RedcardOptions[option].issue, status, origin, handoverDate, creationDate, ranMembers, comments, CardStatusLastUpdated));

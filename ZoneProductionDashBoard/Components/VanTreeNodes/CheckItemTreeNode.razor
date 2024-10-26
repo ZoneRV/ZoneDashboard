@@ -1,0 +1,27 @@
+@using ApexCharts
+@using Markdig
+
+<RadzenTreeItem Template="CheckRenderFragment"/>
+
+@code {
+    [Parameter, EditorRequired] 
+    public Check Check { get; set; } = default!;
+
+    [Parameter, EditorRequired] 
+    public string Style { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        ArgumentNullException.ThrowIfNull(Check);
+        ArgumentNullException.ThrowIfNull(Style);
+        base.OnInitialized();
+    }
+
+    private RenderFragment CheckRenderFragment(RadzenTreeItem item)
+    {
+        return __builder =>
+               {
+                   <div style="@Style">@((MarkupString) Markdown.ToHtml(Check.Name))</div>
+               };
+    }
+}
