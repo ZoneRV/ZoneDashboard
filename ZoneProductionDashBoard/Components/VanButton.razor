@@ -86,7 +86,7 @@
         }
         else if(item.Text == "Open In Trello")
         {
-            await JsRuntime.InvokeVoidAsync("open", $"https://trello.com/{_info.Id}/6ijFTCyN/", "_blank");
+            await JsRuntime.InvokeVoidAsync("open", _info.Url, "_blank");
         }
         else if (item.Text == "More Info")
         {

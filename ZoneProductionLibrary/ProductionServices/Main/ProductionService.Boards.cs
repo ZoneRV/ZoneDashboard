@@ -88,14 +88,15 @@ public partial class ProductionService
 
                     await _vanIdDataDB.DeleteVanId(productionInfo.Name);
 
-                    (bool boardfound, string vanId) newId = await TrySearchForVanId(productionInfo.Name);
+                    (bool boardfound, VanID? vanId) newId = await TrySearchForVanId(productionInfo.Name);
 
-                    if (!newId.boardfound)
+                    if (!newId.boardfound || newId.vanId is null)
                         throw new Exception("Board could not be found");
                     
-                    ProductionVans[productionInfo.Name].Id = newId.vanId;
-                    id = newId.vanId;
-                    cards = await _trelloClient.GetCardsOnBoardAsync(newId.vanId, getCardOptions);
+                    ProductionVans[productionInfo.Name].Id = newId.vanId.VanId;
+                    ProductionVans[productionInfo.Name].Url = newId.vanId.Url;
+                    id = newId.vanId.VanId;
+                    cards = await _trelloClient.GetCardsOnBoardAsync(newId.vanId.VanId, getCardOptions);
                 }
                 else
                 {

@@ -615,9 +615,9 @@ public partial class ProductionService
             {
                 var search = await TrySearchForVanId(name);
                 
-                if(search.boardfound)
+                if(search.boardfound && search.vanId is not null)
                 {
-                    VanProductionInfo newInfo = new VanProductionInfo(search.vanId, name, positionHistory);
+                    VanProductionInfo newInfo = new VanProductionInfo(search.vanId.VanId, name, search.vanId.Url, positionHistory);
                     
                     if(ProductionVans.TryAdd(name, newInfo))
                         Log.Logger.Information("New van added to production {vanName}:{id}", newInfo.Name, newInfo.Id);

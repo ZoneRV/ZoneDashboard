@@ -269,7 +269,8 @@ namespace ZoneProductionLibrary.ProductionServices
             {
                 ProductionVans.Add(board.Name, 
                     new VanProductionInfo(board.Id,
-                    board.Name, 
+                    board.Name,
+                    "_blank",
                     board.PositionHistory, 
                     [(DateTimeOffset.Now, board.Handover!.Value)], 
                     DateTimeOffset.Now > board.Handover ? HandoverState.HandedOver : HandoverState.UnhandedOver));

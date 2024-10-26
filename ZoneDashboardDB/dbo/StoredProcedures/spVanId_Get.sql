@@ -2,7 +2,7 @@
     @VanName varchar(7)
 AS
     begin 
-        SELECT VanId, VanName, Blocked
+        SELECT VanId, VanName, Url, Blocked
         FROM [dbo].[VanId]
         WHERE VanName = @VanName;
     end

@@ -5,8 +5,6 @@ namespace ZoneProductionLibrary.ProductionServices.Base
 {
     public partial interface IProductionService
     {
-        Task<(bool boardfound, string vanId)> TrySearchForVanId(string name, TimeSpan? age = null);
-
         public IEnumerable<string> RequiredBoardIds()
         {
             int daysOfPrevHandovers = Debugger.IsAttached ? 7 : 31;

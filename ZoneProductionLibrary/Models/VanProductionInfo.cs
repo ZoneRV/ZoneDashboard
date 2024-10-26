@@ -4,6 +4,7 @@
     {
         public string Id { get; set; }
         public string Name { get; set; }
+        public string Url { get; set; }
         public VanModel VanModel => Name.ToVanType();
         public IProductionPosition Position => PositionHistory.Count > 0 ? PositionHistory.Last().position : new PreProduction();
         public List<(DateTimeOffset date, IProductionPosition position)> PositionHistory { get; set; }
@@ -18,17 +19,19 @@
 
         public override string ToString() => $"{Name}:{Id}";
 
-        public VanProductionInfo(string id, string name, List<(DateTimeOffset, IProductionPosition)> positionHistory)
+        public VanProductionInfo(string id, string name, string url, List<(DateTimeOffset, IProductionPosition)> positionHistory)
         {
             Id = id;
             Name = name;
+            Url = url;
             PositionHistory = positionHistory.ToList();
         }
 
-        public VanProductionInfo(string id, string name, List<(DateTimeOffset, IProductionPosition)> positionHistory, List<(DateTimeOffset, DateTimeOffset)> handoverHistory, HandoverState handoverState)
+        public VanProductionInfo(string id, string name, string url, List<(DateTimeOffset, IProductionPosition)> positionHistory, List<(DateTimeOffset, DateTimeOffset)> handoverHistory, HandoverState handoverState)
         {
             Id = id;
             Name = name;
+            Url = url;
             PositionHistory = positionHistory.ToList();
             HandoverHistory = handoverHistory.ToList();
             HandoverState = handoverState;

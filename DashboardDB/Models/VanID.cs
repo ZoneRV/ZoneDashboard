@@ -8,16 +8,18 @@ namespace DBLibrary.Models;
 
 public class VanID
 {
-    public VanID(string vanName, string vanId)
+    public VanID(string vanName, string vanId, string url)
     {
         this.VanName = vanName.ToLower();
         this.VanId = vanId;
+        this.Url = url;
     }
     
     public VanID(string vanName)
     {
         this.VanName = vanName.ToLower();
         this.VanId = string.Empty;
+        this.Url = string.Empty;
     }
     
     // Dapper needs a blank constructor to parse data
@@ -31,5 +33,6 @@ public class VanID
     public string VanId { get; set; }
     public string VanName { get; init; }
     public bool Blocked { get; set; } = false;
+    public string Url { get; set; }
 
 }

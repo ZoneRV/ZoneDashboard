@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Configuration;
 using PnP.Framework.Extensions;
 using Serilog.Context;
+using System.Diagnostics.CodeAnalysis;
 using TrelloDotNet;
 using TrelloDotNet.Model;
 using TrelloDotNet.Model.Actions;
@@ -267,30 +268,35 @@ public partial class ProductionService : IProductionService
 
                     VanID? vanId = storedVanIdList.SingleOrDefault(x => x.VanName == formattedName);
                     string idString = string.Empty;
+                    string urlString = string.Empty;
                     
                     if(vanId is not null && vanId.Blocked)
                         continue;
 
-                    if (vanId is null || string.IsNullOrEmpty(vanId.VanId))
+                    if (vanId is null || string.IsNullOrEmpty(vanId.VanId) || string.IsNullOrEmpty(vanId.Url))
                     {
                         TimeSpan lastUpdated = DateTimeOffset.UtcNow - card.LastActivity.UtcDateTime;
-                        (bool boardfound, string vanId) search = await TrySearchForVanId(formattedName, lastUpdated);
+                        (bool boardfound, VanID? vanId) search = await TrySearchForVanId(formattedName, lastUpdated);
 
-                        if (!search.boardfound)
+                        if (!search.boardfound || search.vanId is null)
                             continue;
 
-                        else 
-                            idString = search.vanId;
+                        else
+                        {
+                            idString = search.vanId.VanId;
+                            urlString = search.vanId.Url;
+                        }
                     }
                     else
                     {
                         idString = vanId.VanId;
+                        urlString = vanId.Url;
                     }
 
                     List<(DateTimeOffset date, IProductionPosition)> positionHistory = lineMoveActions.Where(x => x.Data.Card.Id == card.Id).ToPositionHistory(lists);
 
                     ProductionVans.Add(formattedName,
-                                       new VanProductionInfo(idString, formattedName, positionHistory));
+                                       new VanProductionInfo(idString, formattedName, urlString, positionHistory));
                     
                     Log.Logger.Debug("New van information added");
                 }
@@ -437,7 +443,7 @@ public partial class ProductionService : IProductionService
         }
     }
 
-    public async Task<(bool boardfound, string vanId)> TrySearchForVanId(string name, TimeSpan? age = null)
+    public async Task<(bool boardfound, VanID? vanId)> TrySearchForVanId(string name, TimeSpan? age = null)
     {
         if (_trelloClient is null)
             throw new Exception("Trello Client has not been initialized.");
@@ -452,16 +458,16 @@ public partial class ProductionService : IProductionService
         else
         {
             if (vanId.Blocked)
-                return (false, String.Empty);
+                return (false, null);
 
-            if (!string.IsNullOrEmpty(vanId.VanId))
-                return (true, vanId.VanId);
+            if (!string.IsNullOrEmpty(vanId.VanId) && !string.IsNullOrEmpty(vanId.Url))
+                return (true, null);
         }
 
         SearchRequest searchRequest = new SearchRequest(name)
                                       {
                                           SearchCards = false,
-                                          BoardFields = new SearchRequestBoardFields("name", "closed")
+                                          BoardFields = new SearchRequestBoardFields("name", "closed", "url", "shorturl")
                                       };
 
         SearchResult searchResults = await _trelloClient.SearchAsync(searchRequest);
@@ -472,7 +478,7 @@ public partial class ProductionService : IProductionService
         {
             Log.Logger.Error("Multiple Boards found for van {name}, not adding to cache - {urlList}", name, string.Join(", ", results.Select(x => $"https://trello.com/b/{x.Id}/")));
 
-            return (false, string.Empty);
+            return (false, null);
         }
 
         if (results.Count() == 0)
@@ -488,14 +494,17 @@ public partial class ProductionService : IProductionService
                 Log.Logger.Warning("No trello search result for {name}", name);
 
             
-            return (false, string.Empty);
+            return (false, null);
         }
 
         vanId.VanId = results.First().Id;
+        vanId.Url = results.First().Url;
         
         await _vanIdDataDB.UpdateVanId(vanId);
+
+        var id = await _vanIdDataDB.GetId(name);
         
-        return (true, vanId.VanId);
+        return (true, id);
     }
 
     public IEnumerable<TrelloMember> GetTrelloMembers(IEnumerable<string> memberIds)
