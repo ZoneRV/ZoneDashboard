@@ -52,13 +52,13 @@
 
         <RadzenDataGridColumn TItem="YellowCard" Visible="false" Property="PartName"></RadzenDataGridColumn>
 
-        <RadzenDataGridColumn TItem="YellowCard" SortProperty="CardStatus" FilterProperty="CardStatus" Title="Status" Template="CardStatusRender" Width="165px">
+        <RadzenDataGridColumn TItem="YellowCard" SortProperty="CardStatus" FilterProperty="CardStatus" Title="Status" Template="CardStatusRender" Width="165px" Sortable="false">
             <FilterTemplate>
                 <RadzenDropDown TValue="string" Data="_statusOptions" Change="SetStatusFilters" AllowClear="true" Placeholder="Select..."></RadzenDropDown>
             </FilterTemplate>
         </RadzenDataGridColumn>
 
-        <RadzenDataGridColumn TItem="YellowCard" SortProperty="AreaOfOrigin" FilterProperty="AreaOfOrigin" Title="Area Of Origin" Template="CardAreaRender" Width="165px"/>
+        <RadzenDataGridColumn TItem="YellowCard" SortProperty="AreaOfOrigin" FilterProperty="AreaOfOrigin" Title="Area Of Origin" Template="CardAreaRender" Width="165px" Sortable="false"/>
 
     </Columns>
 </RadzenDataGrid>

@@ -23,7 +23,7 @@
         {
             if (context.Data.Key is CardAreaOfOrigin) 
             {
-                if(_dataGrid.ColumnsCollection.Single(x => x.Title == "Status").FilterValue == null)
+                if(_dataGrid.ColumnsCollection.Where(x => x.Title == "Status" || x.Title == "Due").All(x => x.FilterValue == null))
                 {
                     <RadzenText>@(context.Data.Key) - @_dataGrid.View.Where(x => x.AreaOfOrigin == AreaFromDynamic(context)).GetCompletionRate(2)% complete</RadzenText>
                 }
@@ -82,18 +82,19 @@
             </FooterTemplate>
         </RadzenDataGridColumn>
         
-        @if(!_isSingleVan)
-        {
-            <RadzenDataGridColumn TItem="JobCard" Title="Van Position" Template="VanPosition" Width="200px" Sortable="false"/>
-        }
+        <RadzenDataGridColumn TItem="JobCard" Title="Due" Template="CardDueStatus" Width="200px" Sortable="false">
+            <FilterTemplate>
+                <RadzenDropDown TValue="string" Data="_dueStatusOptions" Change="SetDueStatusFilters" AllowClear="true" Placeholder="Select..." Disabled="true"/>
+            </FilterTemplate>
+        </RadzenDataGridColumn>
         
-        <RadzenDataGridColumn TItem="JobCard" SortProperty="CardStatus" FilterProperty="CardStatus" Title="Status" Template="CardStatusRender" Width="165px">
+        <RadzenDataGridColumn TItem="JobCard" SortProperty="CardStatus" FilterProperty="CardStatus" Title="Status" Template="CardStatusRender" Width="165px"  Sortable="false">
             <FilterTemplate>
                 <RadzenDropDown TValue="string" Data="_statusOptions" Change="SetStatusFilters" AllowClear="true" Placeholder="Select..."/>
             </FilterTemplate>
         </RadzenDataGridColumn>
 
-        <RadzenDataGridColumn TItem="JobCard" SortProperty="AreaOfOrigin" FilterProperty="AreaOfOrigin" Title="Area Of Origin" Template="CardAreaRender" Width="165px"/>
+        <RadzenDataGridColumn TItem="JobCard" SortProperty="AreaOfOrigin" FilterProperty="AreaOfOrigin" Title="Area Of Origin" Template="CardAreaRender" Sortable="false" Width="165px"/>
 
     </Columns>
 </RadzenDataGrid>
@@ -119,6 +120,7 @@
     private RadzenDataGrid<JobCard> _dataGrid = default!;
     private RadzenTextBox _nameFilterBox = default!;
     private IEnumerable<string> _statusOptions = ["Completed", "Not Completed", "Not Started", "In Progress", "Unable To Complete"];
+    private IEnumerable<string> _dueStatusOptions = ["Not Due", "Due", "Over Due"];
 
     private CardAreaOfOrigin AreaFromDynamic(Group area)
     {
@@ -170,7 +172,7 @@
         StateHasChanged();
     }
     
-     void SetStatusFilters(object? value)
+    void SetStatusFilters(object? value)
     {
         RadzenDataGridColumn<JobCard>? column = _dataGrid.ColumnsCollection.Single(x => x.Title == "Status");
 
@@ -211,6 +213,38 @@
             column.ClearFilters();
             column.FilterOperator = FilterOperator.Equals;
             column.FilterValue = CardStatus.UnableToComplete;
+        }
+    }
+    
+    void SetDueStatusFilters(object? value)
+    {
+        RadzenDataGridColumn<JobCard>? column = _dataGrid.ColumnsCollection.Single(x => x.Title == "Due");
+
+        if (value is null)
+        {
+            column.ClearFilters();
+            return;
+        }
+
+        string selection = (string)value;
+
+        if (selection == "Not Due")
+        {
+            column.ClearFilters();
+            column.FilterOperator = FilterOperator.Equals;
+            column.FilterValue = DueStatus.NotDue;
+        }
+        else if (selection == "Due")
+        {
+            column.ClearFilters();
+            column.FilterOperator = FilterOperator.NotEquals;
+            column.FilterValue = DueStatus.Due;
+        }
+        else if (selection == "Over Due")
+        {
+            column.ClearFilters();
+            column.FilterOperator = FilterOperator.Equals;
+            column.FilterValue = DueStatus.OverDue;
         }
     }
     
@@ -360,13 +394,15 @@
                };
     }
 
-    private RenderFragment VanPosition(JobCard jobCard)
+    private RenderFragment CardDueStatus(JobCard jobCard)
     {
         IProductionPosition position = ProductionService.ProductionVans[jobCard.BoardName.ToLower()].Position;
 
         return __builder =>
                {
-                   <RadzenText Style="white-space: pre-wrap; text-align: center;">@position.PositionName</RadzenText>
+                   <RadzenCard Style="@("height: 4em; background:" + jobCard.GetTargetStatus(position))">
+                       <RadzenText Style="white-space: pre-wrap; text-align: center;">@jobCard.GetTargetStatus(position).CleanName()</RadzenText>
+                   </RadzenCard>
                };
     }
 }

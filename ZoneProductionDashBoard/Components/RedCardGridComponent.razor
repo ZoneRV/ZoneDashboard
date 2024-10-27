@@ -47,15 +47,15 @@
             </FooterTemplate>
         </RadzenDataGridColumn>
 
-        <RadzenDataGridColumn TItem="RedCard" SortProperty="CardStatus" FilterProperty="CardStatus" Title="Status" Template="CardStatusRender" Width="165px">
+        <RadzenDataGridColumn TItem="RedCard" SortProperty="CardStatus" FilterProperty="CardStatus" Title="Status" Template="CardStatusRender" Width="165px" Sortable="false">
             <FilterTemplate>
                 <RadzenDropDown TValue="string" Data="_statusOptions" Change="SetStatusFilters" AllowClear="true" Placeholder="Select..."></RadzenDropDown>
             </FilterTemplate>
         </RadzenDataGridColumn>
 
-        <RadzenDataGridColumn TItem="RedCard" SortProperty="AreaOfOrigin" FilterProperty="AreaOfOrigin" Title="Area Of Origin" Template="CardAreaRender" Width="165px"/>
+        <RadzenDataGridColumn TItem="RedCard" SortProperty="AreaOfOrigin" FilterProperty="AreaOfOrigin" Title="Area Of Origin" Template="CardAreaRender" Width="165px" Sortable="false"/>
 
-        <RadzenDataGridColumn TItem="RedCard" SortProperty="RedFlagIssue" FilterProperty="RedFlagIssue" Title="Issue" Template="RedFlagIssueRender" Width="165px"/>
+        <RadzenDataGridColumn TItem="RedCard" SortProperty="RedFlagIssue" FilterProperty="RedFlagIssue" Title="Issue" Template="RedFlagIssueRender" Width="165px" Sortable="false"/>
 
         <RadzenDataGridColumn TItem="RedCard" Property="Members" Title="Members" Sortable="false" FilterProperty="MemberNames" Template="MemberRenderFragment" MinWidth="300px">
             <FilterTemplate>
