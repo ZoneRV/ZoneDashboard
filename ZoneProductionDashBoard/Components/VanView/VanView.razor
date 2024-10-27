@@ -2,22 +2,24 @@
 
 @inherits UpdatableComponent
 
-<RadzenTabs>
-    <Tabs>
-        <RadzenTabsItem Text="Job Cards">
-            <JobCardGridComponent JobCards="Van.JobCards" Style="height: 85vh" GroupByAreaOfOrigin="@true" @ref="@_jobCardGrid"/>
-        </RadzenTabsItem>
-        <RadzenTabsItem Text="Red Cards">
-            <RedCardGridComponent RedCards="Van.RedCards" Style="height: 85vh" @ref="@_redCardGrid" IsSingleVan="true"/>
-        </RadzenTabsItem>
-        <RadzenTabsItem Text="Yellow Cards">
-            <YellowCardGridComponent YellowCards="Van.YellowCards" Style="height: 85vh" @ref="_yellowCardGrid" IsSingleVan="true"/>
-        </RadzenTabsItem>
-        <RadzenTabsItem Text="History">
-            <VanRedLineDeadLineComponent Van="Van" @ref="@_redLineDeadLineComponent"/>
-        </RadzenTabsItem>
-    </Tabs>
-</RadzenTabs>
+<div style="@Style">
+    <RadzenTabs>
+        <Tabs>
+            <RadzenTabsItem Text="Job Cards">
+                <JobCardGridComponent JobCards="Van.JobCards" Style="@GridStyles" GroupByAreaOfOrigin="@true" @ref="@_jobCardGrid"/>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Red Cards">
+                <RedCardGridComponent RedCards="Van.RedCards" Style="@GridStyles" @ref="@_redCardGrid" IsSingleVan="true"/>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Yellow Cards">
+                <YellowCardGridComponent YellowCards="Van.YellowCards" Style="@GridStyles" @ref="_yellowCardGrid" IsSingleVan="true"/>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="History">
+                <VanRedLineDeadLineComponent Van="Van" @ref="@_redLineDeadLineComponent"/>
+            </RadzenTabsItem>
+        </Tabs>
+    </RadzenTabs>
+</div>
 
 @code {
     [Parameter, EditorRequired] 
@@ -25,6 +27,13 @@
 
     [Inject] 
     public IProductionService ProductionService { get; set; } = default!;
+
+    [Parameter]
+    public string Style { get; set; } = "";
+    
+    [Parameter]
+    public string GridStyles { get; set; } = "";
+    
 
     VanRedLineDeadLineComponent? _redLineDeadLineComponent;
     RedCardGridComponent? _redCardGrid;

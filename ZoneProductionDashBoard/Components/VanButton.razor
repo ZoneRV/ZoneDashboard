@@ -1,47 +1,62 @@
+@using Microsoft.AspNetCore.Components.Rendering
+@using ZoneProductionLibrary.ProductionServices.Main
 @using Serilog
+
 <RadzenCard Style="@($"padding: 1px; background-color: {Color}; width: min-content; height: min-content")">
     <RadzenSplitButton
-        Text="@VanName.ToUpper()"
+        ButtonContent="@ButtonText" 
         Variant="Variant.Text"
         @ref="_button"
         AlwaysOpenPopup="true"
         Click="OnClick"
         BusyText="Loading..."
-        Icon="@IconName()" 
         Shade="Shade.Darker">
         <ChildContent>
             @if (_van is null)
             {
-                <RadzenSplitButtonItem Text="Load Van"/>
+                <RadzenSplitButtonItem Text="Load Van" Icon="download"/>
             }
             else
             {
-                <RadzenStack Gap="3px">
-                    <p>
-                        Position: @_van.Position.PositionName<br/>
-                        Handover:<br/>
-
-                        @{ var jobCards = _van.JobCards.Where(x => (x.Position < _van.Position || x.Position.Equals(_van.Position)) && x.CardStatus is not CardStatus.Completed); }
-                        @{ var redCards = _van.RedCards.Where(x => x.CardStatus is not CardStatus.Completed); }
-                        @{ var yellowCards = _van.YellowCards.Where(x => x.CardStatus is not CardStatus.Completed); }
-
+                var jobCards = _van.JobCards.Where(x => (x.Position < _van.Position || x.Position.Equals(_van.Position)) && x.CardStatus is not CardStatus.Completed); 
+                var redCards = _van.RedCards.Where(x => x.CardStatus is not CardStatus.Completed); 
+                var yellowCards = _van.YellowCards.Where(x => x.CardStatus is not CardStatus.Completed); 
+                
+                <p>
+                    <a style="font-weight: bold">Position:&nbsp;</a><a>@_van.Position.PositionName<br/></a>
+                    <a style="font-weight: bold">Handover:&nbsp;</a><a>@VanTitleComponent.GetHandoverString(ProductionService, _van)<br/></a>
+                    
+                    @if (!DetailedButton)
+                    {
                         @if (jobCards.Any())
                         {
-                            <a>Job Cards Overdue: @jobCards.Count()<br/></a>
+                            <a style="font-weight: bold">Job Cards Due:&nbsp;</a>
+                            <a>@jobCards.Count() - @jobCards.TotalTimeRemaining().TotalHours.ToString("N0"):@jobCards.TotalTimeRemaining().Minutes.ToString("00") Hours<br/></a>
                         }
                         @if (redCards.Any())
                         {
-                            <a>Red Cards Uncompleted: @redCards.Count()<br/></a>
+                            <a style="font-weight: bold">Red Cards Uncompleted:&nbsp;</a>
+                            <a>@redCards.Count()<br/></a>
                         }
                         @if (yellowCards.Any())
                         {
-                            <a>Yellow Cards Uncompleted: @yellowCards.Count()</a>
+                            <a style="font-weight: bold">Yellow Cards Uncompleted:&nbsp;</a>
+                            <a>@yellowCards.Count()</a>
                         }
-                    </p>
-                </RadzenStack>
-                <RadzenSplitButtonItem Text="More Info"/>
+                    }
+                    else
+                    {
+                        @if (jobCards.Any())
+                        {
+                            <a style="font-weight: bold">Due Job Cards Time Remaining:&nbsp;</a>
+                            <a>@jobCards.TotalTimeRemaining().TotalHours.ToString("N0"):@jobCards.TotalTimeRemaining().Minutes.ToString("00") Hours<br/></a>
+                        }
+                    }
+                </p>
+
+                <RadzenSplitButtonItem Text="More Info" Icon="info"/>
             }
-            <RadzenSplitButtonItem Text="Open In Trello"/>
+            <RadzenSplitButtonItem Text="Open In Trello" Icon="open_in_browser"/>
         </ChildContent>
     </RadzenSplitButton>
 </RadzenCard>
@@ -60,6 +75,9 @@
 
     [Parameter] 
     public string Color { get; set; } = "#FFFFFF";
+
+    [Parameter] 
+    public bool DetailedButton { get; set; } = false;
     
     private VanBoard? _van = null;
     private VanProductionInfo _info = default!;
@@ -72,8 +90,22 @@
 
         _info = ProductionService.ProductionVans[VanName.ToLower()];
         _van = ProductionService.GetBoardByName(VanName.ToLower());
+
+        if (ProductionService is ProductionService prod)
+        {
+            ZoneProductionLibrary.ProductionServices.Main.ProductionService.BoardUpdated += Update;
+        }
         
         base.OnInitialized();
+    }
+
+    public void Update(object? sender, BoardUpdateInfo e)
+    {
+        if (_van is not null && e.BoardId == _van.Id)
+        {
+            _van = ProductionService.GetBoardByName(VanName);
+            StateHasChanged();
+        }
     }
 
     async Task OnClick(RadzenSplitButtonItem item)
@@ -101,16 +133,18 @@
                 VanName.ToUpper(),
                 new Dictionary<string, object>
                 {
-                    { "Van", _van }
+                    { "Van", _van },
+                    { "Style", "height: 75h" },
+                    { "GridStyles", "height: 75vh" }
                 },
                 new DialogOptions
                 {
                     Width = "90vw",
-                    Height = "100vh",
+                    Height = "99vh",
                     ShowClose = true,
                     CloseDialogOnOverlayClick = true, 
                     CloseDialogOnEsc = true,
-                    TitleContent = ds => TitleFragment(ds, _van)
+                    TitleContent = ds => TitleFragment(ds, _van), 
                 });
         }
     }
@@ -123,6 +157,62 @@
                };
     }
 
+    void ButtonText(RenderTreeBuilder treeBuilder)
+    {
+        RenderFragment? fragment = null;
+
+        if (_button.IsBusy)
+        {
+            treeBuilder.OpenComponent<RadzenIcon>(0);
+            treeBuilder.AddAttribute(1, "Icon",  (object) "refresh");
+            treeBuilder.AddAttribute(2, "Style", (object) "animation: rotation 700ms linear infinite");
+            treeBuilder.CloseComponent();
+            treeBuilder.OpenElement(3, "span");
+            treeBuilder.AddAttribute(4, "class", "rz-button-text");
+            treeBuilder.AddContent(5, "Loading...");
+            treeBuilder.CloseElement();
+            return;
+        }
+        
+        if (!DetailedButton || _van is null)
+        {
+            fragment = __builder =>
+            {
+                <RadzenStack Orientation="Orientation.Horizontal" Gap=".5em">
+                    <RadzenIcon Icon="@IconName()"/>
+                    <RadzenText>@VanName.ToUpper()</RadzenText>
+                </RadzenStack>
+            };
+        }
+        else
+        {
+            fragment = __builder =>
+            {
+                <p style="text-align: start; font-size: .75em">
+                    <a style="font-weight: bold; font-size: 1em">@VanName.ToUpper()</a><br/>
+                    @{ var jobCards = _van.JobCards.Where(x => (x.Position < _van.Position || x.Position.Equals(_van.Position)) && x.CardStatus is not CardStatus.Completed); }
+                    @{ var redCards = _van.RedCards.Where(x => x.CardStatus is not CardStatus.Completed); }
+                    @{ var yellowCards = _van.YellowCards.Where(x => x.CardStatus is not CardStatus.Completed); }
+
+                    @if (jobCards.Any())
+                                          {
+                                              <a style="font-weight: bold">Job Cards:&nbsp;</a><a>@jobCards.Count()<br/></a>
+                                          }
+                    @if (redCards.Any())
+                                          {
+                                              <a style="font-weight: bold">Red Cards:&nbsp;</a><a>@redCards.Count()<br/></a>
+                                          }
+                    @if (yellowCards.Any())
+                                          {
+                                              <a style="font-weight: bold">Yellow Cards:&nbsp;</a><a>@yellowCards.Count()</a>
+                                          }
+                </p>
+            };
+        }
+        
+        treeBuilder.AddContent(0, fragment);
+    }
+
     string IconName()
     {
         @if (_van is null)
@@ -131,7 +221,7 @@
         }
         else
         {
-            @if (_van.JobCards.Any(x => (x.Position < _van.Position || x.Position.Equals(_van.Position)) && x.CardStatus != CardStatus.Completed) || _van.RedCards.Any(x => x.CardStatus != CardStatus.Completed))
+            @if (_van.JobCards.Any(x => (x.Position < _van.Position || x.Position.Equals(_van.Position)) && x.CardStatus != CardStatus.Completed) || _van.RedCards.Any(x => x.CardStatus != CardStatus.Completed) || _van.YellowCards.Any(x => x.CardStatus != CardStatus.Completed))
             {
                 if (_info.Handover - TimeSpan.FromDays(3) < DateTime.Now)
                 {

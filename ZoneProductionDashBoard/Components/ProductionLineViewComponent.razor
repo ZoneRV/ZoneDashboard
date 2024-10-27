@@ -3,7 +3,8 @@
 <RadzenTimeline 
     Orientation="Orientation.Horizontal" 
     AlignItems="AlignItems.Center" 
-    @ref="_timeLine">
+    @ref="_timeLine"
+    Style="@Style">
 
     <Items>
         @foreach (IProductionPosition pos in (TypeOfVan is TypeOfVan.Gen2) ? Gen2ProductionPosition.GetAll() : ExpoProductionPosition.GetAll())
@@ -16,9 +17,7 @@
                     <RadzenStack>
                         @foreach (var van in Vans.Where(x => x.Position.Equals(pos)))
                         {
-                            <RadzenCard>
-                                <VanButton VanName="@van.Name"/>
-                            </RadzenCard>
+                            <VanButton VanName="@van.Name" DetailedButton="true"/>
                         }
                     </RadzenStack>
                 </ChildContent>
@@ -33,6 +32,8 @@
 
     [Parameter, EditorRequired] 
     public TypeOfVan TypeOfVan { get; set; } = default;
+
+    [Parameter] public string Style { get; set; } = "";
 
     public List<IProductionPosition> _positions = [];
 

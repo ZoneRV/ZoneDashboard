@@ -1,4 +1,4 @@
-<RadzenText Style="font-weight: bold;">@Van.Name.ToUpper() - @Van.Position.PositionName - @GetHandoverString()</RadzenText>
+<RadzenText Style="font-weight: bold;">@Van.Name.ToUpper() - @Van.Position.PositionName - Handover: @GetHandoverString(ProductionService, Van)</RadzenText>
 
 @code {
     [Inject] 
@@ -15,29 +15,29 @@
         base.OnInitialized();
     }
 
-    string GetHandoverString()
+    public static string GetHandoverString(IProductionService productionService, VanBoard van)
     {
-        var info = ProductionService.GetVanInfo(Van);
+        var info = productionService.GetVanInfo(van);
         
         if (info.HandoverState is HandoverState.HandedOver)
             return "Handed Over.";
         
-        if(Van.Handover.HasValue)
+        if(van.Handover.HasValue)
         {
-            if (Van.Handover.Value - DateTimeOffset.Now < TimeSpan.Zero)
+            if (van.Handover.Value - DateTimeOffset.Now < TimeSpan.Zero)
             {
-                if(Van.Handover.Value - DateTimeOffset.Now < - TimeSpan.FromDays(1))
-                    return $"Handover: {((Van.Handover.Value - DateTimeOffset.Now) * -1).TotalDays.ToString("N0")} days ago";
+                if(van.Handover.Value - DateTimeOffset.Now < - TimeSpan.FromDays(1))
+                    return $"{((van.Handover.Value - DateTimeOffset.Now) * -1).TotalDays.ToString("N0")} days ago";
                 
                 else
-                    return "Handover over due";
+                    return "over due";
             }
             
-            if(Van.Handover.Value - DateTimeOffset.Now > TimeSpan.FromDays(3))
-                return $"Handover: {Van.Handover.Value.LocalDateTime.ToString("dd/MM/yy")}";
+            if(van.Handover.Value - DateTimeOffset.Now > TimeSpan.FromDays(3))
+                return $"{van.Handover.Value.LocalDateTime.ToString("dd/MM/yy")}";
 
             else
-                return $"Handover: {Van.Handover.Value.LocalDateTime.ToString("ddd hh:mm tt")}";
+                return $"{van.Handover.Value.LocalDateTime.ToString("ddd hh:mm tt")}";
         }
 
         return "";

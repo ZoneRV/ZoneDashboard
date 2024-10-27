@@ -44,8 +44,7 @@
         TextProperty="Name">
         <ChildContent>
             <CustomRadzenWeekView StartTime="TimeSpan.FromHours(3)" EndTime="TimeSpan.FromHours(17)" HeaderFormat="ddd dd/MM" TimeFormat="HH:mm"/>
-            <RadzenMonthView MaxAppointmentsInSlot="5"/>
-            <RadzenYearPlannerView MaxAppointmentsInSlot="5"/>
+            <RadzenMonthView MaxAppointmentsInSlot="3"/>
         </ChildContent>
         <Template Context="data">
             <VanButton VanName="@data.Name" Color="@ColorTranslator.ToHtml(data.HandoverState is HandoverState.HandedOver ? Color.FromArgb(255, 180, 180, 180) : data.VanModel.GetTypeColor())" />

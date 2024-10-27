@@ -21,9 +21,16 @@
     <GroupHeaderTemplate>
         @if(_isSingleVan)
         {
-            if (context.Data.Key is CardAreaOfOrigin)
+            if (context.Data.Key is CardAreaOfOrigin) 
             {
-                <RadzenText>@(context.Data.Key) - @_dataGrid.View.Where(x => x.AreaOfOrigin == AreaFromDynamic(context)).GetCompletionRate(2)%</RadzenText>
+                if(_dataGrid.ColumnsCollection.Single(x => x.Title == "Status").FilterValue == null)
+                {
+                    <RadzenText>@(context.Data.Key) - @_dataGrid.View.Where(x => x.AreaOfOrigin == AreaFromDynamic(context)).GetCompletionRate(2)% complete</RadzenText>
+                }
+                else
+                {
+                    <RadzenText>@(context.Data.Key) - @_dataGrid.View.Count(x => x.AreaOfOrigin == AreaFromDynamic(context))</RadzenText>
+                }
             }
             else
             {
@@ -31,8 +38,8 @@
             }
         }
         else
-        {if 
-            (context.Data.Key is CardAreaOfOrigin)
+        {
+            if (context.Data.Key is CardAreaOfOrigin)
             {
                 <RadzenText Style="position: sticky; left: 20px">@(AreaFromDynamic(context))</RadzenText>
             }
