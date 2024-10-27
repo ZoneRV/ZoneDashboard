@@ -4,11 +4,12 @@
 
 <PageTitle>Production</PageTitle>
 
-<div style="height: calc(100vh - 4.5rem)">
-    <ProductionLineViewComponent TypeOfVan="TypeOfVan.Gen2" Vans="_gen2Boards" @ref="_gen2Line" Style="height: 50%"></ProductionLineViewComponent>
-    <ProductionLineViewComponent TypeOfVan="TypeOfVan.Expo" Vans="_expoBoards" @ref="_expoLine" Style="height: 50%"></ProductionLineViewComponent>
+<div style="width: 100vw; height: calc(100vh - 4rem); overflow-x: scroll">
+    <RadzenStack JustifyContent="JustifyContent.Center" >
+        <ProductionLineViewComponent TypeOfVan="TypeOfVan.Gen2" Vans="_gen2Boards" @ref="_gen2Line"></ProductionLineViewComponent>
+        <ProductionLineViewComponent TypeOfVan="TypeOfVan.Expo" Vans="_expoBoards" @ref="_expoLine"></ProductionLineViewComponent>
+    </RadzenStack>
 </div>
-
 @code {
     List<VanBoard> _gen2Boards = [];
     List<VanBoard> _expoBoards = [];
