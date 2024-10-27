@@ -30,7 +30,7 @@ namespace ZoneProductionLibrary.Models.Boards
         public IEnumerable<Check> AllChecks => CheckLists.SelectMany(x => x.Checks);
         public double CompletionRate => GetCompletionRate();
         public bool IsCompleted => Math.Abs(this.CompletionRate - 1d) < .01;
-        public Color Color(TargetStatus status) => TrelloUtil.GetIndicatorColor(CompletionRate, status);
+        public Color Color(DueStatus status) => TrelloUtil.GetIndicatorColor(CompletionRate, status);
 
         public override string ToString() => $"{Name} {((TaskTime.Minutes != 0) ? TaskTime.Minutes.ToString() + "m" : string.Empty)} - {Math.Round(CompletionRate * 100, 0)}%";
 
@@ -49,16 +49,16 @@ namespace ZoneProductionLibrary.Models.Boards
                 return (double)CompletedCheckCount / (double)TotalChecks;
         }
 
-        public TargetStatus GetTargetStatus(IProductionPosition vanPosition)
+        public DueStatus GetTargetStatus(IProductionPosition vanPosition)
         {
             if (Position < vanPosition)
-                return TargetStatus.Finished;
+                return DueStatus.OverDue;
 
             else if (Position.Equals(vanPosition))
-                return TargetStatus.InProgress;
+                return DueStatus.Due;
 
             else
-                return TargetStatus.NotStarted;
+                return DueStatus.NotDue;
         }
 
         internal JobCard(string id, string boardId, string boardName, string name, string trelloListName, IEnumerable<Checklist> checklists, IEnumerable<Comment> comments, CardAreaOfOrigin cardAreaOfOrigin, IProductionPosition productionPosition, CardStatus cardStatus, DateTimeOffset? cardStatusLastUpdated, TimeSpan taskTime)

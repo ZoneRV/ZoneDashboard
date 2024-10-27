@@ -270,15 +270,15 @@ namespace ZoneProductionLibrary
             }
         }
 
-        public static Color GetIndicatorColor(double completionRate, TargetStatus status)
+        public static Color GetIndicatorColor(double completionRate, DueStatus status)
         {
             if (completionRate > .99d)
                 return Color.Green;
 
-            else if (status == TargetStatus.NotStarted)
+            else if (status == DueStatus.NotDue)
                 return Color.LightGray;
 
-            else if ((status == TargetStatus.InProgress && completionRate == 0d) || status == TargetStatus.NotSpecified)
+            else if (status == DueStatus.Due && completionRate == 0d)
                 return Color.Black;
 
             else if (completionRate > 0d)
@@ -288,19 +288,18 @@ namespace ZoneProductionLibrary
                 return Color.Red;
         }
 
-        public static Color GetIndicatorColor(bool isComplete, TargetStatus status)
+        public static Color GetIndicatorColor(bool isComplete, DueStatus status)
         {
             if (isComplete)
                 return Color.Green;
 
-            else if (status != TargetStatus.NotSpecified && status == TargetStatus.NotStarted)
+            if (status == DueStatus.NotDue)
                 return Color.LightGray;
 
-            else if (status != TargetStatus.NotSpecified && status == TargetStatus.InProgress)
+            if (status == DueStatus.Due)
                 return Color.Black;
 
-            else
-                return Color.Red;
+            return Color.Red;
         }
 
         public static Color GetIndicatorColor(this CardStatus cardStatus)

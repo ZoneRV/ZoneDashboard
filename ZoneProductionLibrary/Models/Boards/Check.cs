@@ -9,7 +9,7 @@ namespace ZoneProductionLibrary.Models.Boards
         public DateTimeOffset? LastUpdated { get; set; }
         public string Name { get; }
         public string Id { get; }
-        public Color Color(TargetStatus status) => TrelloUtil.GetIndicatorColor(IsChecked, status); //TODO Implement 
+        public Color Color(DueStatus status) => TrelloUtil.GetIndicatorColor(IsChecked, status); //TODO Implement 
 
         public override string ToString() => $"{Name}:{Id}";
 

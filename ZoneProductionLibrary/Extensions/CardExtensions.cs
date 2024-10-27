@@ -4,16 +4,16 @@ namespace ZoneProductionLibrary.Extensions
 {
     public static class CardExtensions
     {
-        public static TargetStatus GetTargetStatus(this IEnumerable<JobCard> cards, IProductionPosition vanPosition)
+        public static DueStatus GetTargetStatus(this IEnumerable<JobCard> cards, IProductionPosition vanPosition)
         {
-            if (cards.All(x => x.GetTargetStatus(vanPosition) == TargetStatus.Finished))
-                return TargetStatus.Finished;
+            if (cards.All(x => x.GetTargetStatus(vanPosition) == DueStatus.OverDue))
+                return DueStatus.OverDue;
 
-            else if (cards.All(x => x.GetTargetStatus(vanPosition) == TargetStatus.InProgress))
-                return TargetStatus.InProgress;
+            else if (cards.Any(x => x.GetTargetStatus(vanPosition) is DueStatus.Due or DueStatus.OverDue))
+                return DueStatus.Due;
 
             else
-                return TargetStatus.NotStarted;
+                return DueStatus.NotDue;
         }
 
         public static double GetCompletionRate(this IEnumerable<JobCard> cards, int? roundingDigits = null)

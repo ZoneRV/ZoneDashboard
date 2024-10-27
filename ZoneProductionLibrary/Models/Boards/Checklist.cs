@@ -11,7 +11,7 @@ namespace ZoneProductionLibrary.Models.Boards
         public int CompletedCheckCount => Checks.Count(x => x.IsChecked);
         public int UncompletedCheckCount => Checks.Count(x => !x.IsChecked);
         public double CompletionRate => Checks.Count > 0 ? CompletedCheckCount / (double)Checks.Count : 1d;
-        public Color Color(TargetStatus status) => TrelloUtil.GetIndicatorColor(CompletionRate, status);
+        public Color Color(DueStatus status) => TrelloUtil.GetIndicatorColor(CompletionRate, status);
 
         public override string ToString() => $"{Name}:{Id} - {string.Format("{0:0.00}", CompletionRate * 100)}%";
 

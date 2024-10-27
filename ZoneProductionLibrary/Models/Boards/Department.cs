@@ -14,7 +14,7 @@ namespace ZoneProductionLibrary.Models.Boards
 
 
         public double RedcardCompletionRate => RedCards.Count == 0 ? 1d : RedCards.Count(x => x.CardStatus == CardStatus.Completed) / (double)RedCards.Count;
-        public Color RedcardColor => TrelloUtil.GetIndicatorColor(RedcardCompletionRate, TargetStatus.Finished);
+        public Color RedcardColor => TrelloUtil.GetIndicatorColor(RedcardCompletionRate);
         public double CompletionRate => GetCompletionRate();
         public double TargetCompletionRate(IProductionPosition vanPosition) => GetTargetCompletionRate(vanPosition);
         public Color Color(IProductionPosition vanPosition) => TrelloUtil.GetIndicatorColor(GetTargetCompletionRate(vanPosition));
@@ -68,7 +68,7 @@ namespace ZoneProductionLibrary.Models.Boards
 
         private double GetTargetCompletionRate(IProductionPosition vanPosition)
         {
-            var cards = JobCards.Where(x => x.GetTargetStatus(vanPosition) != TargetStatus.NotStarted);
+            var cards = JobCards.Where(x => x.GetTargetStatus(vanPosition) != DueStatus.NotDue);
             double totalScore = cards.Sum(x => x.CompletionRate) + RedCards.Count(x => x.CardStatus == CardStatus.Completed);
 
             double total = cards.Count() + RedCards.Count;

@@ -13,7 +13,6 @@ namespace ZoneProductionLibrary.Models.BoardObjects
         public bool IsChecked { get; private set; }
         public DateTimeOffset? LastModified { get; private set; }
 
-        public Color Color(TargetStatus status) => TrelloUtil.GetIndicatorColor(this.IsChecked, status); //TODO Implement
         public override string ToString() => $"Check {Id}: {Name}";
 
         public CheckObject(string boardId, ChecklistItem checkItem, DateTimeOffset? lastModified)
