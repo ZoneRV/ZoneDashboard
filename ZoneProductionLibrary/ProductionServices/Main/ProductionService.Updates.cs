@@ -381,19 +381,19 @@ public partial class ProductionService
         {
             if (_jobCards.TryGetValue(e.CardId, out JobCardObject? jobCard))
             {
-                foreach (string commentId in jobCard.CommentIds)
-                {
-                    _comments.TryRemove(commentId, out _);
-                }
-
-                jobCard.CommentIds = new List<string>();
-
                 GetCardOptions options = new GetCardOptions()
                 {
                     ActionsTypes = new ActionTypesToInclude("commentCard")
                 };
 
                 Card? trelloCard = await _trelloClient.GetCardAsync(e.CardId, options);
+                
+                foreach (string commentId in jobCard.CommentIds)
+                {
+                    _comments.TryRemove(commentId, out _);
+                }
+
+                jobCard.CommentIds = new List<string>();
 
                 foreach (TrelloAction action in trelloCard.Actions)
                 {
@@ -410,19 +410,19 @@ public partial class ProductionService
 
             else if (_redCards.TryGetValue(e.CardId, out RedCardObject? redCard))
             {
-                foreach (string commentId in redCard.CommentIds)
-                {
-                    _comments.TryRemove(commentId, out _);
-                }
-
-                redCard.CommentIds = new List<string>();
-
                 GetCardOptions options = new GetCardOptions()
                 {
                     ActionsTypes = new ActionTypesToInclude("commentCard")
                 };
 
                 Card? trelloCard = await _trelloClient.GetCardAsync(e.CardId, options);
+                
+                foreach (string commentId in redCard.CommentIds)
+                {
+                    _comments.TryRemove(commentId, out _);
+                }
+
+                redCard.CommentIds = new List<string>();
 
                 foreach (TrelloAction action in trelloCard.Actions)
                 {
@@ -439,12 +439,6 @@ public partial class ProductionService
 
             else if (_yellowCards.TryGetValue(e.CardId, out RedCardObject? yellowCard))
             {
-                foreach (string commentId in yellowCard.CommentIds)
-                {
-                    _comments.TryRemove(commentId, out _);
-                }
-
-                yellowCard.CommentIds = new List<string>();
 
                 GetCardOptions options = new GetCardOptions()
                 {
@@ -452,6 +446,13 @@ public partial class ProductionService
                 };
 
                 Card? trelloCard = await _trelloClient.GetCardAsync(e.CardId, options);
+                
+                foreach (string commentId in yellowCard.CommentIds)
+                {
+                    _comments.TryRemove(commentId, out _);
+                }
+
+                yellowCard.CommentIds = new List<string>();
 
                 foreach (TrelloAction action in trelloCard.Actions)
                 {

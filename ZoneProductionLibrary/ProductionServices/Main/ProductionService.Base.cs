@@ -516,7 +516,10 @@ public partial class ProductionService : IProductionService
             if (Members.TryGetValue(memberId, out TrelloMember? member))
                 members.Add(member);
             else
-                Log.Logger.Error("Could not find member with id:{memberId}", memberId);
+            {
+                KeyNotFoundException notFound = new KeyNotFoundException($"Could not find member with id:{memberId}");
+                Log.Logger.Error(notFound, "Id Not found");
+            }
         }
 
         return members;
@@ -537,7 +540,8 @@ public partial class ProductionService : IProductionService
             }
             else
             {
-                Log.Logger.Error("Could not find commend with id:{commentId}", commentId);
+                KeyNotFoundException notFound = new KeyNotFoundException($"Could not find comment with id:{commentId}");
+                Log.Logger.Error(notFound, "Id Not found");
             }
         }
 
