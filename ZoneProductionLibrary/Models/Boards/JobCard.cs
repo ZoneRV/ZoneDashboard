@@ -13,11 +13,14 @@ namespace ZoneProductionLibrary.Models.Boards
         public string Name { get; }
         public string Url => $"https://trello.com/c/{Id}/";
         public CardStatus CardStatus { get; }
+        public DueStatus DueStatus { get; }
         public DateTimeOffset? CardStatusLastUpdated { get; private set; }
         public CardAreaOfOrigin AreaOfOrigin { get; }
         public string TrelloListName { get; }
         public IProductionPosition Position { get; }
         public List<Checklist> CheckLists { get; } = new List<Checklist>();
+        public DateTimeOffset? Handover { get; }
+        public TimeSpan TimeToHandover => Handover.HasValue ? Handover.Value - DateTimeOffset.Now : TimeSpan.MaxValue;
         public TimeSpan TaskTime { get; }
         public TimeSpan TaskTimeOrDefault => TaskTime > TimeSpan.Zero ? TaskTime : TimeSpan.FromMinutes(30);
         public TimeSpan RemainingTaskTime => TaskTimeOrDefault - (TaskTimeOrDefault * CompletionRate);
@@ -49,18 +52,6 @@ namespace ZoneProductionLibrary.Models.Boards
                 return (double)CompletedCheckCount / (double)TotalChecks;
         }
 
-        public DueStatus GetTargetStatus(IProductionPosition vanPosition)
-        {
-            if (Position < vanPosition)
-                return DueStatus.OverDue;
-
-            else if (Position.Equals(vanPosition))
-                return DueStatus.Due;
-
-            else
-                return DueStatus.NotDue;
-        }
-
         internal JobCard(string id, string boardId, string boardName, string name, string trelloListName, IEnumerable<Checklist> checklists, IEnumerable<Comment> comments, CardAreaOfOrigin cardAreaOfOrigin, IProductionPosition productionPosition, CardStatus cardStatus, DateTimeOffset? cardStatusLastUpdated, TimeSpan taskTime)
         {
             this.Id = id;
@@ -85,9 +76,11 @@ namespace ZoneProductionLibrary.Models.Boards
 
         internal JobCard(JobCardObject jobCardObject, ProductionService productionService, IProductionPosition productionPosition, IEnumerable<Comment> comments)
         {
+            VanProductionInfo info = productionService.ProductionVans.Values.Single(x => x.Id == jobCardObject.BoardId);
+            
             this.Id = jobCardObject.Id;
             this.BoardId = jobCardObject.BoardId;
-            this.BoardName = productionService.ProductionVans.Values.Single(x => x.Id == BoardId).Name;
+            this.BoardName = info.Name;
             this.Name = jobCardObject.Name;
             this.TaskTime = jobCardObject.TaskTime;
             this.TrelloListName = jobCardObject.TrelloListName;
@@ -95,6 +88,15 @@ namespace ZoneProductionLibrary.Models.Boards
             this.CardStatusLastUpdated = jobCardObject.CardStatusLastUpdated;
             this.AreaOfOrigin = jobCardObject.AreaOfOrigin;
             this.Position = productionPosition;
+
+            this.Handover = info.Handover;
+            
+            if (Position < info.Position)
+                this.DueStatus = DueStatus.OverDue;
+            else if (Position.Equals(info.Position))
+                this.DueStatus = DueStatus.Due;
+            else
+                this.DueStatus = DueStatus.NotDue;
 
             List<Checklist> checklists = new List<Checklist>();
             foreach (var chListId in jobCardObject.ChecklistIds)

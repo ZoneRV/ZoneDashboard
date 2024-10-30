@@ -6,10 +6,10 @@ namespace ZoneProductionLibrary.Extensions
     {
         public static DueStatus GetTargetStatus(this IEnumerable<JobCard> cards, IProductionPosition vanPosition)
         {
-            if (cards.All(x => x.GetTargetStatus(vanPosition) == DueStatus.OverDue))
+            if (cards.All(x => x.DueStatus == DueStatus.OverDue))
                 return DueStatus.OverDue;
 
-            else if (cards.Any(x => x.GetTargetStatus(vanPosition) is DueStatus.Due or DueStatus.OverDue))
+            else if (cards.Any(x => x.DueStatus is DueStatus.Due or DueStatus.OverDue))
                 return DueStatus.Due;
 
             else

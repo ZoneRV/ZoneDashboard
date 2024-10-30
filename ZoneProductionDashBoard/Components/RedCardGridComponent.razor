@@ -5,6 +5,8 @@
 @using ZoneProductionDashBoard.Components.VanTreeNodes
 @inherits UpdatableComponent
 
+@implements IDisposable
+
 <RadzenDataGrid
     @ref="@_dataGrid"
     Data="@RedCards"
@@ -21,7 +23,7 @@
         @if (!IsSingleVan)
         {
             <RadzenDataGridColumn TItem="RedCard" FilterProperty="BoardName" Title="Van" Frozen="true"
-                                  Sortable="false" Width="200px">
+                                  Sortable="false" Width="200px" Template="BoardNameRenderFragment">
 
                 <FilterTemplate>
                     <RadzenTextBox Change="SetVanNameFilters" Style="width: 100%" />
@@ -94,7 +96,14 @@
         
         base.OnInitialized();
     }
-    
+
+    public void Dispose()
+    {
+        RedCards = [];
+        _dataGrid.Dispose();
+        NavigationManager.LocationChanged -= HandleLocationChanged;
+    }
+
     void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         foreach (RadzenDataGridColumn<RedCard> column in _dataGrid.ColumnsCollection)

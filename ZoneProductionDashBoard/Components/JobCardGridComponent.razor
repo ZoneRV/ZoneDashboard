@@ -3,6 +3,7 @@
 @using ZoneProductionDashBoard.Components.VanTreeNodes
 
 @inherits UpdatableComponent
+@implements IDisposable
 
 <RadzenDataGrid
     @ref="@_dataGrid"
@@ -25,11 +26,22 @@
             {
                 if(_dataGrid.ColumnsCollection.Where(x => x.Title == "Status" || x.Title == "Due").All(x => x.FilterValue == null))
                 {
-                    <RadzenText>@(context.Data.Key) - @_dataGrid.View.Where(x => x.AreaOfOrigin == AreaFromDynamic(context)).GetCompletionRate(2)% complete</RadzenText>
+                    <RadzenText>@AreaFromDynamic(context).CleanName() - @_dataGrid.View.Where(x => x.AreaOfOrigin == AreaFromDynamic(context)).GetCompletionRate(2)% complete</RadzenText>
                 }
                 else
                 {
-                    <RadzenText>@(context.Data.Key) - @_dataGrid.View.Count(x => x.AreaOfOrigin == AreaFromDynamic(context))</RadzenText>
+                    <RadzenText>@AreaFromDynamic(context).CleanName() - @_dataGrid.View.Count(x => x.AreaOfOrigin == AreaFromDynamic(context))</RadzenText>
+                }
+            }
+            else if (context.Data.Key is DueStatus) 
+            {
+                if(_dataGrid.ColumnsCollection.Where(x => x.Title == "Status" || x.Title == "Due").All(x => x.FilterValue == null))
+                {
+                    <RadzenText>@DueStatusFromDynamic(context).CleanName() - @_dataGrid.View.Where(x => x.DueStatus == DueStatusFromDynamic(context)).GetCompletionRate(2)% complete</RadzenText>
+                }
+                else
+                {
+                    <RadzenText>@DueStatusFromDynamic(context).CleanName() - @_dataGrid.View.Count(x => x.DueStatus == DueStatusFromDynamic(context))</RadzenText>
                 }
             }
             else
@@ -42,6 +54,10 @@
             if (context.Data.Key is CardAreaOfOrigin)
             {
                 <RadzenText Style="position: sticky; left: 20px">@(AreaFromDynamic(context))</RadzenText>
+            }
+            else if (context.Data.Key is DueStatus)
+            {
+                <RadzenText Style="position: sticky; left: 20px">@(DueStatusFromDynamic(context))</RadzenText>
             }
             else
             {
@@ -82,9 +98,9 @@
             </FooterTemplate>
         </RadzenDataGridColumn>
         
-        <RadzenDataGridColumn TItem="JobCard" Title="Due" Template="CardDueStatus" Width="200px" Sortable="false">
+        <RadzenDataGridColumn TItem="JobCard" FilterProperty="DueStatus" Title="Due" Template="CardDueStatus" Width="200px" Sortable="false">
             <FilterTemplate>
-                <RadzenDropDown TValue="string" Data="_dueStatusOptions" Change="SetDueStatusFilters" AllowClear="true" Placeholder="Select..." Disabled="true"/>
+                <RadzenDropDown TValue="string" Data="_dueStatusOptions" Change="SetDueStatusFilters" AllowClear="true" Placeholder="Select..."/>
             </FilterTemplate>
         </RadzenDataGridColumn>
         
@@ -120,9 +136,14 @@
     private RadzenDataGrid<JobCard> _dataGrid = default!;
     private RadzenTextBox _nameFilterBox = default!;
     private IEnumerable<string> _statusOptions = ["Completed", "Not Completed", "Not Started", "In Progress", "Unable To Complete"];
-    private IEnumerable<string> _dueStatusOptions = ["Not Due", "Due", "Over Due"];
+    private IEnumerable<string> _dueStatusOptions = ["Not Due", "Due Now", "Over Due"];
 
     private CardAreaOfOrigin AreaFromDynamic(Group area)
+    {
+        return area.Data.Key;
+    }
+    
+    private DueStatus DueStatusFromDynamic(Group area)
     {
         return area.Data.Key;
     }
@@ -136,6 +157,13 @@
         NavigationManager.LocationChanged += HandleLocationChanged;
         
         base.OnInitialized();
+    }
+
+    public void Dispose()
+    {
+        JobCards = [];
+        _dataGrid.Dispose();
+        NavigationManager.LocationChanged -= HandleLocationChanged;
     }
     
     void OnRender(DataGridRenderEventArgs<JobCard> args)
@@ -234,10 +262,10 @@
             column.FilterOperator = FilterOperator.Equals;
             column.FilterValue = DueStatus.NotDue;
         }
-        else if (selection == "Due")
+        else if (selection == "Due Now")
         {
             column.ClearFilters();
-            column.FilterOperator = FilterOperator.NotEquals;
+            column.FilterOperator = FilterOperator.Equals;
             column.FilterValue = DueStatus.Due;
         }
         else if (selection == "Over Due")
@@ -349,7 +377,7 @@
 
     private RenderFragment TimeToHandoverRenderFragment(JobCard jobCard)
     {
-        TimeSpan timeSpan = ProductionService.ProductionVans[jobCard.BoardName].TimeToHandover ?? TimeSpan.Zero;
+        TimeSpan timeSpan = jobCard.TimeToHandover;
         
         string timeToHandoverString = "";
         bool isNegative = false;
@@ -408,8 +436,8 @@
 
         return __builder =>
                {
-                   <RadzenCard Style="@("height: 4em; background:" + jobCard.GetTargetStatus(position))">
-                       <RadzenText Style="white-space: pre-wrap; text-align: center;">@jobCard.GetTargetStatus(position).CleanName()</RadzenText>
+                   <RadzenCard Style="@("height: 4em; background:" + jobCard.DueStatus)">
+                       <RadzenText Style="white-space: pre-wrap; text-align: center;">@jobCard.DueStatus.CleanName()</RadzenText>
                    </RadzenCard>
                };
     }

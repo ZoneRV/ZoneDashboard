@@ -68,7 +68,7 @@ namespace ZoneProductionLibrary.Models.Boards
 
         private double GetTargetCompletionRate(IProductionPosition vanPosition)
         {
-            var cards = JobCards.Where(x => x.GetTargetStatus(vanPosition) != DueStatus.NotDue);
+            var cards = JobCards.Where(x => x.DueStatus != DueStatus.NotDue);
             double totalScore = cards.Sum(x => x.CompletionRate) + RedCards.Count(x => x.CardStatus == CardStatus.Completed);
 
             double total = cards.Count() + RedCards.Count;

@@ -138,10 +138,10 @@
         => !HideCompleted || !isComplete;
 
     string CheckHtmlColorStyleString(Check check)
-        => "color:" + ColorTranslator.ToHtml(TrelloUtil.GetIndicatorColor(check.IsChecked, JobCard.GetTargetStatus(VanPosition)));
+        => "color:" + ColorTranslator.ToHtml(TrelloUtil.GetIndicatorColor(check.IsChecked, JobCard.DueStatus));
 
      string JobHtmlColorStyleString
-        => "color:" + ColorTranslator.ToHtml(JobCard.Color(JobCard.GetTargetStatus(VanPosition)));
+        => "color:" + ColorTranslator.ToHtml(JobCard.Color(JobCard.DueStatus));
 
     string GetNameText(string name, double completionRate, TimeSpan remainingTime)
     {

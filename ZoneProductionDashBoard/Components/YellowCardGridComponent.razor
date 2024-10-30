@@ -4,6 +4,7 @@
 @using Serilog
 @using ZoneProductionDashBoard.Components.VanTreeNodes
 @inherits UpdatableComponent
+@implements IDisposable
 
 <RadzenDataGrid
     @ref="@_dataGrid"
@@ -88,6 +89,13 @@
         NavigationManager.LocationChanged += HandleLocationChanged;
         
         base.OnInitialized();
+    }
+
+    public void Dispose()
+    {
+        YellowCards = [];
+        _dataGrid.Dispose();
+        NavigationManager.LocationChanged -= HandleLocationChanged;
     }
     
     void OnRender(DataGridRenderEventArgs<YellowCard> args)

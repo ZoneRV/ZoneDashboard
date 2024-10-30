@@ -31,10 +31,10 @@
         => !HideCompleted || !isComplete;
 
     string ChecklistHtmlColorStyleString(Checklist checklist)
-        => "color:" + ColorTranslator.ToHtml(checklist.Color(JobCard.GetTargetStatus(VanPosition)));
+        => "color:" + ColorTranslator.ToHtml(checklist.Color(JobCard.DueStatus));
 
     string CheckHtmlColorStyleString(Check check)
-        => "color:" + ColorTranslator.ToHtml(TrelloUtil.GetIndicatorColor(check.IsChecked, JobCard.GetTargetStatus(VanPosition)));
+        => "color:" + ColorTranslator.ToHtml(TrelloUtil.GetIndicatorColor(check.IsChecked, JobCard.DueStatus));
     
     private RenderFragment ChecklistRenderFragment(RadzenTreeItem item)
     {
