@@ -266,22 +266,9 @@
 
     private RenderFragment MemberRenderFragment(RedCard redCard)
     {
-        List<string> memberNames = redCard.Members.Select(x => x.Username).ToList();
-
-        foreach (Comment comment in redCard.Comments)
-        {
-            foreach (string word in Regex.Split(comment.Content, @"\s+").Where(s => s != string.Empty))
-            {
-                if(word.StartsWith('@'))
-                    memberNames.Add(new string(word.Skip(1).ToArray()));
-            }
-        }
-
-        memberNames = memberNames.Distinct().ToList();
-
         return __builder =>
                {
-                   <RadzenText Style="white-space: pre-wrap">@string.Join(", ", memberNames)</RadzenText>
+                   <RadzenText Style="white-space: pre-wrap">@redCard.MemberNames</RadzenText>
                };
     }
 

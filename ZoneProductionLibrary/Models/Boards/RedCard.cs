@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Drawing;
+using System.Text.RegularExpressions;
 
 namespace ZoneProductionLibrary.Models.Boards
 {
@@ -21,7 +22,7 @@ namespace ZoneProductionLibrary.Models.Boards
         public List<TrelloMember> Members { get; }
         public List<Comment> Comments { get; }
         public List<AttachmentInfo> Attachments { get; }
-        public string MemberNames => string.Join("", Members.Select(x => x.Username).Concat(Comments.Select(x => x.CreatorMember.Username)));
+        public string MemberNames => GetMemberNames();
         public TimeSpan Age => (CreationDate.HasValue) ? DateTime.Now - CreationDate.Value : TimeSpan.Zero;
         public Color Color => TrelloUtil.GetIndicatorColor(CardStatus);
 
@@ -83,6 +84,25 @@ namespace ZoneProductionLibrary.Models.Boards
             Members = members.ToList();
             Comments = comments.ToList();
             Attachments = redCardObject.Attachments;
+        }
+
+        string GetMemberNames()
+        {
+            List<string> memberNames = Members.Select(x => x.Username).ToList();
+
+            foreach (Comment comment in Comments)
+            {
+                memberNames.Add(comment.CreatorMember.Username);
+                foreach (string word in Regex.Split(comment.Content, @"\s+").Where(s => s != string.Empty))
+                {
+                    if(word.StartsWith('@'))
+                        memberNames.Add(new string(word.Skip(1).ToArray()));
+                }
+            }
+
+            memberNames = memberNames.Distinct().ToList();
+
+            return string.Join(", ", memberNames);
         }
     }
 }
