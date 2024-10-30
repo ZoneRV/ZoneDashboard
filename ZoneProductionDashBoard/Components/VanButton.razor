@@ -89,10 +89,13 @@
     string _vanName = default!;
     
     [Parameter] 
-    public string Color { get; set; } = "#FFFFFF";
+    public string Color { get; set; } = "#000000";
 
     [Parameter] 
     public bool DetailedButton { get; set; } = false;
+    
+    [Parameter] 
+    public bool ShowIcon { get; set; } = false;
     
     private VanBoard? _van = null;
     private VanProductionInfo _info = default!;
@@ -105,6 +108,9 @@
 
         _info = ProductionService.ProductionVans[VanName.ToLower()];
         _van = ProductionService.GetBoardByName(VanName.ToLower());
+
+        if (Color == "#000000")
+            Color = _vanName.ToVanType().GetTypeColor().ToHex();
 
         if (ProductionService is ProductionService prod)
         {
@@ -194,8 +200,11 @@
             fragment = __builder =>
             {
                 <RadzenStack Orientation="Orientation.Horizontal" Gap=".5em">
-                    <RadzenIcon Icon="@IconName()"/>
                     <RadzenText>@VanName.ToUpper()</RadzenText>
+                    @if(ShowIcon)
+                    {
+                        <RadzenIcon Icon="@IconName()"/>
+                    }
                 </RadzenStack>
             };
         }
@@ -210,17 +219,17 @@
                     @{ var yellowCards = _van.YellowCards.Where(x => x.CardStatus is not CardStatus.Completed); }
 
                     @if (jobCards.Any())
-                                          {
-                                              <a style="font-weight: bold">Job Cards:&nbsp;</a><a>@jobCards.Count()<br/></a>
-                                          }
+                    {
+                        <a style="font-weight: bold">Job Cards:&nbsp;</a><a>@jobCards.Count()<br/></a>
+                    }
                     @if (redCards.Any())
-                                          {
-                                              <a style="font-weight: bold">Red Cards:&nbsp;</a><a>@redCards.Count()<br/></a>
-                                          }
+                    {
+                        <a style="font-weight: bold">Red Cards:&nbsp;</a><a>@redCards.Count()<br/></a>
+                    }
                     @if (yellowCards.Any())
-                                          {
-                                              <a style="font-weight: bold">Yellow Cards:&nbsp;</a><a>@yellowCards.Count()</a>
-                                          }
+                    {
+                        <a style="font-weight: bold">Yellow Cards:&nbsp;</a><a>@yellowCards.Count()</a>
+                    }
                 </p>
             };
         }

@@ -26,8 +26,8 @@
     <Columns>
         @if (!IsSingleVan)
         {
-            <RadzenDataGridColumn TItem="YellowCard" Property="BoardName" Title="Van" Frozen="true"
-                                  Sortable="false" Width="200px">
+            <RadzenDataGridColumn TItem="YellowCard" FilterProperty="BoardName" Title="Van" Frozen="true"
+                                  Sortable="false" Width="200px" Template="BoardNameRenderFragment">
 
                 <FilterTemplate>
                     <RadzenTextBox Change="SetVanNameFilters" Style="width: 100%"/>
@@ -232,6 +232,14 @@
         }
         
         base.OnAfterRender(firstRender);
+    }
+
+    private RenderFragment BoardNameRenderFragment(YellowCard yellowCard)
+    {
+        return __builder =>
+               {
+                   <VanButton ShowIcon="false" DetailedButton="false" VanName="@yellowCard.BoardName.ToLower()"/>
+               };
     }
 
     private RenderFragment YellowCardNameRenderFragment(YellowCard yellowCard)

@@ -47,7 +47,7 @@
             <RadzenMonthView MaxAppointmentsInSlot="3"/>
         </ChildContent>
         <Template Context="data">
-            <VanButton VanName="@data.Name" Color="@ColorTranslator.ToHtml(data.HandoverState is HandoverState.HandedOver ? Color.FromArgb(255, 180, 180, 180) : data.VanModel.GetTypeColor())" />
+            <VanButton VanName="@data.Name" ShowIcon="true" Color="@ColorTranslator.ToHtml(data.HandoverState is HandoverState.HandedOver ? Color.FromArgb(255, 180, 180, 180) : data.VanModel.GetTypeColor())" />
         </Template>
     </RadzenScheduler>
 </div>
