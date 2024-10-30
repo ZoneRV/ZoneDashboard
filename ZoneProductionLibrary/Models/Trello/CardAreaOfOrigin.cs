@@ -28,6 +28,7 @@ namespace ZoneProductionLibrary.Models.Trello
         [Display(Name = "One Comp")] OneComp,
         [Display(Name = "Design")] Design,
         [Display(Name = "QC")] QC,
+        [Display(Name = "MODE")] Mode,
         [Display(Name = "Unknown")] Unknown
     }
 }

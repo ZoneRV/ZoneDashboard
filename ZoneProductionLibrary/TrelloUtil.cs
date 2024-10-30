@@ -130,6 +130,9 @@ namespace ZoneProductionLibrary
                 case "Wall/Roof MOD":
                     return CardAreaOfOrigin.WallRoofMod;
 
+                case "WALL PREP":
+                    return CardAreaOfOrigin.WallRoofMod;
+
                 case "Wall Mod":
                     return CardAreaOfOrigin.WallRoofMod;
 
@@ -137,6 +140,9 @@ namespace ZoneProductionLibrary
                     return CardAreaOfOrigin.WallRoofMod;
 
                 case "Roof Mod":
+                    return CardAreaOfOrigin.WallRoofMod;
+
+                case "Roof":
                     return CardAreaOfOrigin.WallRoofMod;
 
                 case "Sealing":
@@ -190,6 +196,9 @@ namespace ZoneProductionLibrary
                 case "CNC":
                     return CardAreaOfOrigin.CNC;
 
+                case "MODE":
+                    return CardAreaOfOrigin.Mode;
+
                 case "One Composite":
                     return CardAreaOfOrigin.OneComp;
 
@@ -199,7 +208,6 @@ namespace ZoneProductionLibrary
                 case "QC":
                     return CardAreaOfOrigin.QC;
 
-                // Expo specific Fields
                 case "Bay4":
                     return CardAreaOfOrigin.Bay4;
 

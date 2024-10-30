@@ -141,6 +141,7 @@ public class Gen2ProductionPosition : IProductionPosition
         ("QA Cabs Gen2 Checklist (REV002)", 1),
         ("QA Cabs Gen2 Checklist", 1),
         ("[QA] Cabs Gen2 Checklist", 1),
+        ("[QC] CABs Checklist", 1),
         ("BAY 1 FURNITURE INSTALL (REV001)", 2),
         ("BAY 1 FURNITURE INSTALL (REV002)", 2),
         ("BAY 1 FURNITURE INSTALL (REV003)", 2),
@@ -165,6 +166,8 @@ public class Gen2ProductionPosition : IProductionPosition
         ("[QC] Wall/Roof Mod Checklist", 3),
         ("WALL/ROOF MOD QC", 3),
         ("Bay Leader Inspection Wall/Roof Mod", 3),
+        ("MODE", 3), //TODO: Confirm Position
+        ("[QC] MODE", 3), //TODO: Confirm Position
         ("BAY 3 WALL/ROOF INSTALL", 4),
         ("[QC] Bay3 Checklist", 4),
         ("BAY 3 WALL/ROOF INSTALL changed", 4),
@@ -174,6 +177,7 @@ public class Gen2ProductionPosition : IProductionPosition
         ("BAY 4 SEALING & ELECTRICAL", 5),
         ("BAY 4  & ELECTRICAL", 5),
         ("BAY 5 (REV001)", 6),
+        ("[QC] Bay4 Checklist", 6),
         ("BAY 5 (REV002)", 6),
         ("BAY 5 (REV003)", 6),
         ("BAY 5", 6),
