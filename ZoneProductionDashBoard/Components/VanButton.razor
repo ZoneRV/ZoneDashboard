@@ -69,10 +69,25 @@
     
     [Inject] 
     public DialogService DialogService { get; set; } = default!;
-    
-    [Parameter, EditorRequired] 
-    public string VanName { get; set; } = default!;
 
+    [Parameter, EditorRequired]
+    public string VanName
+    {
+        get => _vanName;
+        
+        set
+        {
+            if(_vanName != value)
+            {
+                _vanName = value;
+                _info = ProductionService.ProductionVans[_vanName.ToLower()];
+                _van = ProductionService.GetBoardByName(_vanName);
+            }
+        }
+    } 
+
+    string _vanName = default!;
+    
     [Parameter] 
     public string Color { get; set; } = "#FFFFFF";
 
@@ -85,7 +100,7 @@
 
     protected override void OnInitialized()
     {
-        ArgumentNullException.ThrowIfNull(VanName);
+        ArgumentNullException.ThrowIfNull(_vanName);
         ArgumentNullException.ThrowIfNull(ProductionService);
 
         _info = ProductionService.ProductionVans[VanName.ToLower()];
@@ -103,7 +118,7 @@
     {
         if (_van is not null && e.BoardId == _van.Id)
         {
-            _van = ProductionService.GetBoardByName(VanName);
+            _van = ProductionService.GetBoardByName(_vanName);
             InvokeAsync(StateHasChanged);
         }
     }

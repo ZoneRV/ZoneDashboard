@@ -60,7 +60,7 @@
     
     RadzenScheduler<VanData> _scheduler = default!;
 
-    public class VanData(VanProductionInfo info, VanBoard? van)
+    public class VanData(VanProductionInfo info)
     {
         public string Name { get; } = info.Name;
         public string Id { get; } = info.Id;
@@ -68,8 +68,6 @@
         public DateTime HandoverEnd => Handover + TimeSpan.FromHours(1);
         public HandoverState HandoverState { get; } = info.HandoverState;
         public VanModel VanModel { get; } = info.VanModel;
-
-        public VanBoard? Van { get; } = van;
     }
 
     List<VanData> _data = [];
@@ -107,7 +105,7 @@
             if (!pair.Value.Handover.HasValue)
                 throw new ArgumentNullException(nameof(pair.Value.Handover), "Cannot display van with no handover date on calendar.");
             
-            _data.Add(new VanData(pair.Value, ProductionService.GetBoardById(pair.Value.Id)));
+            _data.Add(new VanData(pair.Value));
         }
     }
 
