@@ -43,12 +43,20 @@
 
     protected override void UpdateIfIdSubscribed(object? sender, BoardUpdateInfo e)
     {
+        var oldList = new List<string>(SubscribedIds);
         SubscribedIds = ProductionService.ProductionVanIds(false).ToList();
         
         if( 
+            oldList.SequenceEqual(SubscribedIds) ||
             (e.Type is BoardUpdateType.Position or BoardUpdateType.Hanover) ||
             (e.TotalBoardUpdate || e.Type is BoardUpdateType.JobCard or BoardUpdateType.RedCard && SubscribedIds.Contains(e.BoardId)))
         {
+
+            var boards = ProductionService.GetBoards(SubscribedIds).ToList();
+
+            _gen2Boards = boards.Where(x => x.VanModel.IsGen2()).ToList();
+            _expoBoards = boards.Where(x => !x.VanModel.IsGen2()).ToList();
+            
             _gen2Line.Update();
             _expoLine.Update();
         }
