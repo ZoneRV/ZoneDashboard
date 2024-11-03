@@ -86,9 +86,11 @@
 
     public new void Dispose()
     {
-        base.Dispose();
+        logLines = [];
 
         _refreshLogs = false;
+        
+        base.Dispose();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

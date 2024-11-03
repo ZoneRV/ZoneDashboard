@@ -1,5 +1,7 @@
 @inherits UpdatableComponent
 
+@implements IDisposable
+
 <RadzenTimeline 
     Orientation="Orientation.Horizontal" 
     AlignItems="AlignItems.Center" 
@@ -52,5 +54,11 @@
             _positions = ExpoProductionPosition.GetAll().Select(x => (IProductionPosition)x).ToList();
         
         base.OnInitialized();
+    }
+
+    public void Dispose()
+    {
+        _timeLine.Dispose();
+        _positions.Clear();
     }
 }

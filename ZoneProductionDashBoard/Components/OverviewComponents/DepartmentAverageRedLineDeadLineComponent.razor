@@ -3,6 +3,8 @@
 
 @inherits UpdatableComponent
 
+@implements IDisposable
+
 @if (StatsService.SelectedDepartments.Count != 1)
 {
     <RadzenText>Please select 1 department</RadzenText>
@@ -103,6 +105,12 @@ else
             StateHasChanged();
         }
         base.OnAfterRender(firstRender);
+    }
+
+    public void Dispose()
+    {
+        _chartData = [];
+        _chart?.Dispose();
     }
 
     private Dictionary<CardAreaOfOrigin, List<BoxPlotDataItem>> LoadData()

@@ -75,6 +75,8 @@
     public void Dispose()
     {
         StatsService.CardFilterOptions.RedFlagIssues = Enum.GetValues<RedFlagIssue>();
+        
+        _typeChart.Dispose();
     }
 
     protected override void OnInitialized()

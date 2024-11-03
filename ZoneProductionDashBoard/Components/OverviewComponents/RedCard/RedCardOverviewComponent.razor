@@ -3,6 +3,8 @@
 
 @inherits UpdatableComponent
 
+@implements IDisposable
+
 <RadzenCard>
     <RadzenStack Orientation="Orientation.Horizontal">
         <RedCardCountComponent MinDate="_minDate" MaxDate="_maxDate" @ref="_countComponent"/>
@@ -49,6 +51,13 @@
         }
         
         base.OnAfterRender(firstRender);
+    }
+
+    public void Dispose()
+    {
+        _redCardsPerDay.Dispose();
+        _redCardAgeGraphComponent.Dispose();
+        _countComponent.Dispose();
     }
 
     public override void Update()

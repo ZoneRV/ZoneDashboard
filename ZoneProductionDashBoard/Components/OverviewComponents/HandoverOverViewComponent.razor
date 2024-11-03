@@ -3,6 +3,8 @@
 
 @inherits UpdatableComponent
 
+@implements IDisposable
+
 <RadzenDataGrid 
     Data="@_vans" 
     TItem="VanBoard" 
@@ -65,6 +67,12 @@
         }
 
         return base.OnAfterRenderAsync(firstRender);
+    }
+
+    public void Dispose()
+    {
+        _vans = [];
+        _grid.Dispose();
     }
 
     private RenderFragment NameTemplate(VanBoard board)

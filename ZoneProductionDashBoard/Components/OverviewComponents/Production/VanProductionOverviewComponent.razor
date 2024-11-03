@@ -1,5 +1,7 @@
 ﻿@inherits UpdatableComponent
 
+@implements IDisposable
+
 @if (StatsService.SelectedDepartments.Count > 0)
 {
     @if (!DisplayVans.Any())
@@ -13,7 +15,7 @@
 }
 else
 {
-    <NewProductionLineOverviewComponent @ref="@_prodLine"/>
+    <ProductionLineOverviewComponent @ref="@_prodLine"/>
 }
 
 @code {
@@ -27,9 +29,17 @@ else
     public NavigationManager NavigationManager { get; set; } = default!;
 
     DepartmentJobListHeatMapComponent? _heatMap;
-    NewProductionLineOverviewComponent? _prodLine;
+    ProductionLineOverviewComponent? _prodLine;
 
     IEnumerable<VanBoard> DisplayVans { get; set; } = [];
+
+    public void Dispose()
+    {
+        _heatMap?.Dispose();
+        _prodLine?.Dispose();
+
+        DisplayVans = [];
+    }
 
     void PopulateDisplayVans()
     {

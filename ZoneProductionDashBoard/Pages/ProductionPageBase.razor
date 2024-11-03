@@ -31,7 +31,7 @@
     protected List<string> SubscribedIds { get; set; } = [];
     protected List<BoardUpdateType> SubscribedTypes { get; set; } = [];
 
-    public void Dispose()
+    public virtual void Dispose()
     {
         if (ProductionService is ProductionService)
         {

@@ -2,6 +2,8 @@
 @using ZoneProductionLibrary.ProductionServices.Main
 @using Serilog
 
+@implements IDisposable
+
 <RadzenCard Style="@($"padding: 1px; background-color: {Color}; width: min-content; height: min-content")">
     <RadzenSplitButton
         ButtonContent="@ButtonText" 
@@ -261,5 +263,11 @@
                 return "done_all";
             }
         }
+    }
+
+    public void Dispose()
+    {
+        _van = null;
+        _info = default!;
     }
 }

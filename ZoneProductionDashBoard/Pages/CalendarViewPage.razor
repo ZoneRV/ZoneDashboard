@@ -7,6 +7,8 @@
 
 @inherits ProductionPageBase
 
+@implements IDisposable
+
 @page "/Handover"
 
 <PageTitle>Handover Calendar</PageTitle>
@@ -119,6 +121,14 @@
 
         if (!PageLoaded)
             PageLoaded = true;
+    }
+
+    public override void Dispose()
+    {
+        _data = [];
+        _scheduler.Dispose();
+        
+        base.Dispose();
     }
 
     void OnVanRender(SchedulerAppointmentRenderEventArgs<VanData> args)

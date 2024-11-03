@@ -95,4 +95,18 @@
         _yGrid?.Update();
         _jGrid?.Update();
     }
+
+    public override void Dispose()
+    {
+        _redCards = [];
+        _yellowCards = [];
+        _jobCards = [];
+            
+        _rGrid?.Dispose();
+        _yGrid?.Dispose();
+        _jGrid?.Dispose();
+        
+        base.Dispose();
+    }
+
 }

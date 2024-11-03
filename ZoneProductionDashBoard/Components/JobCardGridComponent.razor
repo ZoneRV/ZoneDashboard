@@ -161,7 +161,7 @@
 
     public void Dispose()
     {
-        JobCards = [];
+        _nameFilterBox.Dispose();
         _dataGrid.Dispose();
         NavigationManager.LocationChanged -= HandleLocationChanged;
     }

@@ -93,7 +93,7 @@
 
     public void Dispose()
     {
-        YellowCards = [];
+        _nameFilterBox.Dispose();
         _dataGrid.Dispose();
         NavigationManager.LocationChanged -= HandleLocationChanged;
     }

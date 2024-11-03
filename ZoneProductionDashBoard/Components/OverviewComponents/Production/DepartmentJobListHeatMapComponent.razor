@@ -2,6 +2,8 @@
 
 @inherits UpdatableComponent
 
+@implements IDisposable
+
 <ApexChart TItem="FormattedJobCard" Options="_options" Height="@("600px")" Width="@("100%")" @ref="_chart">
 
     <ApexPointTooltip>
@@ -43,6 +45,12 @@
     ApexChartOptions<FormattedJobCard> _options = new ApexChartOptions<FormattedJobCard>();
 
     Dictionary<CardAreaOfOrigin, List<string>> _jobNames = [];
+
+    public void Dispose()
+    {
+        _chart.Dispose();
+        _jobNames = [];
+    }
 
     public override void Update()
     {

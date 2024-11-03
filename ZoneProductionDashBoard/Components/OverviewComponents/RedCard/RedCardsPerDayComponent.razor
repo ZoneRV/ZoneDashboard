@@ -4,6 +4,8 @@
 
 @inherits UpdatableComponent
 
+@implements IDisposable
+
 <ApexChart
     TItem="DateDataItem"
     Title="RedCards/Day"
@@ -66,7 +68,7 @@
 
     ApexChartOptions<DateDataItem> _mainOptions = new ApexChartOptions<DateDataItem>();
     ApexChartOptions<DateDataItem> _rangeOptions = new ApexChartOptions<DateDataItem>();
-   
+
     public override void Update()
     {
         _redCardDateData = LoadRedCardDateData();
@@ -209,6 +211,15 @@
         };
         
         base.OnInitialized();
+    }
+
+    public void Dispose()
+    {
+        _timeRangeChart.Dispose();
+        _redCardDateChart.Dispose();
+
+        _totalCountData = [];
+        _redCardDateData = [];
     }
 
     Dictionary<string, string> GetColorKeys()

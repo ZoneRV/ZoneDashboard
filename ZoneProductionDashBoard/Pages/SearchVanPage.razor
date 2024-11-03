@@ -15,7 +15,7 @@ else if (_board is null)
 else
 {
     <div style="height: calc(100vh - 4.5rem)">
-        <VanView Van="@_board" GridStyles="height: 75vh"/>
+        <VanView Van="@_board" GridStyles="height: 75vh" @ref="_view"/>
     </div>
 }
 
@@ -24,6 +24,7 @@ else
     public string VanName { get; set; } = default!;
 
     private VanBoard? _board;
+    private VanView? _view;
 
     protected override void OnInitialized()
     {
@@ -52,4 +53,12 @@ else
             StateHasChanged();
         }
     }
+
+    public override void Dispose()
+    {
+        _board = null;
+        _view?.Dispose();
+        base.Dispose();
+    }
+
 }

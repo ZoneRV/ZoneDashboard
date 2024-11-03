@@ -2,6 +2,8 @@
 
 @inherits UpdatableComponent
 
+@implements IDisposable
+
 <ApexChart
     @ref="@_chart"
     Title="Days to complete red card"
@@ -83,6 +85,13 @@
             StateHasChanged();
         }
         base.OnAfterRender(firstRender);
+    }
+
+    public void Dispose()
+    {
+        _chart.Dispose();
+        _data = [];
+        _outlierData = [];
     }
 
     public override void Update()

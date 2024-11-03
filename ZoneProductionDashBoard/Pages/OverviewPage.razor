@@ -1,7 +1,8 @@
 ﻿@page "/overview/"
 
 @using Microsoft.AspNetCore.WebUtilities
-@inherits ZoneProductionDashBoard.Pages.ProductionPageBase
+
+@inherits ProductionPageBase
 
 <PageTitle>Overview</PageTitle>
 
@@ -44,6 +45,16 @@ else
     RadzenTabs _tabs = default!;
 
     private int _tabsIndex = 0;
+
+    public override void Dispose()
+    {
+        _general?.Dispose();
+        _handover?.Dispose();
+        _production?.Dispose();
+        _redLine?.Dispose();
+        
+        base.Dispose();
+    }
 
     protected override async Task OnInitializedAsync()
     {

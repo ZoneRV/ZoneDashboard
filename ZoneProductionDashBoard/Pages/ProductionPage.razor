@@ -82,4 +82,15 @@
         StateHasChanged();
     }
 
+    public override void Dispose()
+    {
+        _gen2Boards.Clear();
+        _expoBoards.Clear();
+        
+        _gen2Line.Dispose();
+        _expoLine.Dispose();
+        
+        base.Dispose();
+    }
+
 }

@@ -5,6 +5,8 @@
 
 @inherits UpdatableComponent
 
+@implements IDisposable
+
 @if (!Van.JobCards.Any() || _jobData.Sum(x => x.Value.Count) < MinDataPoints)
 {
     <RadzenText>Not Enough data to load graph</RadzenText>
@@ -207,5 +209,11 @@ else
         }
 
         return dateDataItems;
+    }
+
+    public void Dispose()
+    {
+        _jobData.Clear();
+        _chart?.Dispose();
     }
 }
