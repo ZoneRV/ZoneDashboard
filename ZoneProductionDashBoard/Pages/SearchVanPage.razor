@@ -15,11 +15,15 @@ else if (_board is null)
 else
 {
     <div style="height: calc(100vh - 4.5rem)">
+        <VanTitleComponent Van="_board"/>
         <VanView Van="@_board" GridStyles="height: 75vh" @ref="_view"/>
     </div>
 }
 
 @code {
+    [Inject] 
+    public NavigationManager NavigationManager { get; set; } = default!;
+    
     [Parameter] 
     public string VanName { get; set; } = default!;
 
@@ -29,6 +33,8 @@ else
     protected override void OnInitialized()
     {
         ArgumentNullException.ThrowIfNull(ProductionService);
+
+        NavigationManager.LocationChanged += OnNavChanged;
     }
     
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -47,6 +53,10 @@ else
                 await DialogService.Alert($"{VanName} is not a valid van name.", "Van not found");
                 return;
             }
+            else
+            {
+                _view?.Update();
+            }
             
             CloseLoadingDialog();
             
@@ -54,11 +64,18 @@ else
         }
     }
 
+    async void OnNavChanged(object? o, LocationChangedEventArgs e)
+    {
+        if(e.Location.ToLower().Contains("searchvan"))
+            await OnAfterRenderAsync(true);
+    }
+
     public override void Dispose()
     {
+        NavigationManager.LocationChanged -= OnNavChanged;
+        
         _board = null;
         _view?.Dispose();
         base.Dispose();
     }
-
 }
