@@ -67,7 +67,6 @@
     
     private void QueueUpdate()
     {
-        Log.Logger.Information("s");
         UpdateCancellationTokenSource.Cancel();
         
         TimeSpan timeSinceUpdate = DateTime.Now - LastUpdate;
@@ -84,17 +83,13 @@
     {
         if (waitTime is not null)
         {
-            Log.Logger.Information("d");
             await Task.Delay(waitTime.Value);
             
             if(token.IsCancellationRequested && DateTime.Now - LastUpdate < waitTime * .99)
             {
-                Log.Logger.Information("c");
                 return;
             }
         }
-        
-        Log.Logger.Information("done");
 
         var updatedVan = ProductionService.GetBoardById(Van.Id);
 
