@@ -28,9 +28,9 @@ namespace ZoneProductionLibrary.Extensions
                 case VanModel.ZSP:  return ColorTranslator.FromHtml("#fb5607");
                 case VanModel.ZPP:  return ColorTranslator.FromHtml("#ffbe0b");
                 case VanModel.ZSPF: return ColorTranslator.FromHtml("#ff006e");
-                case VanModel.ZSS:  return ColorTranslator.FromHtml("#ff006e");
-                case VanModel.ZSSF:  return ColorTranslator.FromHtml("#ff006a");
-                case VanModel.EXP:  return ColorTranslator.FromHtml("#8338ec");
+                case VanModel.ZSS:  return ColorTranslator.FromHtml("#47BCFF");
+                case VanModel.ZSSF: return ColorTranslator.FromHtml("#47BCFF");
+                case VanModel.EXP:  return ColorTranslator.FromHtml("#A26AF1");
 
                 default:
                     {
