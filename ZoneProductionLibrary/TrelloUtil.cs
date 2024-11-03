@@ -178,6 +178,9 @@ namespace ZoneProductionLibrary
                 case "Sub Assembly":
                     return CardAreaOfOrigin.SubAssembly;
 
+                case "Cabs Prep":
+                    return CardAreaOfOrigin.CabsPrep;
+
                 case "Cabs":
                     return CardAreaOfOrigin.CabsAssembly;
 
@@ -189,6 +192,9 @@ namespace ZoneProductionLibrary
 
                 case "Supplier":
                     return CardAreaOfOrigin.Supplier;
+
+                case "Gas":
+                    return CardAreaOfOrigin.Gas;
 
                 case "Contractor":
                     return CardAreaOfOrigin.Contractor;
