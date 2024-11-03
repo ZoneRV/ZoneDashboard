@@ -72,17 +72,16 @@
 
     protected virtual void QueueUpdate()
     {
-        Log.Logger.Information("Update requested.");
         UpdateCancellationTokenSource.Cancel();
         
         TimeSpan timeSinceUpdate = DateTime.Now - LastUpdate;
         LastUpdate = DateTime.Now;
         
         if (timeSinceUpdate > UpdateRateLimit)
-            Update(UpdateCancellationTokenSource.Token);
+            InvokeAsync(() => Update(UpdateCancellationTokenSource.Token));
         
         else
-            Update(UpdateCancellationTokenSource.Token, UpdateRateLimit - timeSinceUpdate);
+            InvokeAsync(() => Update(UpdateCancellationTokenSource.Token, UpdateRateLimit - timeSinceUpdate));
     }
 
     protected virtual async Task Update(CancellationToken token, TimeSpan? waitTime = null)

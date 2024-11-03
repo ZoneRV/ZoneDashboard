@@ -1,6 +1,5 @@
-﻿@using ZoneProductionLibrary.ProductionServices.Main
-
-@inherits UpdatableComponent
+﻿@using Serilog
+@using ZoneProductionLibrary.ProductionServices.Main
 
 @implements IDisposable
 
@@ -36,6 +35,9 @@
     [Parameter]
     public string GridStyles { get; set; } = "";
     
+    CancellationTokenSource UpdateCancellationTokenSource = new CancellationTokenSource();
+    TimeSpan UpdateRateLimit = TimeSpan.FromSeconds(5);
+    DateTime LastUpdate = DateTime.Now;
 
     VanRedLineDeadLineComponent? _redLineDeadLineComponent;
     RedCardGridComponent? _redCardGrid;
@@ -49,28 +51,62 @@
         
         if (ProductionService is ProductionService)
         {
-            ZoneProductionLibrary.ProductionServices.Main.ProductionService.BoardUpdated += UpdateIfIdSubscribed;
+            ZoneProductionLibrary.ProductionServices.Main.ProductionService.BoardUpdated += QueueUpdateIfIdSubscribed;
         }
         
         base.OnInitialized();
     }
     
-    void UpdateIfIdSubscribed(object? sender, BoardUpdateInfo e)
+    void QueueUpdateIfIdSubscribed(object? sender, BoardUpdateInfo e)
     {
         if (e.BoardId == Van.Id)
         {
-            var updatedVan = ProductionService.GetBoardById(Van.Id);
-
-            if (updatedVan is not null)
-                Van = updatedVan;
-            
-            _jobCardGrid?.Update();
-            _redCardGrid?.Update();
-            _yellowCardGrid?.Update();
-            _redLineDeadLineComponent?.Update();
-
-            InvokeAsync(StateHasChanged);
+            QueueUpdate();
         }
+    }
+    
+    private void QueueUpdate()
+    {
+        Log.Logger.Information("s");
+        UpdateCancellationTokenSource.Cancel();
+        
+        TimeSpan timeSinceUpdate = DateTime.Now - LastUpdate;
+        LastUpdate = DateTime.Now;
+        
+        if (timeSinceUpdate > UpdateRateLimit)
+            InvokeAsync(() => Update(UpdateCancellationTokenSource.Token));
+        
+        else
+            InvokeAsync(() => Update(UpdateCancellationTokenSource.Token, UpdateRateLimit - timeSinceUpdate));
+    }
+    
+    public async Task Update(CancellationToken token, TimeSpan? waitTime = null)
+    {
+        if (waitTime is not null)
+        {
+            Log.Logger.Information("d");
+            await Task.Delay(waitTime.Value);
+            
+            if(token.IsCancellationRequested && DateTime.Now - LastUpdate < waitTime * .99)
+            {
+                Log.Logger.Information("c");
+                return;
+            }
+        }
+        
+        Log.Logger.Information("done");
+
+        var updatedVan = ProductionService.GetBoardById(Van.Id);
+
+        if (updatedVan is not null)
+            Van = updatedVan;
+            
+        _jobCardGrid?.Update();
+        _redCardGrid?.Update();
+        _yellowCardGrid?.Update();
+        _redLineDeadLineComponent?.Update();
+
+        StateHasChanged();
     }
 
     public void Dispose()
@@ -79,5 +115,7 @@
         _redCardGrid?.Dispose();
         _yellowCardGrid?.Dispose();
         _redLineDeadLineComponent?.Dispose();
+        
+        ZoneProductionLibrary.ProductionServices.Main.ProductionService.BoardUpdated -= QueueUpdateIfIdSubscribed;
     }
 }

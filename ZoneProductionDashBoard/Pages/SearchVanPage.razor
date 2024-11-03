@@ -53,10 +53,6 @@ else
                 await DialogService.Alert($"{VanName} is not a valid van name.", "Van not found");
                 return;
             }
-            else
-            {
-                _view?.Update();
-            }
             
             CloseLoadingDialog();
             
