@@ -608,9 +608,12 @@ public partial class ProductionService
             
             if (ProductionVans.TryGetValue(name, out VanProductionInfo? info))
             {
-                info.PositionHistory = positionHistory;
+                if (!info.PositionHistory.SequenceEqual(positionHistory))
+                {
+                    info.PositionHistory = positionHistory;
                 
-                BoardUpdated?.Invoke(this, new BoardUpdateInfo(e.BoardId, BoardUpdateType.Position));
+                    BoardUpdated?.Invoke(this, new BoardUpdateInfo(e.BoardId, BoardUpdateType.Position));
+                }
             }
             else
             {
