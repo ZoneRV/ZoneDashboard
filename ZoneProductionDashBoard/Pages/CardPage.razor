@@ -1,5 +1,6 @@
 ﻿@page "/cards/"
 
+@using Serilog
 @inherits ProductionPageBase
 
 <PageTitle>Cards</PageTitle>
@@ -27,8 +28,6 @@
     
     IEnumerable<JobCard> _jobCards = [];
     JobCardGridComponent? _jGrid;
-
-    bool _initialLoadComplete = false;
     
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -43,8 +42,6 @@
             _redCards = await ProductionService.GetRedCardsAsync(Progress, SubscribedIds);
             _yellowCards = ProductionService.GetYellowCards(SubscribedIds);
             _jobCards = ProductionService.GetJobCards(SubscribedIds);
-
-            _initialLoadComplete = true;
             
             if(_rGrid is not null)
                 _rGrid.Update();
@@ -58,27 +55,44 @@
             CloseLoadingDialog();
 
             StateHasChanged();
+
+            PageLoaded = true;
         }
     }
 
-    protected override void UpdateIfIdSubscribed(object? sender, BoardUpdateInfo e)
+    protected override void QueueUpdateIfIdSubscribed(object? sender, BoardUpdateInfo e)
     {
-        if(!_initialLoadComplete)
+        if(!PageLoaded)
             return;
-        
+
+        List<string> oldIds = new List<string>(SubscribedIds);
         SubscribedIds = ProductionService.ProductionVanIds(true).ToList();
         
-        if( 
+        if(
+            !SubscribedIds.SequenceEqual(oldIds) ||
             (e.Type is BoardUpdateType.Position or BoardUpdateType.Hanover) ||
             (e.TotalBoardUpdate || e.Type is BoardUpdateType.JobCard or BoardUpdateType.RedCard && SubscribedIds.Contains(e.BoardId)))
         {
-            _redCards = ProductionService.GetRedCards(SubscribedIds);
-            _yellowCards = ProductionService.GetYellowCards(SubscribedIds);
-            _jobCards = ProductionService.GetJobCards(SubscribedIds);
-            
-            _rGrid?.Update();
-            _yGrid?.Update();
-            _jGrid?.Update();
+            QueueUpdate();
         }
+    }
+
+    protected override async Task Update(CancellationToken token, TimeSpan? waitTime = null)
+    {
+        if (waitTime is not null)
+        {
+            await Task.Delay(waitTime.Value);
+            
+            if(token.IsCancellationRequested && DateTime.Now - LastUpdate < waitTime * .99)
+                return;
+        }
+        
+        _redCards = ProductionService.GetRedCards(SubscribedIds);
+        _yellowCards = ProductionService.GetYellowCards(SubscribedIds);
+        _jobCards = ProductionService.GetJobCards(SubscribedIds);
+            
+        _rGrid?.Update();
+        _yGrid?.Update();
+        _jGrid?.Update();
     }
 }

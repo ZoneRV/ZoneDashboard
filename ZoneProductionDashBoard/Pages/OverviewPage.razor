@@ -7,7 +7,7 @@
 
 <StatFilterComponent />
 
-@if (_dataLoaded)
+@if (PageLoaded)
 {
     <RadzenTabs Style="max-height: fit-content" @ref="_tabs" Change="TabsUpdated" @bind-SelectedIndex="_tabsIndex">
         <Tabs>
@@ -44,7 +44,6 @@ else
     RadzenTabs _tabs = default!;
 
     private int _tabsIndex = 0;
-    private bool _dataLoaded = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -55,7 +54,9 @@ else
         SubscribedIds = idsToLoad;
         SubscribedTypes = [BoardUpdateType.RedCard];
 
-        _dataLoaded = true;
+        UpdateRateLimit = TimeSpan.FromSeconds(60);
+
+        PageLoaded = true;
         
         await base.OnInitializedAsync();
     }

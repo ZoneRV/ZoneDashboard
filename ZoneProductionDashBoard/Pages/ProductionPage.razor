@@ -1,5 +1,6 @@
 ﻿@page "/production/"
 
+@using Serilog
 @inherits ProductionPageBase
 
 <PageTitle>Production</PageTitle>
@@ -38,27 +39,47 @@
             _expoLine.Update();
             
             StateHasChanged();
+
+            PageLoaded = true;
         }
     }
 
-    protected override void UpdateIfIdSubscribed(object? sender, BoardUpdateInfo e)
+    protected override void QueueUpdateIfIdSubscribed(object? sender, BoardUpdateInfo e)
     {
+        if(!PageLoaded)
+            return;
+        
         var oldList = new List<string>(SubscribedIds);
         SubscribedIds = ProductionService.ProductionVanIds(false).ToList();
         
         if( 
-            oldList.SequenceEqual(SubscribedIds) ||
-            (e.Type is BoardUpdateType.Position or BoardUpdateType.Hanover) ||
-            (e.TotalBoardUpdate || e.Type is BoardUpdateType.JobCard or BoardUpdateType.RedCard && SubscribedIds.Contains(e.BoardId)))
+            !oldList.SequenceEqual(SubscribedIds) ||
+            e.Type is BoardUpdateType.Position ||
+            SubscribedIds.Contains(e.BoardId) && (e.TotalBoardUpdate || e.Type is BoardUpdateType.JobCard or BoardUpdateType.RedCard))
         {
-
-            var boards = ProductionService.GetBoards(SubscribedIds).ToList();
-
-            _gen2Boards = boards.Where(x => x.VanModel.IsGen2()).ToList();
-            _expoBoards = boards.Where(x => !x.VanModel.IsGen2()).ToList();
-            
-            _gen2Line.Update();
-            _expoLine.Update();
+            QueueUpdate();
         }
     }
+
+    protected override async Task Update(CancellationToken token, TimeSpan? waitTime = null)
+    {
+        if (waitTime is not null)
+        {
+            await Task.Delay(waitTime.Value);
+            
+            if(token.IsCancellationRequested && DateTime.Now - LastUpdate < waitTime * .99)
+                return;
+        }
+        
+        var boards = ProductionService.GetBoards(SubscribedIds).ToList();
+
+        _gen2Boards = boards.Where(x => x.VanModel.IsGen2()).ToList();
+        _expoBoards = boards.Where(x => !x.VanModel.IsGen2()).ToList();
+            
+        _gen2Line.Update();
+        _expoLine.Update();
+        
+        StateHasChanged();
+    }
+
 }

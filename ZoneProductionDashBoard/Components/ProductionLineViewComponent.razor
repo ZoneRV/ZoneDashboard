@@ -36,9 +36,7 @@
     [Parameter] public string Style { get; set; } = "";
 
     public List<IProductionPosition> _positions = [];
-
     RadzenTimeline _timeLine = default!;
-
 
     protected override void OnInitialized()
     {
@@ -55,10 +53,4 @@
         
         base.OnInitialized();
     }
-
-    public override void Update()
-    {
-        base.Update();
-    }
-
 }

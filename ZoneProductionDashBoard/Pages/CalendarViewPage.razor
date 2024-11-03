@@ -72,26 +72,35 @@
 
     List<VanData> _data = [];
 
-    protected override void UpdateIfIdSubscribed(object? sender, BoardUpdateInfo e)
+    protected override void QueueUpdateIfIdSubscribed(object? sender, BoardUpdateInfo e)
     {
-        bool updated = false;
+        if(!PageLoaded)
+            return;
         
         if (e.Type == BoardUpdateType.Hanover)
         {
-            _scheduler.Reload();
-            updated = true;
+            QueueUpdate();
         }
 
         else if ((e.TotalBoardUpdate || e.Type is BoardUpdateType.JobCard or BoardUpdateType.RedCard) && _data.Any(x => x.Id == e.BoardId))
         {
-            _scheduler.Reload();
-            updated = true;
+            QueueUpdate();
         }
         
-        if(updated)
-            Log.Logger.Debug("{this} has been updated {BoardUpdateInfo}", MethodInfo.GetCurrentMethod()?.DeclaringType is null ? "unknown" : MethodInfo.GetCurrentMethod()!.DeclaringType!.Name, e);
-        
         // TODO: update overdue and recently updated vans
+    }
+
+    protected override async Task Update(CancellationToken token, TimeSpan? waitTime = null)
+    {
+        if (waitTime is not null)
+        {
+            await Task.Delay(waitTime.Value);
+            
+            if(token.IsCancellationRequested && DateTime.Now - LastUpdate < waitTime * .99)
+                return;
+        }
+        
+        _scheduler.Reload();
     }
 
     void OnLoadData(SchedulerLoadDataEventArgs args)
@@ -107,6 +116,9 @@
             
             _data.Add(new VanData(pair.Value));
         }
+
+        if (!PageLoaded)
+            PageLoaded = true;
     }
 
     void OnVanRender(SchedulerAppointmentRenderEventArgs<VanData> args)
