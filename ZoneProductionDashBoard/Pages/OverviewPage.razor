@@ -6,11 +6,11 @@
 
 <PageTitle>Overview</PageTitle>
 
-<StatFilterComponent />
+<StatFilterComponent Height="4rem"/>
 
 @if (PageLoaded)
 {
-    <RadzenTabs Style="max-height: fit-content" @ref="_tabs" Change="TabsUpdated" @bind-SelectedIndex="_tabsIndex">
+    <RadzenTabs @ref="_tabs" Change="TabsUpdated" @bind-SelectedIndex="_tabsIndex">
         <Tabs>
             <RadzenTabsItem Text="Red Cards">
                 <RedCardOverviewComponent @ref="_general"/>
@@ -31,7 +31,6 @@ else
 {
     <RadzenText>Loading</RadzenText>
 }
-
 
 @code {
     [Inject] 

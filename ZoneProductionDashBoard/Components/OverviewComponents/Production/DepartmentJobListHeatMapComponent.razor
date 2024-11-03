@@ -4,34 +4,35 @@
 
 @implements IDisposable
 
-<ApexChart TItem="FormattedJobCard" Options="_options" Height="@("600px")" Width="@("100%")" @ref="_chart">
+<div style="height: calc(100vh - 14rem)">
+    <ApexChart TItem="FormattedJobCard" Options="_options" Height="@("98%")" Width="@("98%")" @ref="_chart">
 
-    <ApexPointTooltip>
-        <RadzenText Style="@("color: " + context.DataPoint.Items.First().CardStatus.GetIndicatorColor().ToHex())">@context.DataPoint.Items.First().LabelDescription</RadzenText>
-        @if (context.DataPoint.Items.First().CardStatus == CardStatus.UnableToComplete)
-        {
-            foreach (string comment in context.DataPoint.Items.First().Comments)
+        <ApexPointTooltip>
+            <RadzenText Style="@("color: " + context.DataPoint.Items.First().CardStatus.GetIndicatorColor().ToHex())">@context.DataPoint.Items.First().LabelDescription</RadzenText>
+            @if (context.DataPoint.Items.First().CardStatus == CardStatus.UnableToComplete)
             {
-                <RadzenText>- @comment</RadzenText>
+                foreach (string comment in context.DataPoint.Items.First().Comments)
+                {
+                    <RadzenText>- @comment</RadzenText>
+                }
             }
-        }
-    </ApexPointTooltip>
-    
-    <ChildContent>
-        @foreach (VanBoard van in Vans)
-        {
-            <ApexPointSeries TItem="FormattedJobCard"
-                             Items="@GetFormattedCards(van.JobCards.Where(x => StatsService.CardFilterOptions.CardAreaOfOrigins.Contains(x.AreaOfOrigin)))"
-                             Name="@($"{van.Name} - {van.Position.PositionName}")"
-                             SeriesType="SeriesType.Heatmap"
-                             PointColor="@(x => x.CardStatus.GetIndicatorColor().ToHex())"
-                             XValue="@(x => x.Name)"
-                             YValue="@(e => CardValue(e, van.Position))" 
-                             Group="@van.Position.PositionName"/>
-        }
-    </ChildContent>
-</ApexChart>
-
+        </ApexPointTooltip>
+        
+        <ChildContent>
+            @foreach (VanBoard van in Vans)
+            {
+                <ApexPointSeries TItem="FormattedJobCard"
+                                 Items="@GetFormattedCards(van.JobCards.Where(x => StatsService.CardFilterOptions.CardAreaOfOrigins.Contains(x.AreaOfOrigin)))"
+                                 Name="@($"{van.Name} - {van.Position.PositionName}")"
+                                 SeriesType="SeriesType.Heatmap"
+                                 PointColor="@(x => x.CardStatus.GetIndicatorColor().ToHex())"
+                                 XValue="@(x => x.Name)"
+                                 YValue="@(e => CardValue(e, van.Position))" 
+                                 Group="@van.Position.PositionName"/>
+            }
+        </ChildContent>
+    </ApexChart>
+</div>
 
 @code {
     [Inject] 

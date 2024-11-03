@@ -1,6 +1,6 @@
 ﻿@using Microsoft.AspNetCore.WebUtilities
 
-<RadzenCard>
+<RadzenCard Style="@($"height: {Height}; padding: 1px")" Variant="Variant.Text">
     <RadzenStack Orientation="Orientation.Horizontal">
         <RadzenStack Gap="2px">
             <RadzenText>Production Line</RadzenText>
@@ -33,8 +33,10 @@
         }
     </RadzenStack>
 </RadzenCard>
-
 @code {
+    [Parameter] 
+    public string Height { get; set; } = "auto";
+    
     [Inject]
     public IProductionService ProductionService { get; set; } = default!;
 

@@ -5,10 +5,10 @@
 
 @implements IDisposable
 
-<RadzenCard>
+<RadzenCard Style="height: calc(100vh - 14rem)">
     <RadzenStack Orientation="Orientation.Horizontal">
         <RedCardCountComponent MinDate="_minDate" MaxDate="_maxDate" @ref="_countComponent"/>
-        <RadzenStack Style="flex: auto">
+        <RadzenStack Style="flex: auto" Gap="1rem">
             <div style="padding-right: 50px">
                 <RedCardsPerDayComponent TotalMinDate="@(DateTime.Now - TimeSpan.FromDays(31))" @ref=@_redCardsPerDay/>
                 <RedCardAgeGraphComponent MinDate="_minDate" MaxDate="_maxDate" @ref=@_redCardAgeGraphComponent/>
