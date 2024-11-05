@@ -19,6 +19,9 @@ namespace ZoneProductionLibrary.Models.Boards
                 if (this.CompletionRate > .999)
                     return CardStatus.Completed;
 
+                if (_cardStatus is CardStatus.UnableToComplete)
+                    return _cardStatus;
+
                 if (_cardStatus is CardStatus.InProgress || this.CompletionRate is > 0d and < 1d)
                     return CardStatus.InProgress;
 
