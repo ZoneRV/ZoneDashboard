@@ -12,7 +12,21 @@ namespace ZoneProductionLibrary.Models.Boards
         public TypeOfVan VanType => BoardName.ToVanType().IsGen2() ? TypeOfVan.Gen2 : TypeOfVan.Expo;
         public string Name { get; }
         public string Url => $"https://trello.com/c/{Id}/";
-        public CardStatus CardStatus { get; }
+        public CardStatus CardStatus
+        {
+            get
+            {
+                if (this.CompletionRate > .999)
+                    return CardStatus.Completed;
+
+                if (_cardStatus is CardStatus.InProgress || this.CompletionRate is > 0d and < 1d)
+                    return CardStatus.InProgress;
+
+                return _cardStatus;
+            }
+        }
+
+        private CardStatus _cardStatus;
         public DueStatus DueStatus { get; }
         public DateTimeOffset? CardStatusLastUpdated { get; private set; }
         public CardAreaOfOrigin AreaOfOrigin { get; }
@@ -39,13 +53,12 @@ namespace ZoneProductionLibrary.Models.Boards
 
         private double GetCompletionRate()
         {
+            if (_cardStatus == CardStatus.Completed)
+                return 1d;
+            
             if (TotalChecks == 0)
             {
-                if (CardStatus == CardStatus.Completed)
-                    return 1d;
-
-                else
-                    return 0d;
+                return 0d;
             }
 
             else
@@ -59,7 +72,7 @@ namespace ZoneProductionLibrary.Models.Boards
             this.BoardName = boardName;
             this.Name = name;
             this.TrelloListName = trelloListName;
-            this.CardStatus = cardStatus;
+            _cardStatus = cardStatus;
             this.AreaOfOrigin = cardAreaOfOrigin;
             this.CheckLists = checklists.ToList();
             this.TaskTime = taskTime;
@@ -84,7 +97,7 @@ namespace ZoneProductionLibrary.Models.Boards
             this.Name = jobCardObject.Name;
             this.TaskTime = jobCardObject.TaskTime;
             this.TrelloListName = jobCardObject.TrelloListName;
-            this.CardStatus = jobCardObject.CardStatus;
+            _cardStatus = jobCardObject.CardStatus;
             this.CardStatusLastUpdated = jobCardObject.CardStatusLastUpdated;
             this.AreaOfOrigin = jobCardObject.AreaOfOrigin;
             this.Position = productionPosition;
