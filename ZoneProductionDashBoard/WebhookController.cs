@@ -279,7 +279,7 @@ namespace ZoneProductionDashBoard
 
         private async void OnMemberAddedToOrg(WebhookAction args)
         {
-            Member? member = await args.Data.Member.GetAsync();
+            Member? member = await args.Data.Member.GetAsync();  //TODO: figure out why is causing crashes 
             
             if(member is null)
                 return;
