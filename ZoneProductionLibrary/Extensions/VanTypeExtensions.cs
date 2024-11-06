@@ -10,6 +10,16 @@ namespace ZoneProductionLibrary.Extensions
         {
             return vanModel is VanModel.ZPP or VanModel.ZSP or VanModel.ZSPF or VanModel.ZSS or VanModel.ZSSF;
         }
+        
+        
+        public static TypeOfVan VanType(this VanModel vanModel)
+        {
+            if (vanModel.IsGen2())
+                return TypeOfVan.Gen2;
+            
+            else
+                return TypeOfVan.Expo;
+        }
 
         public static VanModel ToVanType(this string input)
         {

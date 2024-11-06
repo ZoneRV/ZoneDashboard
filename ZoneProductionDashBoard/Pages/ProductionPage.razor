@@ -1,23 +1,46 @@
 ﻿@page "/production/"
 
+@using BlazorBootstrap
+@using Orientation = Radzen.Orientation
 @using Serilog
 @inherits ProductionPageBase
 
 <PageTitle>Production</PageTitle>
 
-<div style="width: 100vw; height: calc(100vh - 4rem); overflow-x: scroll">
-    <RadzenStack JustifyContent="JustifyContent.Center" >
-        <ProductionLineViewComponent TypeOfVan="TypeOfVan.Gen2" Vans="_gen2Boards" @ref="_gen2Line"></ProductionLineViewComponent>
-        <ProductionLineViewComponent TypeOfVan="TypeOfVan.Expo" Vans="_expoBoards" @ref="_expoLine"></ProductionLineViewComponent>
+<StatFilterComponent Height="4rem" />
+
+<div style="width: 100vw; height: calc(100vh - 10rem); overflow-x: auto !important; justify-items: center; align-content: center">
+    <ProductionLineViewComponent Vans="_vans.Where(x => x.VanModel.VanType() == StatsService.SelectedVanType && x.Position is not PostProduction)" @ref="_line"/>
+
+    <RadzenStack>
+        <RadzenText TextStyle="TextStyle.H3">Car Park:</RadzenText>
+        <RadzenStack Orientation="Orientation.Horizontal">
+            @foreach (VanBoard van in _vans.Where(x => x is not null && x.Position is PostProduction && x.VanModel.VanType() == StatsService.SelectedVanType && x.Handover.HasValue).OrderBy(x => x.Handover))
+            {
+                <RadzenStack>
+                    <RadzenText>Handover @van.Handover!.Value.LocalDateTime.Date.ToString("dd/MM")</RadzenText>
+                    <VanButton VanName="@van.Name" DetailedButton="true" Color="#FFFFFF" OverrideColorToStatus="true" UseStatsServiceFilter="true"/>
+                </RadzenStack>
+            }
+        </RadzenStack>
     </RadzenStack>
 </div>
-@code {
-    List<VanBoard> _gen2Boards = [];
-    List<VanBoard> _expoBoards = [];
 
-    ProductionLineViewComponent _gen2Line = default!;
-    ProductionLineViewComponent _expoLine = default!;
-    
+@code {
+    [Inject] 
+    public NavigationManager NavigationManager { get; set; } = default!;
+
+    IEnumerable<VanBoard> _vans = [];
+
+    ProductionLineViewComponent _line = default!;
+
+    protected override void OnInitialized()
+    {
+        NavigationManager.LocationChanged += (_, _) => _line.Update();
+        
+        base.OnInitialized();
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         await base.OnAfterRenderAsync(firstRender);
@@ -26,17 +49,15 @@
         {
             ShowLoadingDialog();
 
-            SubscribedIds = ProductionService.ProductionVanIds(false).ToList();
+            SubscribedIds = ProductionService.ProductionVanIds(true).ToList();
 
-            var boards = await ProductionService.GetBoardsAsync(Progress, SubscribedIds);
+            var vans = await ProductionService.GetBoardsAsync(Progress, SubscribedIds);
 
-            _gen2Boards = boards.Where(x => x.VanModel.IsGen2()).ToList();
-            _expoBoards = boards.Where(x => !x.VanModel.IsGen2()).ToList();
+            _vans = vans;
 
             CloseLoadingDialog();
             
-            _gen2Line.Update();
-            _expoLine.Update();
+            _line.Update();
             
             StateHasChanged();
 
@@ -71,24 +92,16 @@
                 return;
         }
         
-        var boards = ProductionService.GetBoards(SubscribedIds).ToList();
-
-        _gen2Boards = boards.Where(x => x.VanModel.IsGen2()).ToList();
-        _expoBoards = boards.Where(x => !x.VanModel.IsGen2()).ToList();
+        _vans = ProductionService.GetBoards(SubscribedIds).ToList();
             
-        _gen2Line.Update();
-        _expoLine.Update();
+        _line.Update();
         
         StateHasChanged();
     }
 
     public override void Dispose()
     {
-        _gen2Boards.Clear();
-        _expoBoards.Clear();
-        
-        _gen2Line.Dispose();
-        _expoLine.Dispose();
+        NavigationManager.LocationChanged -= (_, _) => _line.Update();
         
         base.Dispose();
     }

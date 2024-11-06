@@ -4,7 +4,26 @@
 
 @implements IDisposable
 
-<RadzenCard Style="@($"padding: 1px; background-color: {Color}; width: max-content; height: min-content")">
+@{
+    string color = Color;
+
+    if (_van is not null && OverrideColorToStatus && FiltedAreaOfOrigins.Any())
+    {
+        if (_redCards.Any() || _yellowCards.Any() || _jobCards.Any(x => x.DueStatus is DueStatus.OverDue))
+            color = System.Drawing.Color.OrangeRed.ToHex();
+        
+        else if (_jobCards.Any())
+            color = System.Drawing.Color.Orange.ToHex();
+        
+        else if (_van.JobCards.Where(x => FiltedAreaOfOrigins.Contains(x.AreaOfOrigin)).All(x => x.DueStatus is DueStatus.NotDue))
+            color = System.Drawing.Color.Gray.ToHex();
+        
+        else
+            color = System.Drawing.Color.LimeGreen.ToHex();
+    }
+}
+
+<RadzenCard Style="@($"padding: 1px; background-color: {color}; width: max-content; height: max-content")">
     <RadzenSplitButton
         ButtonContent="@ButtonText" 
         Variant="Variant.Text"
@@ -20,38 +39,34 @@
             }
             else
             {
-                var jobCards = _van.JobCards.Where(x => (x.Position < _van.Position || x.Position.Equals(_van.Position)) && x.CardStatus is not CardStatus.Completed); 
-                var redCards = _van.RedCards.Where(x => x.CardStatus is not CardStatus.Completed); 
-                var yellowCards = _van.YellowCards.Where(x => x.CardStatus is not CardStatus.Completed); 
-                
                 <p>
                     <a style="font-weight: bold">Position:&nbsp;</a><a>@_van.Position.PositionName<br/></a>
                     <a style="font-weight: bold">Handover:&nbsp;</a><a>@VanTitleComponent.GetHandoverString(ProductionService, _van)<br/></a>
                     
                     @if (!DetailedButton)
                     {
-                        @if (jobCards.Any())
+                        @if (_jobCards.Any())
                         {
                             <a style="font-weight: bold">Job Cards Due:&nbsp;</a>
-                            <a>@jobCards.Count() - @jobCards.TotalTimeRemaining().TotalHours.ToString("N0"):@jobCards.TotalTimeRemaining().Minutes.ToString("00") Hours<br/></a>
+                            <a>@_jobCards.Count() - @_jobCards.TotalTimeRemaining().TotalHours.ToString("N0"):@_jobCards.TotalTimeRemaining().Minutes.ToString("00") Hours<br/></a>
                         }
-                        @if (redCards.Any())
+                        @if (_redCards.Any())
                         {
                             <a style="font-weight: bold">Red Cards Uncompleted:&nbsp;</a>
-                            <a>@redCards.Count()<br/></a>
+                            <a>@_redCards.Count()<br/></a>
                         }
-                        @if (yellowCards.Any())
+                        @if (_yellowCards.Any())
                         {
                             <a style="font-weight: bold">Yellow Cards Uncompleted:&nbsp;</a>
-                            <a>@yellowCards.Count()</a>
+                            <a>@_yellowCards.Count()</a>
                         }
                     }
                     else
                     {
-                        @if (jobCards.Any())
+                        @if (_jobCards.Any())
                         {
                             <a style="font-weight: bold">Due Job Cards Time Remaining:&nbsp;</a>
-                            <a>@jobCards.TotalTimeRemaining().TotalHours.ToString("N0"):@jobCards.TotalTimeRemaining().Minutes.ToString("00") Hours<br/></a>
+                            <a>@_jobCards.TotalTimeRemaining().TotalHours.ToString("N0"):@_jobCards.TotalTimeRemaining().Minutes.ToString("00") Hours<br/></a>
                         }
                     }
                 </p>
@@ -67,10 +82,16 @@
     public IProductionService ProductionService { get; set; } = default!;
     
     [Inject] 
+    public StatsService StatsService { get; set; } = default!;
+    
+    [Inject] 
     public IJSRuntime JsRuntime { get; set; } = default!;
     
     [Inject] 
     public DialogService DialogService { get; set; } = default!;
+    
+    [Inject] 
+    public NavigationManager NavigationManager { get; set; } = default!;
 
     [Parameter, EditorRequired]
     public string VanName
@@ -84,6 +105,13 @@
                 _vanName = value;
                 _info = ProductionService.ProductionVans[_vanName.ToLower()];
                 _van = ProductionService.GetBoardByName(_vanName);
+                
+                if(_van is null)
+                    return;
+                
+                _jobCards = _van.JobCards.Where(x => x.DueStatus is DueStatus.Due or DueStatus.OverDue && x.CardStatus is not CardStatus.Completed && (!FiltedAreaOfOrigins.Any() || FiltedAreaOfOrigins.Contains(x.AreaOfOrigin))).ToList();
+                _redCards = _van.RedCards.Where(x => x.CardStatus is not CardStatus.Completed && (!FiltedAreaOfOrigins.Any() || FiltedAreaOfOrigins.Contains(x.AreaOfOrigin))).ToList();
+                _yellowCards = _van.YellowCards.Where(x => x.CardStatus is not CardStatus.Completed && (!FiltedAreaOfOrigins.Any() || FiltedAreaOfOrigins.Contains(x.AreaOfOrigin))).ToList();
             }
         }
     } 
@@ -91,13 +119,26 @@
     string _vanName = default!;
     
     [Parameter] 
-    public string Color { get; set; } = "#000000";
+    public string Color { get; set; } = default(string)!;
+    
+    [Parameter] 
+    public bool OverrideColorToStatus { get; set; } = false;
 
     [Parameter] 
     public bool DetailedButton { get; set; } = false;
     
     [Parameter] 
     public bool ShowIcon { get; set; } = false;
+
+    [Parameter] 
+    public bool UseStatsServiceFilter { get; set; } = false;
+
+    [Parameter] 
+    public List<CardAreaOfOrigin> FiltedAreaOfOrigins { get; set; } = [];
+
+    List<JobCard> _jobCards = [];
+    List<RedCard> _redCards = [];
+    List<YellowCard> _yellowCards = [];
     
     private VanBoard? _van = null;
     private VanProductionInfo _info = default!;
@@ -107,19 +148,46 @@
     {
         ArgumentNullException.ThrowIfNull(_vanName);
         ArgumentNullException.ThrowIfNull(ProductionService);
-
-        _info = ProductionService.ProductionVans[VanName.ToLower()];
-        _van = ProductionService.GetBoardByName(VanName.ToLower());
-
-        if (Color == "#000000")
+        
+        if (Color == default(string))
             Color = _vanName.ToVanType().GetTypeColor().ToHex();
 
         if (ProductionService is ProductionService prod)
         {
             ZoneProductionLibrary.ProductionServices.Main.ProductionService.BoardUpdated += Update;
         }
+
+        if (UseStatsServiceFilter)
+        {
+            NavigationManager.LocationChanged += (_, _) =>
+                                                 {
+                                                     UpdateAreaOfOrigins();
+                                                     InvokeAsync(StateHasChanged);
+                                                 };
+        }
+        
+        UpdateAreaOfOrigins();
         
         base.OnInitialized();
+    }
+
+    void UpdateAreaOfOrigins()
+    {
+        if(UseStatsServiceFilter)
+        {
+            if (StatsService.SelectedDepartments.Count == 0)
+                FiltedAreaOfOrigins = [];
+
+            else
+                FiltedAreaOfOrigins = StatsService.CardFilterOptions.CardAreaOfOrigins.ToList();
+        }
+        
+        if(_van is null)
+            return;
+                
+        _jobCards = _van.JobCards.Where(x => x.DueStatus is DueStatus.Due or DueStatus.OverDue && x.CardStatus is not CardStatus.Completed && (!FiltedAreaOfOrigins.Any() || FiltedAreaOfOrigins.Contains(x.AreaOfOrigin))).ToList();
+        _redCards = _van.RedCards.Where(x => x.CardStatus is not CardStatus.Completed && (!FiltedAreaOfOrigins.Any() || FiltedAreaOfOrigins.Contains(x.AreaOfOrigin))).ToList();
+        _yellowCards = _van.YellowCards.Where(x => x.CardStatus is not CardStatus.Completed && (!FiltedAreaOfOrigins.Any() || FiltedAreaOfOrigins.Contains(x.AreaOfOrigin))).ToList();
     }
 
     public void Update(object? sender, BoardUpdateInfo e)
@@ -137,6 +205,14 @@
         {
             _button.IsBusy = true;
             _van = await ProductionService.GetBoardAsyncByName(VanName);
+            
+            if(_van is not null)
+            {
+                _jobCards = _van.JobCards.Where(x => x.DueStatus is DueStatus.Due or DueStatus.OverDue && x.CardStatus is not CardStatus.Completed && (!FiltedAreaOfOrigins.Any() || FiltedAreaOfOrigins.Contains(x.AreaOfOrigin))).ToList();
+                _redCards = _van.RedCards.Where(x => x.CardStatus is not CardStatus.Completed && (!FiltedAreaOfOrigins.Any() || FiltedAreaOfOrigins.Contains(x.AreaOfOrigin))).ToList();
+                _yellowCards = _van.YellowCards.Where(x => x.CardStatus is not CardStatus.Completed && (!FiltedAreaOfOrigins.Any() || FiltedAreaOfOrigins.Contains(x.AreaOfOrigin))).ToList();
+            }
+            
             _button.IsBusy = false;
         }
         else if(item.Text == "Open In Trello")
@@ -216,21 +292,18 @@
             {
                 <p style="text-align: start; font-size: .75em">
                     <a style="font-weight: bold; font-size: 1em">@VanName.ToUpper()</a><br/>
-                    @{ var jobCards = _van.JobCards.Where(x => (x.Position < _van.Position || x.Position.Equals(_van.Position)) && x.CardStatus is not CardStatus.Completed); }
-                    @{ var redCards = _van.RedCards.Where(x => x.CardStatus is not CardStatus.Completed); }
-                    @{ var yellowCards = _van.YellowCards.Where(x => x.CardStatus is not CardStatus.Completed); }
-
-                    @if (jobCards.Any())
+                    
+                    @if (_jobCards.Any())
                     {
-                        <a style="font-weight: bold">Job Cards:&nbsp;</a><a>@jobCards.Count()<br/></a>
+                        <a style="font-weight: bold">Job Cards:&nbsp;</a><a>@_jobCards.Count()<br/></a>
                     }
-                    @if (redCards.Any())
+                    @if (_redCards.Any())
                     {
-                        <a style="font-weight: bold">Red Cards:&nbsp;</a><a>@redCards.Count()<br/></a>
+                        <a style="font-weight: bold">Red Cards:&nbsp;</a><a>@_redCards.Count()<br/></a>
                     }
-                    @if (yellowCards.Any())
+                    @if (_yellowCards.Any())
                     {
-                        <a style="font-weight: bold">Yellow Cards:&nbsp;</a><a>@yellowCards.Count()</a>
+                        <a style="font-weight: bold">Yellow Cards:&nbsp;</a><a>@_yellowCards.Count()</a>
                     }
                 </p>
             };

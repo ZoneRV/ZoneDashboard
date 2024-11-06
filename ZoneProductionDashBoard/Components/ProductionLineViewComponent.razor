@@ -1,44 +1,29 @@
 @inherits UpdatableComponent
 
-@implements IDisposable
-
-<RadzenTimeline 
-    Orientation="Orientation.Horizontal" 
-    AlignItems="AlignItems.Center" 
-    @ref="_timeLine"
-    Style="@Style">
-
-    <Items>
-        @foreach (IProductionPosition pos in (TypeOfVan is TypeOfVan.Gen2) ? Gen2ProductionPosition.GetAll() : ExpoProductionPosition.GetAll())
+<div style="width: max-content; overflow-x: auto">
+    <RadzenRow class="rz-overflow-scroll" Style="padding-top: 1em; padding-bottom: 1em">
+        @foreach (IProductionPosition pos in (StatsService.SelectedVanType is TypeOfVan.Gen2) ? Gen2ProductionPosition.GetAll() : ExpoProductionPosition.GetAll())
         {
-            <RadzenTimelineItem>
-                <LabelContent>
-                    <RadzenText>@pos.PositionName</RadzenText>
-                </LabelContent>
-                <ChildContent>
-                    <RadzenStack>
-                        @foreach (var van in Vans.Where(x => x.Position.Equals(pos)))
-                        {
-                            <VanButton VanName="@van.Name" DetailedButton="true" Color="#FFFFFF"/>
-                        }
-                    </RadzenStack>
-                </ChildContent>
-            </RadzenTimelineItem>
+            <RadzenColumn>
+                <div style="height: 4em">
+                    <RadzenText TextAlign="TextAlign.Center">@pos.PositionName</RadzenText>
+                </div>
+                @foreach (var van in Vans.Where(x => x.Position.Equals(pos)))
+                {
+                    <RadzenRow Gap="1em">
+                        <VanButton VanName="@van.Name" DetailedButton="true" Color="#FFFFFF" OverrideColorToStatus="true" UseStatsServiceFilter="true"/>
+                    </RadzenRow>
+                }
+            </RadzenColumn>
         }
-    </Items>
-</RadzenTimeline>
-
+    </RadzenRow>
+</div>
 @code {
+    [Inject] 
+    public StatsService StatsService { get; set; } = default!;
+    
     [Parameter, EditorRequired] 
     public IEnumerable<VanBoard> Vans { get; set; } = default!;
-
-    [Parameter, EditorRequired] 
-    public TypeOfVan TypeOfVan { get; set; } = default;
-
-    [Parameter] public string Style { get; set; } = "";
-
-    public List<IProductionPosition> _positions = [];
-    RadzenTimeline _timeLine = default!;
 
     protected override void OnInitialized()
     {
@@ -46,19 +31,7 @@
 
         if (!Vans.All(x => x.VanModel.IsGen2()) || !Vans.All(x => !x.VanModel.IsGen2()))
             throw new ArgumentException("Cannot add vans from seperate lines to production line view compontent");
-
-        if (Vans.Any(x => x.VanModel.IsGen2()))
-            _positions = Gen2ProductionPosition.GetAll().Select(x => (IProductionPosition)x).ToList();
-        
-        else
-            _positions = ExpoProductionPosition.GetAll().Select(x => (IProductionPosition)x).ToList();
         
         base.OnInitialized();
-    }
-
-    public void Dispose()
-    {
-        _timeLine.Dispose();
-        _positions.Clear();
     }
 }
