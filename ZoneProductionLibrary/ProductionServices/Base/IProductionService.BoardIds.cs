@@ -52,7 +52,8 @@ namespace ZoneProductionLibrary.ProductionServices.Base
         public IEnumerable<string> ProductionVanIds(bool includeCarPark) => ProductionVanIds(Enum.GetValues<VanModel>(), includeCarPark);
 
         public IEnumerable<string> ProductionVanIds(IEnumerable<VanModel> vanTypes, bool includeCarPark)
-            => ProductionVans.Values.Where(x => 
+            => ProductionVans.Values.Where(x =>
+            x.Handover.HasValue &&
             x.Position is not PreProduction &&
             (includeCarPark || x.Position is not PostProduction) && 
             vanTypes.Contains(x.Name.ToVanType()) && 

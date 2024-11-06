@@ -290,7 +290,11 @@
         if (timeSpan < TimeSpan.Zero)
         {
             isNegative = true;
-            timeSpan = -timeSpan;
+            
+            if(timeSpan == TimeSpan.MinValue)
+                timeSpan = TimeSpan.MaxValue;
+            else
+                timeSpan = -timeSpan;
         }
         if (timeSpan < TimeSpan.FromDays(1))
         {
