@@ -148,7 +148,6 @@ public interface IProductionPosition : IEquatable<IProductionPosition>, IEqualit
         [
             "Design issues __________________ NO RED CARDs TO BE ADDED TO THIS COLUMN",
             "OUTSIDE - Carpark GEN2",
-            "OUTSIDE - Carpark GEN2 (Fishbowl closed)",
-            "Chassis Module Expo"
+            "OUTSIDE - Carpark GEN2 (Fishbowl closed)"
         ];
 }
