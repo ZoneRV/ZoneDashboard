@@ -42,7 +42,7 @@ public partial class ProductionService : IProductionService
         new ProductionDepartment("Upholstery",       [CardAreaOfOrigin.Upholstery]),
         new ProductionDepartment("Cabs Finishing",   [CardAreaOfOrigin.CabsFinishing]),
         new ProductionDepartment("Commissioning",    [CardAreaOfOrigin.Commissioning, CardAreaOfOrigin.Detailing]),
-        new ProductionDepartment("QC",               [CardAreaOfOrigin.QC])
+        new ProductionDepartment("Gas",              [CardAreaOfOrigin.Gas])
     ];
 
 
@@ -59,7 +59,7 @@ public partial class ProductionService : IProductionService
         new ProductionDepartment("Sealing",       [CardAreaOfOrigin.Sealing]),
         new ProductionDepartment("Cabs Finishing",[CardAreaOfOrigin.CabsFinishing]),
         new ProductionDepartment("Commissioning", [CardAreaOfOrigin.Commissioning, CardAreaOfOrigin.Detailing]),
-        new ProductionDepartment("QC",            [CardAreaOfOrigin.QC])
+        new ProductionDepartment("Gas",           [CardAreaOfOrigin.Gas])
     ];
 
 
