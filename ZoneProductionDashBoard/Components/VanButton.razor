@@ -195,6 +195,7 @@
         if (_van is not null && e.BoardId == _van.Id)
         {
             _van = ProductionService.GetBoardByName(_vanName);
+            UpdateAreaOfOrigins();
             InvokeAsync(StateHasChanged);
         }
     }

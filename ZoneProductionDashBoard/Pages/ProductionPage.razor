@@ -71,7 +71,7 @@
             return;
         
         var oldList = new List<string>(SubscribedIds);
-        SubscribedIds = ProductionService.ProductionVanIds(false).ToList();
+        SubscribedIds = ProductionService.ProductionVanIds(true).ToList();
         
         if( 
             !oldList.SequenceEqual(SubscribedIds) ||
