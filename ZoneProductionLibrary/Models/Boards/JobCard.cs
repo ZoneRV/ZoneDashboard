@@ -31,7 +31,7 @@ namespace ZoneProductionLibrary.Models.Boards
 
         private CardStatus _cardStatus;
         public DueStatus DueStatus { get; }
-        public DateTimeOffset? CardStatusLastUpdated { get; private set; }
+        public DateTimeOffset? CardStatusLastUpdated { get; private set; } // TODO: account for status not being changed and all checks being marked off
         public CardAreaOfOrigin AreaOfOrigin { get; }
         public string TrelloListName { get; }
         public IProductionPosition Position { get; }

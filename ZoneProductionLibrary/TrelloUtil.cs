@@ -289,11 +289,14 @@ namespace ZoneProductionLibrary
             if (completionRate > .99d)
                 return Color.Green;
 
-            else if (status == DueStatus.NotDue)
+            else if (status is DueStatus.NotDue)
                 return Color.LightGray;
 
-            else if (status == DueStatus.Due && completionRate == 0d)
+            else if (status is DueStatus.Due && completionRate == 0d)
                 return Color.Black;
+            
+            else if (status is DueStatus.OverDue)
+                return Color.Red;
 
             else if (completionRate > 0d)
                 return Color.Orange;

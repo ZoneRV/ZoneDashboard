@@ -9,21 +9,8 @@
 
 <StatFilterComponent Height="4rem" />
 
-<div style="width: 100vw; height: calc(100vh - 10rem); overflow-x: auto !important; justify-items: center; align-content: center">
-    <ProductionLineViewComponent Vans="_vans.Where(x => x.VanModel.VanType() == StatsService.SelectedVanType && x.Position is not PostProduction)" @ref="_line"/>
-
-    <RadzenStack>
-        <RadzenText TextStyle="TextStyle.H3">Car Park:</RadzenText>
-        <RadzenStack Orientation="Orientation.Horizontal">
-            @foreach (VanBoard van in _vans.Where(x => x is not null && x.Position is PostProduction && x.VanModel.VanType() == StatsService.SelectedVanType && x.Handover.HasValue).OrderBy(x => x.Handover))
-            {
-                <RadzenStack>
-                    <RadzenText>Handover @van.Handover!.Value.LocalDateTime.Date.ToString("dd/MM")</RadzenText>
-                    <VanButton VanName="@van.Name" DetailedButton="true" Color="#FFFFFF" OverrideColorToStatus="true" UseStatsServiceFilter="true"/>
-                </RadzenStack>
-            }
-        </RadzenStack>
-    </RadzenStack>
+<div style="width: 100vw; height: calc(100vh - 10rem); overflow-x: auto;">
+    <ProductionLineViewComponent Vans="_vans.Where(x => x.VanModel.VanType() == StatsService.SelectedVanType)" @ref="_line"/>
 </div>
 
 @code {

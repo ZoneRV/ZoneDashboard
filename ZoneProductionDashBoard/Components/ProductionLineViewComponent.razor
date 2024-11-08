@@ -1,22 +1,38 @@
 @inherits UpdatableComponent
 
-<div style="width: max-content; overflow-x: auto">
-    <RadzenRow class="rz-overflow-scroll" Style="padding-top: 1em; padding-bottom: 1em">
-        @foreach (IProductionPosition pos in (StatsService.SelectedVanType is TypeOfVan.Gen2) ? Gen2ProductionPosition.GetAll() : ExpoProductionPosition.GetAll())
-        {
-            <RadzenColumn>
-                <div style="height: 4em">
-                    <RadzenText TextAlign="TextAlign.Center">@pos.PositionName</RadzenText>
-                </div>
-                @foreach (var van in Vans.Where(x => x.Position.Equals(pos)))
-                {
-                    <RadzenRow Gap="1em">
-                        <VanButton VanName="@van.Name" DetailedButton="true" Color="#FFFFFF" OverrideColorToStatus="true" UseStatsServiceFilter="true"/>
-                    </RadzenRow>
-                }
-            </RadzenColumn>
-        }
-    </RadzenRow>
+<div style="justify-items: flex-start; align-items: center; align-self: center">
+    <RadzenStack>
+        <RadzenText TextStyle="TextStyle.H3">Production Line:</RadzenText>
+        <RadzenRow class="rz-overflow-scroll" Style="padding: 4rem; width: max-content;">
+            @foreach (IProductionPosition pos in (StatsService.SelectedVanType is TypeOfVan.Gen2) ? Gen2ProductionPosition.GetAll() : ExpoProductionPosition.GetAll())
+            {
+                <RadzenColumn>
+                    <div style="height: 4em">
+                        <RadzenText TextAlign="TextAlign.Center">@pos.PositionName</RadzenText>
+                    </div>
+                    @foreach (var van in Vans.Where(x => x.Position.Equals(pos)))
+                    {
+                        <RadzenRow Gap="1em" AlignItems="AlignItems.Start">
+                            <VanButton VanName="@van.Name" DetailedButton="true" Color="#FFFFFF" OverrideColorToStatus="true" UseStatsServiceFilter="true"/>
+                        </RadzenRow>
+                    }
+                </RadzenColumn>
+            }
+        </RadzenRow>
+    </RadzenStack>
+
+    <RadzenStack>
+        <RadzenText TextStyle="TextStyle.H3">Car Park:</RadzenText>
+        <RadzenStack Orientation="Orientation.Horizontal">
+            @foreach (VanBoard van in Vans.Where(x => x is not null && x.Position is PostProduction && x.VanModel.VanType() == StatsService.SelectedVanType && x.Handover.HasValue).OrderBy(x => x.Handover))
+            {
+                <RadzenStack>
+                    <RadzenText>Handover @van.Handover!.Value.LocalDateTime.Date.ToString("dd/MM")</RadzenText>
+                    <VanButton VanName="@van.Name" DetailedButton="true" Color="#FFFFFF" OverrideColorToStatus="true" UseStatsServiceFilter="true"/>
+                </RadzenStack>
+            }
+        </RadzenStack>
+    </RadzenStack>
 </div>
 @code {
     [Inject] 

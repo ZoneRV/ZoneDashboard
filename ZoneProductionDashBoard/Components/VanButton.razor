@@ -66,7 +66,16 @@
                         @if (_jobCards.Any())
                         {
                             <a style="font-weight: bold">Due Job Cards Time Remaining:&nbsp;</a>
-                            <a>@_jobCards.TotalTimeRemaining().TotalHours.ToString("N0"):@_jobCards.TotalTimeRemaining().Minutes.ToString("00") Hours<br/></a>
+                            <a>@_jobCards.TotalTimeRemaining().TotalHours.ToString("N0"):@_jobCards.TotalTimeRemaining().Minutes.ToString("00") Hours</a>
+                            
+                            if(_jobCards.Count < 20)
+                            {
+                                <br/>
+                                foreach (JobCard jobCard in _jobCards)
+                                {
+                                    <a style="@($"color: {jobCard.Color(jobCard.DueStatus).ToHex()}")">@jobCard.Name - @jobCard.CardStatus.CleanName()<br/></a>
+                                }
+                            }
                         }
                     }
                 </p>
@@ -292,18 +301,45 @@
             fragment = __builder =>
             {
                 <p style="text-align: start; font-size: .75em">
-                    <a style="font-weight: bold; font-size: 1em">@VanName.ToUpper()</a><br/>
+                    <a style="font-weight: bold; font-size: 1em">@VanName.ToUpper()</a>
                     
                     @if (_jobCards.Any())
                     {
-                        <a style="font-weight: bold">Job Cards:&nbsp;</a><a>@_jobCards.Count()<br/></a>
+                        <br/><br/>
+                        int overDueJobCardCount = _jobCards.Count(x => x.DueStatus is DueStatus.OverDue);
+                        
+                        <a style="font-weight: bold">Job Cards:&nbsp;</a><a>@_jobCards.Count()</a>
+                        
+                        if (overDueJobCardCount == _jobCards.Count)
+                        {
+                            <a style="font-weight: bold">&nbsp;overdue</a>
+                        }
+                        else if (overDueJobCardCount > 1)
+                        {
+                            <br/>
+                            <a style="font-weight: bold">@overDueJobCardCount overdue</a>
+                        }
+                        
+                        if (_jobCards.All(x => x.CardStatus is CardStatus.UnableToComplete))
+                        {
+                            <br/>
+                            <a style="font-weight: bold">All Unable to complete</a>
+                        }
                     }
                     @if (_redCards.Any())
                     {
-                        <a style="font-weight: bold">Red Cards:&nbsp;</a><a>@_redCards.Count()<br/></a>
+                        <br/><br/>
+                        <a style="font-weight: bold">Red Cards:&nbsp;</a><a>@_redCards.Count()</a>
+                        
+                        if (_redCards.All(x => x.CardStatus is CardStatus.UnableToComplete))
+                        {
+                            <br/>
+                            <a style="font-weight: bold">All Unable to complete</a>
+                        }
                     }
                     @if (_yellowCards.Any())
                     {
+                        <br/><br/>
                         <a style="font-weight: bold">Yellow Cards:&nbsp;</a><a>@_yellowCards.Count()</a>
                     }
                 </p>
