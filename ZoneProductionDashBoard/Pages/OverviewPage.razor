@@ -7,10 +7,14 @@
 
 <PageTitle>Overview</PageTitle>
 
-<StatFilterComponent Height="4rem"/>
-
-@if (PageLoaded)
+@if (!DashboardConfig.AllowOverviewPage)
 {
+    <a>Overview page has beeen temporarily disabled due to technical reasons</a>
+}
+else if (PageLoaded)
+{
+    <StatFilterComponent Height="4rem"/>
+    
     <RadzenTabs @ref="_tabs" Change="TabsUpdated" @bind-SelectedIndex="_tabsIndex">
         <Tabs>
             <RadzenTabsItem Text="Red Cards">
@@ -19,7 +23,7 @@
             <RadzenTabsItem Text="Production">
                 <VanProductionOverviewComponent @ref="_production"/>
             </RadzenTabsItem>
-            <RadzenTabsItem Text="Redline Deadline" Disabled="@(!Debugger.IsAttached)">
+            <RadzenTabsItem Text="Redline Deadline" Disabled="@(!DashboardConfig.AllowOverviewPage)">
                 <DepartmentAverageRedLineDeadLineComponent @ref="_redLine"/>
             </RadzenTabsItem>
             <RadzenTabsItem Text="Handover View">
@@ -58,14 +62,17 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        List<string> idsToLoad = ProductionService.RequiredBoardIds().ToList();
+        if (DashboardConfig.AllowOverviewPage)
+        {
+            List<string> idsToLoad = ProductionService.RequiredBoardIds().ToList();
 
-        await ProductionService.GetBoardsAsync(Progress, idsToLoad);
+            await ProductionService.GetBoardsAsync(Progress, idsToLoad);
 
-        SubscribedIds = idsToLoad;
-        SubscribedTypes = [BoardUpdateType.RedCard];
+            SubscribedIds = idsToLoad;
+            SubscribedTypes = [BoardUpdateType.RedCard];
 
-        UpdateRateLimit = TimeSpan.FromSeconds(60);
+            UpdateRateLimit = TimeSpan.FromSeconds(60);
+        }
 
         PageLoaded = true;
         

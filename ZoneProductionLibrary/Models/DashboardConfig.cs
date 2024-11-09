@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using System.Diagnostics;
 using System.Runtime.InteropServices.JavaScript;
 
 namespace ZoneProductionDashBoard
@@ -6,6 +7,9 @@ namespace ZoneProductionDashBoard
     public static class DashboardConfig
     {
         public static IConfiguration? Configuration;
+        
+        public static bool AllowOverviewPage
+            => Debugger.IsAttached ? true : bool.TryParse(Configuration?["AllowOverviewPage"], out bool res) ? res : false;
 
         public static string TrelloApiKey 
             => Configuration?.GetValue<string>("TrelloApiKey")?? throw new ArgumentNullException("TrelloApiKey", "TrelloApiKey must be added to config file.");
