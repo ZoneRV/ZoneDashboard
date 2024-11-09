@@ -1,5 +1,6 @@
 ﻿@page "/overview/"
 
+@using System.Diagnostics
 @using Microsoft.AspNetCore.WebUtilities
 
 @inherits ProductionPageBase
@@ -18,7 +19,7 @@
             <RadzenTabsItem Text="Production">
                 <VanProductionOverviewComponent @ref="_production"/>
             </RadzenTabsItem>
-            <RadzenTabsItem Text="Redline Deadline" Disabled="true">
+            <RadzenTabsItem Text="Redline Deadline" Disabled="@(!Debugger.IsAttached)">
                 <DepartmentAverageRedLineDeadLineComponent @ref="_redLine"/>
             </RadzenTabsItem>
             <RadzenTabsItem Text="Handover View">

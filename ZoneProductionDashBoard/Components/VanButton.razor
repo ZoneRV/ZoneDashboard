@@ -40,24 +40,31 @@
             else
             {
                 <p>
-                    <a style="font-weight: bold">Position:&nbsp;</a><a>@_van.Position.PositionName<br/></a>
-                    <a style="font-weight: bold">Handover:&nbsp;</a><a>@VanTitleComponent.GetHandoverString(ProductionService, _van)<br/></a>
+                    <a style="font-weight: bold">Position:&nbsp;</a><a>@_van.Position.PositionName</a>
+                    <br/>
+                    <a style="font-weight: bold">Handover:&nbsp;</a><a>@VanTitleComponent.GetHandoverString(ProductionService, _van)</a>
                     
                     @if (!DetailedButton)
                     {
                         @if (_jobCards.Any())
                         {
+                            <br/>
                             <a style="font-weight: bold">Job Cards Due:&nbsp;</a>
-                            <a>@_jobCards.Count() - @_jobCards.TotalTimeRemaining().TotalHours.ToString("N0"):@_jobCards.TotalTimeRemaining().Minutes.ToString("00") Hours<br/></a>
+                            <br/>
+                            <a>@_jobCards.Count() - @_jobCards.TotalTimeRemaining().TotalHours.ToString("N0"):@_jobCards.TotalTimeRemaining().Minutes.ToString("00") Hours</a>
                         }
                         @if (_redCards.Any())
                         {
+                            <br/>
                             <a style="font-weight: bold">Red Cards Uncompleted:&nbsp;</a>
-                            <a>@_redCards.Count()<br/></a>
+                            <br/>
+                            <a>@_redCards.Count()></a>
                         }
                         @if (_yellowCards.Any())
                         {
+                            <br/>
                             <a style="font-weight: bold">Yellow Cards Uncompleted:&nbsp;</a>
+                            <br/>
                             <a>@_yellowCards.Count()</a>
                         }
                     }
@@ -65,17 +72,97 @@
                     {
                         @if (_jobCards.Any())
                         {
-                            <a style="font-weight: bold">Due Job Cards Time Remaining:&nbsp;</a>
-                            <a>@_jobCards.TotalTimeRemaining().TotalHours.ToString("N0"):@_jobCards.TotalTimeRemaining().Minutes.ToString("00") Hours</a>
-                            
-                            if(_jobCards.Count < 20)
-                            {
-                                <br/>
-                                foreach (JobCard jobCard in _jobCards)
-                                {
-                                    <a style="@($"color: {jobCard.Color(jobCard.DueStatus).ToHex()}")">@jobCard.Name - @jobCard.CardStatus.CleanName()<br/></a>
-                                }
-                            }
+                            <br/>
+                            <a style="font-weight: bold">Job Cards:</a>
+                            <div style="max-height: 10em; height: min-content; overflow-y: auto; padding: 0; direction: rtl">
+                                <div style="direction: ltr">
+                                    <a style="font-weight: bold">Job Cards Time Remaining:&nbsp;</a>
+                                    <a>@_jobCards.TotalTimeRemaining().TotalHours.ToString("N0"):@_jobCards.TotalTimeRemaining().Minutes.ToString("00") Hours</a>
+                                    @foreach (JobCard jobCard in _jobCards)
+                                    {
+                                        <br/>
+                                        if(FiltedAreaOfOrigins.Count != 1)
+                                        {
+                                            <a style="@($"color: {jobCard.Color(jobCard.DueStatus).ToHex()}")">@jobCard.Name - @jobCard.AreaOfOrigin.CleanName()</a>
+                                        }
+                                        else
+                                        {
+                                            <a style="@($"color: {jobCard.Color(jobCard.DueStatus).ToHex()}")">@jobCard.Name</a>
+                                        }
+
+                                        if (jobCard.CardStatus is CardStatus.UnableToComplete)
+                                        {
+                                            <a style="@($"color: {jobCard.Color(jobCard.DueStatus).ToHex()}")">@CardStatus.UnableToComplete.CleanName()</a>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        }
+                        
+                        @if (_redCards.Any())
+                        {
+                            <br/>
+                            <a style="font-weight: bold">Red Cards:</a>
+                            <div style="max-height: 10em; height: min-content; overflow-y: auto; padding: 0; direction: rtl">
+                                <div style="direction: ltr">
+                                    @{ bool first = true;}
+                                    @foreach (RedCard redCard in _redCards)
+                                    {
+                                        @if (first)
+                                        {
+                                            first = false;
+                                        }
+                                        else
+                                        {
+                                            <br/>
+                                        }
+                                        if (FiltedAreaOfOrigins.Count != 1)
+                                        {
+                                            <a style="@($"color: {redCard.Color.ToHex()}")">@redCard.Name - @redCard.AreaOfOrigin.CleanName()</a>
+                                        }
+                                        else
+                                        {
+                                            <a style="@($"color: {redCard.Color.ToHex()}")">@redCard.Name</a>
+                                        }
+
+                                        if (redCard.CardStatus is CardStatus.UnableToComplete)
+                                        {
+                                            <a style="@($"color: {redCard.Color.ToHex()}")">@CardStatus.UnableToComplete.CleanName()</a>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        }
+                        
+                        @if (_yellowCards.Any())
+                        {
+                            <br/>
+                            <a style="font-weight: bold">Yelow Cards:</a>
+                            <div style="max-height: 10em; height: min-content; overflow-y: auto; padding: 0; direction: rtl">
+                                <div style="direction: ltr">
+                                    @{ bool first = true;}
+                                    @foreach (YellowCard yellowCard in _yellowCards)
+                                    {
+                                        @if (first)
+                                        {
+                                            first = false;
+                                        }
+                                        else
+                                        {
+                                            <br/>
+                                        }
+
+                                        if (FiltedAreaOfOrigins.Count != 1)
+                                        {
+                                            <a style="@($"color: {yellowCard.Color.ToHex()}")">@yellowCard.Name - @yellowCard.AreaOfOrigin.CleanName()</a>
+                                        }
+                                        else
+                                        {
+                                            <a style="@($"color: {yellowCard.Color.ToHex()}")">@yellowCard.Name</a>
+                                        }
+                                    }
+                                </div>
+                            </div>
                         }
                     }
                 </p>

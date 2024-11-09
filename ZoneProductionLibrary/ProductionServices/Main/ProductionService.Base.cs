@@ -35,7 +35,7 @@ public partial class ProductionService : IProductionService
         new ProductionDepartment("Chassis",          [CardAreaOfOrigin.Chassis]),
         new ProductionDepartment("Cabinetry",        [CardAreaOfOrigin.CabsAssembly, CardAreaOfOrigin.SubAssembly, CardAreaOfOrigin.CabsPrep]),
         new ProductionDepartment("Bay 1",            [CardAreaOfOrigin.Bay1]),
-        new ProductionDepartment("Electrical",       [CardAreaOfOrigin.Bay2, CardAreaOfOrigin.Electrical]),
+        new ProductionDepartment("Electrical",       [CardAreaOfOrigin.Electrical]),
         new ProductionDepartment("Wall/Roof Mod",    [CardAreaOfOrigin.WallRoofMod]),
         new ProductionDepartment("Bay 3",            [CardAreaOfOrigin.Bay3, CardAreaOfOrigin.Toolbox]),
         new ProductionDepartment("Sealing",          [CardAreaOfOrigin.Sealing]),
