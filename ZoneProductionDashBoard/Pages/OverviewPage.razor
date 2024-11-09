@@ -23,7 +23,7 @@ else if (PageLoaded)
             <RadzenTabsItem Text="Production">
                 <VanProductionOverviewComponent @ref="_production"/>
             </RadzenTabsItem>
-            <RadzenTabsItem Text="Redline Deadline" Disabled="@(!DashboardConfig.AllowOverviewPage)">
+            <RadzenTabsItem Text="Redline Deadline" Disabled="@(!Debugger.IsAttached)">
                 <DepartmentAverageRedLineDeadLineComponent @ref="_redLine"/>
             </RadzenTabsItem>
             <RadzenTabsItem Text="Handover View">
