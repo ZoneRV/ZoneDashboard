@@ -58,7 +58,7 @@
                             <br/>
                             <a style="font-weight: bold">Red Cards Uncompleted:&nbsp;</a>
                             <br/>
-                            <a>@_redCards.Count()></a>
+                            <a>@_redCards.Count()</a>
                         }
                         @if (_yellowCards.Any())
                         {
@@ -92,7 +92,7 @@
 
                                         if (jobCard.CardStatus is CardStatus.UnableToComplete)
                                         {
-                                            <a style="@($"color: {jobCard.Color(jobCard.DueStatus).ToHex()}")">@CardStatus.UnableToComplete.CleanName()</a>
+                                            <a style="@($"color: {jobCard.Color(jobCard.DueStatus).ToHex()}")">&nbsp;@CardStatus.UnableToComplete.CleanName()</a>
                                         }
                                     }
                                 </div>
@@ -127,7 +127,7 @@
 
                                         if (redCard.CardStatus is CardStatus.UnableToComplete)
                                         {
-                                            <a style="@($"color: {redCard.Color.ToHex()}")">@CardStatus.UnableToComplete.CleanName()</a>
+                                            <a style="@($"color: {redCard.Color.ToHex()}")">&nbsp;@CardStatus.UnableToComplete.CleanName()</a>
                                         }
                                     }
                                 </div>
