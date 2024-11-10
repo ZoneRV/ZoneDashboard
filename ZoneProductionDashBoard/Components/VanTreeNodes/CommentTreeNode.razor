@@ -24,7 +24,7 @@
                 <RadzenCard Variant="Variant.Flat" class="rz-mx-au" Style="white-space: pre-wrap; margin:1px">
                     <RadzenStack AlignItems="AlignItems.Start" JustifyContent="JustifyContent.Start" Gap="1px" >
                         <div style="color: black">@((MarkupString) Markdown.ToHtml(Comment.Content))</div>
-                        <RadzenText TextStyle="TextStyle.Caption" Text="@Comment.DateCreated.ToString("dd/MM/yy hh:mm tt")" />
+                        <RadzenText TextStyle="TextStyle.Caption" Text="@Comment.DateCreated.ToLocalTime().ToString("dd/MM/yy hh:mm tt")" />
                     </RadzenStack>
                 </RadzenCard>
             </RadzenStack>

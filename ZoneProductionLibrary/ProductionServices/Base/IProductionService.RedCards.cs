@@ -6,12 +6,14 @@
         Task<IEnumerable<RedCard>> GetRedCardsAsync(IProgress<double> progress, IEnumerable<string> boardIds);
         IEnumerable<RedCard> GetRedCards(IEnumerable<string> boardIds);
         IEnumerable<RedCard> GetRedCards(IEnumerable<VanModel> vanTypes);
+        RedCard? GetRedCard(string id);
 
         
         IEnumerable<YellowCard> GetYellowCards();
         Task<IEnumerable<YellowCard>> GetYellowCardsAsync(IProgress<double> progress, IEnumerable<string> boardIds);
         IEnumerable<YellowCard> GetYellowCards(IEnumerable<string> boardIds);
         IEnumerable<YellowCard> GetYellowCards(IEnumerable<VanModel> vanTypes);
+        YellowCard? GetYellowCard(string id);
         
         Dictionary<CardAreaOfOrigin, List<RedCard>> GetRedCardsByAreaOfOrigin() => GetRedCardsByAreaOfOrigin(Enum.GetValues<VanModel>(), null);
         Dictionary<CardAreaOfOrigin, List<RedCard>> GetRedCardsByAreaOfOrigin(BoardFilterOptions filterOptions) => GetRedCardsByAreaOfOrigin(filterOptions.vanTypes, filterOptions.BoardIds);

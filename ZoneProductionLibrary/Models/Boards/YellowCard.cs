@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Newtonsoft.Json;
+using System.ComponentModel.DataAnnotations;
 using System.Drawing;
 
 namespace ZoneProductionLibrary.Models.Boards
@@ -6,9 +7,9 @@ namespace ZoneProductionLibrary.Models.Boards
     public class YellowCard : IFilterableCard
     {
         public string Id { get; }
-        public string BoardId { get; }
-        public string BoardName { get; }
-        public TypeOfVan VanType => BoardName.ToVanType().IsGen2() ? TypeOfVan.Gen2 : TypeOfVan.Expo;
+        [JsonIgnore] public string BoardId { get; }
+        [JsonIgnore] public string BoardName { get; }
+        [JsonIgnore] public TypeOfVan VanType => BoardName.ToVanType().IsGen2() ? TypeOfVan.Gen2 : TypeOfVan.Expo;
         public string Name { get; }
         public string PartName => Name.Split(' ').First();
         public string Url => $"https://trello.com/c/{Id}/";
@@ -19,7 +20,7 @@ namespace ZoneProductionLibrary.Models.Boards
         public List<Comment> Comments { get; }
         public List<AttachmentInfo> Attachments { get; }
         public TimeSpan Age => (CreationDate.HasValue) ? DateTime.Now - CreationDate.Value : TimeSpan.Zero;
-        public Color Color => CardStatus is CardStatus.Completed ? Color.Green : Color.Red;
+        [JsonIgnore] public Color Color => CardStatus is CardStatus.Completed ? Color.Green : Color.Red;
 
         public override string ToString() => $"{Name} - {Enum.GetName(typeof(CardAreaOfOrigin), AreaOfOrigin)}";
 

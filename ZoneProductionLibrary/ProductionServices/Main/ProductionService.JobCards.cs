@@ -11,7 +11,7 @@ public partial class ProductionService
             report += 100d / enumerable.Count();
             progress.Report(report);
 
-            if (!_vanBoards.ContainsKey(boardId)) await GetBoardAsyncById(boardId);
+            if (!_vanBoards.ContainsKey(boardId)) await GetBoardByIdAsync(boardId);
         }
 
         return GetJobCards(enumerable);
@@ -45,5 +45,37 @@ public partial class ProductionService
         }
 
         return cards.AsEnumerable();
+    }
+
+    public Check? GetCheck(string id)
+    {
+        if (!_checks.TryGetValue(id, out CheckObject? checkObject))
+            return null;
+
+        return new Check(checkObject);
+    }
+
+    public Checklist? GetChecklist(string id)
+    {
+        if (!_checkLists.TryGetValue(id, out ChecklistObject? checklistObject))
+            return null;
+
+        List<Check> checks = [];
+
+        foreach (string checkId in checklistObject.CheckObjectIds)
+        {
+            if(_checks.TryGetValue(checkId, out var check))
+                checks.Add(new Check(check));
+        }
+
+        return new Checklist(checklistObject.Name, checks);
+    }
+
+    public JobCard? GetJobCard(string id)
+    {
+        if (!_jobCards.TryGetValue(id, out JobCardObject? jobObject))
+            return null;
+
+        return GetJobCard(jobObject);
     }
 }

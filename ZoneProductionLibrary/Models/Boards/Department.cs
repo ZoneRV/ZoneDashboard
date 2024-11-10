@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using Newtonsoft.Json;
+using System.Drawing;
 
 namespace ZoneProductionLibrary.Models.Boards
 {
@@ -6,16 +7,16 @@ namespace ZoneProductionLibrary.Models.Boards
     {
         public string Name { get; }
         public List<JobCard> JobCards { get; } = [];
-        public List<JobCard> PippsCards => JobCards.Where(x => x.Name == "Team Leader PIPP").ToList();
-        public List<JobCard> BayLeaderSignOfCards => JobCards.Where(x => x.Name == "Bay-Leader -- Quality Sign-Off").ToList();
+        [JsonIgnore] public List<JobCard> PippsCards => JobCards.Where(x => x.Name == "Team Leader PIPP").ToList();
+        [JsonIgnore] public List<JobCard> BayLeaderSignOfCards => JobCards.Where(x => x.Name == "Bay-Leader -- Quality Sign-Off").ToList();
         public List<RedCard> RedCards { get; private set; } = [];
         public List<YellowCard> YellowCards { get; } = [];
-        public List<CardAreaOfOrigin> RedcardsResponsibleFor { get; } = [];
+        [JsonIgnore] public List<CardAreaOfOrigin> RedcardsResponsibleFor { get; } = [];
 
 
-        public double RedcardCompletionRate => RedCards.Count == 0 ? 1d : RedCards.Count(x => x.CardStatus == CardStatus.Completed) / (double)RedCards.Count;
-        public Color RedcardColor => TrelloUtil.GetIndicatorColor(RedcardCompletionRate);
-        public double CompletionRate => GetCompletionRate();
+        [JsonIgnore] public double RedcardCompletionRate => RedCards.Count == 0 ? 1d : RedCards.Count(x => x.CardStatus == CardStatus.Completed) / (double)RedCards.Count;
+        [JsonIgnore] public Color RedcardColor => TrelloUtil.GetIndicatorColor(RedcardCompletionRate);
+        [JsonIgnore] public double CompletionRate => GetCompletionRate();
         public double TargetCompletionRate(IProductionPosition vanPosition) => GetTargetCompletionRate(vanPosition);
         public Color Color(IProductionPosition vanPosition) => TrelloUtil.GetIndicatorColor(GetTargetCompletionRate(vanPosition));
 

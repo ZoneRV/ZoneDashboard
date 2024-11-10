@@ -34,7 +34,7 @@ namespace ZoneProductionLibrary.ProductionServices.Base
             return GetBoardById(productionInfo.Id);
         }
         
-        async Task<VanBoard?> GetBoardAsyncByName(string name)
+        async Task<VanBoard?> GetBoardByNameAsync(string name)
         {
             VanProductionInfo productionInfo;
 
@@ -46,7 +46,7 @@ namespace ZoneProductionLibrary.ProductionServices.Base
                 return null;
             }
 
-            return await GetBoardAsyncById(productionInfo.Id);
+            return await GetBoardByIdAsync(productionInfo.Id);
         }
 
         public IEnumerable<string> ProductionVanIds(bool includeCarPark) => ProductionVanIds(Enum.GetValues<VanModel>(), includeCarPark);

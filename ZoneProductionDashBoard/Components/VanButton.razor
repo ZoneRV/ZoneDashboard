@@ -301,7 +301,7 @@
         if (item.Text == "Load Van")
         {
             _button.IsBusy = true;
-            _van = await ProductionService.GetBoardAsyncByName(VanName);
+            _van = await ProductionService.GetBoardByNameAsync(VanName);
             
             if(_van is not null)
             {

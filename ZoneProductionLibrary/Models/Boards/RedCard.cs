@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Newtonsoft.Json;
+using System.ComponentModel.DataAnnotations;
 using System.Drawing;
 using System.Text.RegularExpressions;
 
@@ -7,24 +8,24 @@ namespace ZoneProductionLibrary.Models.Boards
     public class RedCard : IFilterableCard
     {
         public string Id { get; }
-        public string BoardId { get; }
-        public string BoardName { get; }
-        public TypeOfVan VanType => BoardName.ToVanType().IsGen2() ? TypeOfVan.Gen2 : TypeOfVan.Expo;
-        public DateTime? VanHandoverDate { get; }
-        public TimeSpan TimeToHandover => (VanHandoverDate.HasValue) ? VanHandoverDate.Value - DateTime.Now : TimeSpan.MinValue;
+        [JsonIgnore] public string BoardId { get; }
+        [JsonIgnore] public string BoardName { get; }
+        [JsonIgnore] public TypeOfVan VanType => BoardName.ToVanType().IsGen2() ? TypeOfVan.Gen2 : TypeOfVan.Expo;
+        [JsonIgnore] public DateTime? VanHandoverDate { get; }
+        [JsonIgnore] public TimeSpan TimeToHandover => (VanHandoverDate.HasValue) ? VanHandoverDate.Value - DateTime.Now : TimeSpan.MinValue;
         public string Name { get; }
         public string Url => $"https://trello.com/c/{Id}/";
         public CardStatus CardStatus { get; }
-        public DateTimeOffset? CardStatusLastUpdated { get; private set; }
+        [JsonIgnore] public DateTimeOffset? CardStatusLastUpdated { get; private set; }
         public RedFlagIssue RedFlagIssue { get; }
         public CardAreaOfOrigin AreaOfOrigin { get; }
         public DateTimeOffset? CreationDate { get; }
         public List<TrelloMember> Members { get; }
         public List<Comment> Comments { get; }
         public List<AttachmentInfo> Attachments { get; }
-        public string MemberNames => GetMemberNames();
+        [JsonIgnore] public string MemberNames => GetMemberNames();
         public TimeSpan Age => (CreationDate.HasValue) ? DateTime.Now - CreationDate.Value : TimeSpan.Zero;
-        public Color Color => CardStatus is CardStatus.Completed ? Color.Green : Color.Red;
+        [JsonIgnore] public Color Color => CardStatus is CardStatus.Completed ? Color.Green : Color.Red;
 
         public override string ToString() => $"{Name} - {Enum.GetName(typeof(CardAreaOfOrigin), AreaOfOrigin)} - {Enum.GetName(typeof(RedFlagIssue), RedFlagIssue)}";
 

@@ -2,6 +2,22 @@
 
 public partial class ProductionService
 {
+    public RedCard? GetRedCard(string id)
+    {
+        if (!_redCards.TryGetValue(id, out RedCardObject? redObject))
+            return null;
+
+        return GetRedCard(redObject);
+    }
+    
+    public YellowCard? GetYellowCard(string id)
+    {
+        if (!_yellowCards.TryGetValue(id, out RedCardObject? redCardObject))
+            return null;
+
+        return GetYellowCard(redCardObject);
+    }
+    
     public IEnumerable<RedCard> GetRedCards()
     {
         return _redCards.Values.Select(redCard => GetRedCard(redCard)).ToList();

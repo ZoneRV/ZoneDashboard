@@ -19,5 +19,9 @@
         /// </summary>
         IEnumerable<JobCard> GetJobCards(string boardId) => GetJobCards([boardId]);
         IEnumerable<JobCard> GetJobCards(IEnumerable<VanModel> vanTypes);
+
+        Check? GetCheck(string id);
+        Checklist? GetChecklist(string id);
+        JobCard? GetJobCard(string id);
     }
 }

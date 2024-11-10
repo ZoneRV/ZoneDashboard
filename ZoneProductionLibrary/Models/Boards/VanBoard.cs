@@ -1,11 +1,12 @@
-﻿using System.Collections.Concurrent;
+﻿using Newtonsoft.Json;
+using System.Collections.Concurrent;
 using ZoneProductionLibrary.ProductionServices.Main;
 
 namespace ZoneProductionLibrary.Models.Boards
 {
     public class VanBoard : IFilterableBoard
     {
-        public VanModel VanModel => Name.ToVanType();
+        [JsonIgnore] public VanModel VanModel => Name.ToVanType();
         public string Id { get; }
         public string Url => $"https://trello.com/b/{this.Id}/";
         public string Name { get; private set; }
@@ -17,9 +18,9 @@ namespace ZoneProductionLibrary.Models.Boards
         public List<(DateTimeOffset date, IProductionPosition position)> PositionHistory { get; private set; }
 
         public double CompletionRate => Departments.Average(d => d.CompletionRate);
-        public IEnumerable<JobCard> JobCards => Departments.SelectMany(x => x.JobCards);
-        public IEnumerable<RedCard> RedCards => Departments.SelectMany(x => x.RedCards).Concat(UnallocatedRedCards);
-        public IEnumerable<YellowCard> YellowCards => Departments.SelectMany(x => x.YellowCards);
+        [JsonIgnore] public IEnumerable<JobCard> JobCards => Departments.SelectMany(x => x.JobCards);
+        [JsonIgnore] public IEnumerable<RedCard> RedCards => Departments.SelectMany(x => x.RedCards).Concat(UnallocatedRedCards);
+        [JsonIgnore] public IEnumerable<YellowCard> YellowCards => Departments.SelectMany(x => x.YellowCards);
 
         public VanBoard(
             VanBoardObject boardObject,

@@ -15,7 +15,7 @@ public partial class ProductionService
 {
     private readonly ConcurrentDictionary<string, Task<VanBoard?>> _currentBoardTasks = [];
 
-    public async Task<VanBoard?> GetBoardAsyncById(string id)
+    public async Task<VanBoard?> GetBoardByIdAsync(string id)
     {
         VanProductionInfo productionInfo;
 
@@ -236,7 +236,7 @@ public partial class ProductionService
         await Parallel.ForEachAsync(idEnumerable, parallelOptions, async (id, _) =>
                                                                    {
                                                                        VanBoard? board =
-                                                                           await GetBoardAsyncById(id);
+                                                                           await GetBoardByIdAsync(id);
 
                                                                        report += 100d / idEnumerable.Count;
                                                                        progress.Report(report);
@@ -265,7 +265,7 @@ public partial class ProductionService
                     Log.Logger.Warning("{name}: {id} has not been initialized. Retrieving as background task.", ProductionVans.Values.Single(x => x.Id == id).Name, id);
                     
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-                    GetBoardAsyncById(id);
+                    GetBoardByIdAsync(id);
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
                 }
                 

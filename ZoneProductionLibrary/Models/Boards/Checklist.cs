@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using System.Text.Json.Serialization;
 
 namespace ZoneProductionLibrary.Models.Boards
 {
@@ -8,8 +9,8 @@ namespace ZoneProductionLibrary.Models.Boards
         public string Id { get; }
         public List<Check> Checks { get; } = new List<Check>();
 
-        public int CompletedCheckCount => Checks.Count(x => x.IsChecked);
-        public int UncompletedCheckCount => Checks.Count(x => !x.IsChecked);
+        [JsonIgnore] public int CompletedCheckCount => Checks.Count(x => x.IsChecked);
+        [JsonIgnore] public int UncompletedCheckCount => Checks.Count(x => !x.IsChecked);
         public double CompletionRate => Checks.Count > 0 ? CompletedCheckCount / (double)Checks.Count : 1d;
         public Color Color(DueStatus status) => TrelloUtil.GetIndicatorColor(CompletionRate, status);
 

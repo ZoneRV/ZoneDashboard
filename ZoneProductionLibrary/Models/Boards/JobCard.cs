@@ -1,5 +1,7 @@
-﻿using System.Collections.Concurrent;
+﻿using Newtonsoft.Json.Converters;
+using System.Collections.Concurrent;
 using System.Drawing;
+using System.Text.Json.Serialization;
 using ZoneProductionLibrary.ProductionServices.Main;
 
 namespace ZoneProductionLibrary.Models.Boards
@@ -7,9 +9,9 @@ namespace ZoneProductionLibrary.Models.Boards
     public class JobCard : IFilterableCard
     {
         public string Id { get; }
-        public string BoardId { get; }
-        public string BoardName { get; }
-        public TypeOfVan VanType => BoardName.ToVanType().IsGen2() ? TypeOfVan.Gen2 : TypeOfVan.Expo;
+        [JsonIgnore] public string BoardId { get; }
+        [JsonIgnore] public string BoardName { get; }
+        [JsonIgnore] public TypeOfVan VanType => BoardName.ToVanType().IsGen2() ? TypeOfVan.Gen2 : TypeOfVan.Expo;
         public string Name { get; }
         public string Url => $"https://trello.com/c/{Id}/";
         public CardStatus CardStatus
@@ -29,27 +31,27 @@ namespace ZoneProductionLibrary.Models.Boards
             }
         }
 
-        private CardStatus _cardStatus;
+        [JsonIgnore] private CardStatus _cardStatus;
         public DueStatus DueStatus { get; }
-        public DateTimeOffset? CardStatusLastUpdated { get; private set; } // TODO: account for status not being changed and all checks being marked off
+        [JsonIgnore] public DateTimeOffset? CardStatusLastUpdated { get; private set; } // TODO: account for status not being changed and all checks being marked off
         public CardAreaOfOrigin AreaOfOrigin { get; }
-        public string TrelloListName { get; }
+        [JsonIgnore] public string TrelloListName { get; }
         public IProductionPosition Position { get; }
         public List<Checklist> CheckLists { get; } = new List<Checklist>();
-        public DateTimeOffset? Handover { get; }
-        public TimeSpan TimeToHandover => Handover.HasValue ? Handover.Value - DateTimeOffset.Now : TimeSpan.MaxValue;
-        public TimeSpan TaskTime { get; }
-        public TimeSpan TaskTimeOrDefault => TaskTime > TimeSpan.Zero ? TaskTime : TimeSpan.FromMinutes(30);
-        public TimeSpan RemainingTaskTime => TaskTimeOrDefault - (TaskTimeOrDefault * CompletionRate);
+        [JsonIgnore] public DateTimeOffset? Handover { get; }
+        [JsonIgnore] public TimeSpan TimeToHandover => Handover.HasValue ? Handover.Value - DateTimeOffset.Now : TimeSpan.MaxValue;
+        [JsonIgnore] private TimeSpan _taskTime { get; }
+        public TimeSpan TaskTime => _taskTime > TimeSpan.Zero ? _taskTime : TimeSpan.FromMinutes(30);
+        [JsonIgnore] public TimeSpan RemainingTaskTime => TaskTime - (TaskTime * CompletionRate);
         public List<Comment> Comments { get; }
         public List<AttachmentInfo> Attachments { get; }
 
-        public int TotalChecks => UncompletedCheckCount + CompletedCheckCount;
-        public int CompletedCheckCount => CheckLists.Sum(x => x.CompletedCheckCount);
-        public int UncompletedCheckCount => CheckLists.Sum(x => x.UncompletedCheckCount);
-        public IEnumerable<Check> AllChecks => CheckLists.SelectMany(x => x.Checks);
-        public double CompletionRate => GetCompletionRate();
-        public bool IsCompleted => Math.Abs(this.CompletionRate - 1d) < .01;
+        [JsonIgnore] public int TotalChecks => UncompletedCheckCount + CompletedCheckCount;
+        [JsonIgnore] public int CompletedCheckCount => CheckLists.Sum(x => x.CompletedCheckCount);
+        [JsonIgnore] public int UncompletedCheckCount => CheckLists.Sum(x => x.UncompletedCheckCount);
+        [JsonIgnore] public IEnumerable<Check> AllChecks => CheckLists.SelectMany(x => x.Checks);
+        [JsonIgnore] public double CompletionRate => GetCompletionRate();
+        [JsonIgnore] public bool IsCompleted => Math.Abs(this.CompletionRate - 1d) < .01;
         public Color Color(DueStatus status) => TrelloUtil.GetIndicatorColor(CompletionRate, status);
 
         public override string ToString() => $"{Name} {((TaskTime.Minutes != 0) ? TaskTime.Minutes.ToString() + "m" : string.Empty)} - {Math.Round(CompletionRate * 100, 0)}%";
@@ -78,7 +80,7 @@ namespace ZoneProductionLibrary.Models.Boards
             _cardStatus = cardStatus;
             this.AreaOfOrigin = cardAreaOfOrigin;
             this.CheckLists = checklists.ToList();
-            this.TaskTime = taskTime;
+            this._taskTime = taskTime;
             this.Position = productionPosition;
             this.CardStatusLastUpdated = cardStatusLastUpdated;
             this.Comments = comments.ToList();
@@ -98,7 +100,7 @@ namespace ZoneProductionLibrary.Models.Boards
             this.BoardId = jobCardObject.BoardId;
             this.BoardName = info.Name;
             this.Name = jobCardObject.Name;
-            this.TaskTime = jobCardObject.TaskTime;
+            this._taskTime = jobCardObject.TaskTime;
             this.TrelloListName = jobCardObject.TrelloListName;
             _cardStatus = jobCardObject.CardStatus;
             this.CardStatusLastUpdated = jobCardObject.CardStatusLastUpdated;

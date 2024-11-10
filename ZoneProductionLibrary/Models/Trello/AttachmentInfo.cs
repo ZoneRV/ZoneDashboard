@@ -1,4 +1,5 @@
-﻿using TrelloDotNet.Model;
+﻿using Newtonsoft.Json;
+using TrelloDotNet.Model;
 using ZoneProductionLibrary.Models.UpdateData;
 
 namespace ZoneProductionLibrary.Models.Trello
@@ -11,7 +12,7 @@ namespace ZoneProductionLibrary.Models.Trello
         public string Url { get; }
         public string FileName { get; }
 
-        public string FilePath => $"attachments/{Id}-{FileName}";
+        [JsonIgnore] public string FilePath => $"attachments/{Id}-{FileName}";
 
         public AttachmentInfo(string id, string url, string fileName)
         {

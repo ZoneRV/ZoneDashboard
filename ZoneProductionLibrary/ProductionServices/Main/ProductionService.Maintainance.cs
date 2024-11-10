@@ -316,7 +316,7 @@ namespace ZoneProductionLibrary.ProductionServices.Main
 
             foreach (string unloadedId in unloadedIds)
             {
-                await GetBoardAsyncById(unloadedId);
+                await GetBoardByIdAsync(unloadedId);
 
                 ids.Remove(unloadedId);
             }

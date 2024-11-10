@@ -67,7 +67,7 @@ else
     {
         await ShowLoadingDialog();
 
-        _van = await ProductionService.GetBoardAsyncById(_selectedVanId);
+        _van = await ProductionService.GetBoardByIdAsync(_selectedVanId);
         
         CloseLoadingDialog();
         

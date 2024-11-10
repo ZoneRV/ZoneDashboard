@@ -2,8 +2,7 @@
 {
     public partial interface IProductionService
     {
-        
-        Task<VanBoard?> GetBoardAsyncById(string id);
+        Task<VanBoard?> GetBoardByIdAsync(string id);
         VanBoard? GetBoardById(string id);
         IEnumerable<VanBoard> GetBoards(IEnumerable<string> ids);
         Task<IEnumerable<VanBoard>> GetBoardsAsync(IProgress<double> progress, IEnumerable<string> ids);

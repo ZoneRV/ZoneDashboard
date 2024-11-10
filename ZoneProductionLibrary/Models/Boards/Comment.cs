@@ -1,15 +1,17 @@
-﻿namespace ZoneProductionLibrary.Models.Boards
+﻿using System.Text.Json.Serialization;
+
+namespace ZoneProductionLibrary.Models.Boards
 {
     public class Comment
     {
         public TrelloMember CreatorMember { get; }
-        public DateTime DateCreated { get; }
+        public DateTimeOffset DateCreated { get; }
         public string Content { get; }
 
         public Comment(CommentObject commentObject, TrelloMember member)
         {
             CreatorMember = member;
-            DateCreated = commentObject.DateCreated.LocalDateTime;
+            DateCreated = commentObject.DateCreated;
             Content = commentObject.Content;
         }
 

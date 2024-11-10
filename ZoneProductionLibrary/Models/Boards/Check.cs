@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using Newtonsoft.Json;
+using System.Drawing;
 using TrelloDotNet.Model;
 
 namespace ZoneProductionLibrary.Models.Boards
@@ -32,7 +33,11 @@ namespace ZoneProductionLibrary.Models.Boards
         {
             Name = name;
             IsChecked = isChecked;
-            Id = DateTime.Now.Ticks.ToString();
+            Id = _checkId.ToString();
+
+            _checkId++;
         }
+        
+        private static int _checkId = 0;
     }
 }

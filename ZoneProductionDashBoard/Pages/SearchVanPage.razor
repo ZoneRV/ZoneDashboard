@@ -45,7 +45,7 @@ else
         {
             await ShowLoadingDialog();
             
-            _board = await ProductionService.GetBoardAsyncByName(VanName);
+            _board = await ProductionService.GetBoardByNameAsync(VanName);
 
             if (_board is null)
             {

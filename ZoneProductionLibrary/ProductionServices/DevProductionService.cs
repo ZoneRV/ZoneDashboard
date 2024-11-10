@@ -348,7 +348,7 @@ namespace ZoneProductionLibrary.ProductionServices
             return dateTime;
         }
 
-        public Task<VanBoard?> GetBoardAsyncById(string id)
+        public Task<VanBoard?> GetBoardByIdAsync(string id)
         {
             return Task.FromResult(boards.SingleOrDefault(x => x.Id == id));
         }
@@ -396,7 +396,9 @@ namespace ZoneProductionLibrary.ProductionServices
 
 
 
-
+        
+        public JobCard? GetJobCard(string id) => boards.SelectMany(x => x.JobCards).FirstOrDefault(x => x.Id == id);
+        
         public Task<IEnumerable<JobCard>> GetJobCardsAsync(IProgress<double> _, IEnumerable<string> boardIds) => Task.FromResult(GetJobCards(boardIds));
 
         public IEnumerable<JobCard> GetJobCards(IEnumerable<string> boardIds)
@@ -423,7 +425,20 @@ namespace ZoneProductionLibrary.ProductionServices
             return cards;
         }
 
+        public Check? GetCheck(string id)
+        {
+            return boards.SelectMany(x => x.JobCards)
+                                 .SelectMany(x => x.CheckLists)
+                                 .SelectMany(x => x.Checks)
+                                 .FirstOrDefault(x => x.Id == id);
+        }
 
+        public Checklist? GetChecklist(string id)
+        {
+            return boards.SelectMany(x => x.JobCards)
+                         .SelectMany(x => x.CheckLists)
+                         .FirstOrDefault(x => x.Id == id);
+        }
 
 
         public IEnumerable<RedCard> GetRedCards()
@@ -437,6 +452,9 @@ namespace ZoneProductionLibrary.ProductionServices
 
             return cards;
         }
+
+        public RedCard? GetRedCard(string id) => boards.SelectMany(x => x.RedCards).FirstOrDefault(x => x.Id == id);
+        public YellowCard? GetYellowCard(string id) => boards.SelectMany(x => x.YellowCards).FirstOrDefault(x => x.Id == id);
 
         public IEnumerable<YellowCard> GetYellowCards()
         {

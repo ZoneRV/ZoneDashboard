@@ -88,7 +88,7 @@ namespace ZoneProductionLibrary.ProductionServices.Main
                 // Collecting and comparing new data
                 CompareReport? report = new CompareReport(oldBoard.Name);
 
-                await GetBoardAsyncById(id);
+                await GetBoardByIdAsync(id);
 
                 if (_vanBoards.TryGetValue(id, out VanBoardObject? newBoard))
                 {

@@ -1,11 +1,13 @@
-﻿using TrelloDotNet.Model;
+﻿
+using Newtonsoft.Json;
+using TrelloDotNet.Model;
 
 namespace ZoneProductionLibrary.Models.Trello
 {
     public class TrelloMember
     {
-        public string Id { get; set; }
-        public string OrgId { get; set; }
+        [JsonIgnore] public string Id { get; set; }
+        [JsonIgnore] public string OrgId { get; set; }
         public string FullName { get; set; }
         public string Username { get; set; }
         public string AvatarUrl { get; }
