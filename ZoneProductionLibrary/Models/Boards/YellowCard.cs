@@ -19,7 +19,7 @@ namespace ZoneProductionLibrary.Models.Boards
         public DateTimeOffset? CreationDate { get; }
         public List<Comment> Comments { get; }
         public List<AttachmentInfo> Attachments { get; }
-        public TimeSpan Age => (CreationDate.HasValue) ? DateTime.Now - CreationDate.Value : TimeSpan.Zero;
+        [JsonIgnore] public TimeSpan Age => (CreationDate.HasValue) ? DateTime.Now - CreationDate.Value : TimeSpan.Zero;
         [JsonIgnore] public Color Color => CardStatus is CardStatus.Completed ? Color.Green : Color.Red;
 
         public override string ToString() => $"{Name} - {Enum.GetName(typeof(CardAreaOfOrigin), AreaOfOrigin)}";

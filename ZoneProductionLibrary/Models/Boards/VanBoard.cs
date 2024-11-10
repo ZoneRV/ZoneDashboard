@@ -12,15 +12,16 @@ namespace ZoneProductionLibrary.Models.Boards
         public string Name { get; private set; }
         public List<Department> Departments { get; } = new List<Department>();
         public List<RedCard> UnallocatedRedCards { get; } = new List<RedCard>();
+        public List<YellowCard> UnallocatedYellowCards { get; } = new List<YellowCard>();
         public DateTimeOffset? Handover { get; private set; }
 
-        public IProductionPosition Position => PositionHistory.Count > 0 ? PositionHistory.Last().position : new PreProduction();
+        [JsonIgnore] public IProductionPosition Position => PositionHistory.Count > 0 ? PositionHistory.Last().position : new PreProduction();
         public List<(DateTimeOffset date, IProductionPosition position)> PositionHistory { get; private set; }
 
-        public double CompletionRate => Departments.Average(d => d.CompletionRate);
+        [JsonIgnore] public double CompletionRate => Departments.Average(d => d.CompletionRate);
         [JsonIgnore] public IEnumerable<JobCard> JobCards => Departments.SelectMany(x => x.JobCards);
         [JsonIgnore] public IEnumerable<RedCard> RedCards => Departments.SelectMany(x => x.RedCards).Concat(UnallocatedRedCards);
-        [JsonIgnore] public IEnumerable<YellowCard> YellowCards => Departments.SelectMany(x => x.YellowCards);
+        [JsonIgnore] public IEnumerable<YellowCard> YellowCards => Departments.SelectMany(x => x.YellowCards).Concat(UnallocatedYellowCards);
 
         public VanBoard(
             VanBoardObject boardObject,
