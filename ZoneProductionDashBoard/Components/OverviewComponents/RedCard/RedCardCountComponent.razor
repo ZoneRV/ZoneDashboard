@@ -109,8 +109,7 @@
     {
         List<RedCard> redCards = ProductionService.GetRedCards().ToList();
 
-        redCards = redCards.FilterCards(StatsService.CardFilterOptions)
-                           .Where(x => StatsService.SelectedVanType == x.VanType
+        redCards = redCards.Where(x => StatsService.SelectedVanType == x.VanType
                                        && x.CreationDate.HasValue &&
                                        x.CreationDate.Value.LocalDateTime.Date >= MinDate.Date &&
                                        x.CreationDate.Value.LocalDateTime.Date <= MaxDate.Date)

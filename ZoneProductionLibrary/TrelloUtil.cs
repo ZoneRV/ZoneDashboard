@@ -97,130 +97,130 @@ namespace ZoneProductionLibrary
                                 .First(option => !string.IsNullOrEmpty(option.Value.Text) &&
                                                  desiredFieldItems.Any(cardItem => cardItem.ValueId == option.Id)).Value.Text;
 
-            switch (fieldValue)
+            switch (fieldValue.ToLower())
             {
                 // Gen 2 field values 
-                case "Welding":
+                case "welding":
                     return CardAreaOfOrigin.Welding;
 
-                case "Chassis":
+                case "chassis":
                     return CardAreaOfOrigin.Chassis;
 
-                case "Bay 1 Furniture install":
+                case "bay 1 furniture install":
                     return CardAreaOfOrigin.Bay1;
 
-                case "Bay 1":
+                case "bay 1":
                     return CardAreaOfOrigin.Bay1;
 
-                case "Bay 2 Electrical":
+                case "bay 2 electrical":
                     return CardAreaOfOrigin.Bay2;
 
-                case "Bay 2":
+                case "bay 2":
                     return CardAreaOfOrigin.Bay2;
 
-                case "Bay 3 Wall/Roof":
+                case "bay 3 wall/roof":
                     return CardAreaOfOrigin.Bay3;
 
-                case "Bay 3":
+                case "bay 3":
                     return CardAreaOfOrigin.Bay3;
 
-                case "Bay 4":
+                case "bay 4":
                     return CardAreaOfOrigin.Bay4;
 
-                case "Wall/Roof MOD":
+                case "wall/roof mod":
                     return CardAreaOfOrigin.WallRoofMod;
 
-                case "WALL PREP":
+                case "wall prep":
                     return CardAreaOfOrigin.WallRoofMod;
 
-                case "Wall Mod":
+                case "wall mod":
                     return CardAreaOfOrigin.WallRoofMod;
 
-                case "Roof Mod A":
+                case "roof mod a":
                     return CardAreaOfOrigin.WallRoofMod;
 
-                case "Roof Mod":
+                case "roof mod":
                     return CardAreaOfOrigin.WallRoofMod;
 
-                case "Roof":
+                case "roof":
                     return CardAreaOfOrigin.WallRoofMod;
 
-                case "Sealing":
+                case "sealing":
                     return CardAreaOfOrigin.Sealing;
 
-                case "Bay 4 Sealing":
+                case "bay 4 sealing":
                     return CardAreaOfOrigin.Sealing;
 
-                case "Toolbox":
+                case "toolbox":
                     return CardAreaOfOrigin.Toolbox;
 
-                case "Upholstery":
+                case "upholstery":
                     return CardAreaOfOrigin.Upholstery;
 
-                case "Commissioning":
+                case "commissioning":
                     return CardAreaOfOrigin.Commissioning;
 
-                case "Detailing":
+                case "detailing":
                     return CardAreaOfOrigin.Detailing;
 
-                case "Bay 6":
+                case "bay 6":
                     return CardAreaOfOrigin.Commissioning;
 
-                case "Cabs Finishing":
+                case "cabs finishing":
                     return CardAreaOfOrigin.CabsFinishing;
 
-                case "Paint Pay":
+                case "paint pay":
                     return CardAreaOfOrigin.PaintBay;
 
-                case "Paint Bay":
+                case "paint bay":
                     return CardAreaOfOrigin.PaintBay;
 
-                case "Sub Assembly":
+                case "sub assembly":
                     return CardAreaOfOrigin.SubAssembly;
 
-                case "Cabs Prep":
+                case "cabs prep":
                     return CardAreaOfOrigin.CabsPrep;
 
-                case "Cabs":
+                case "cabs":
                     return CardAreaOfOrigin.CabsAssembly;
 
-                case "Cabs Assembly":
+                case "cabs assembly":
                     return CardAreaOfOrigin.CabsAssembly;
 
-                case "Stores":
+                case "stores":
                     return CardAreaOfOrigin.Stores;
 
-                case "Supplier":
+                case "supplier":
                     return CardAreaOfOrigin.Supplier;
 
-                case "Gas":
+                case "gas":
                     return CardAreaOfOrigin.Gas;
 
-                case "Contractor":
+                case "contractor":
                     return CardAreaOfOrigin.Contractor;
 
-                case "CNC":
+                case "cnc":
                     return CardAreaOfOrigin.CNC;
 
-                case "MODE":
+                case "mode":
                     return CardAreaOfOrigin.Mode;
 
-                case "One Composite":
+                case "one composite":
                     return CardAreaOfOrigin.OneComp;
 
-                case "Design":
+                case "design":
                     return CardAreaOfOrigin.Design;
 
-                case "QC":
+                case "qc":
                     return CardAreaOfOrigin.QC;
 
-                case "Bay4":
+                case "bay4":
                     return CardAreaOfOrigin.Bay4;
 
-                case "Electrical":
+                case "electrical":
                     return CardAreaOfOrigin.Electrical;
 
-                case "Unknown":
+                case "unknown":
                     return CardAreaOfOrigin.Unknown;
                 
                 default:
