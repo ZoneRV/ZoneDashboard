@@ -31,11 +31,21 @@
                     Value="_selectedDepartments"/>
             </RadzenStack>
         }
+        @if(ShowDetailButtonSwitch)
+        {
+            <RadzenStack>
+                <RadzenText>Detailed Van Buttons</RadzenText>
+                <RadzenSwitch bind-Value="_detailSwitch" Value="@StatsService.DetailedButtonDropDown" Change="OnDetailSwitched"/>
+            </RadzenStack>
+        }
     </RadzenStack>
 </RadzenCard>
 @code {
     [Parameter] 
     public string Height { get; set; } = "auto";
+
+    [Parameter] 
+    public bool ShowDetailButtonSwitch { get; set; } = false;
     
     [Inject]
     public IProductionService ProductionService { get; set; } = default!;
@@ -53,6 +63,7 @@
 
     List<string> _selectedDepartments = new List<string>();
     List<string> _departments = new List<string>();
+    bool _detailSwitch = true;
 
     public bool UpdateUri = false;
 
@@ -95,6 +106,12 @@
             }
         }
 
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("detailbutton", out var detailSetting))
+        {
+            newIntialFilters = true;
+            _detailSwitch = bool.Parse(detailSetting.First()!);
+        }
+
         return newIntialFilters;
     }
 
@@ -105,6 +122,8 @@
         parameters.Add("line", Enum.GetName(StatsService.SelectedVanType));
 
         parameters.Add("deps", string.Join("+", StatsService.SelectedDepartments));
+        
+        parameters.Add("detailbutton", StatsService.DetailedButtonDropDown);
 
         string newUri = NavigationManager.GetUriWithQueryParameters(parameters);
                 
@@ -220,6 +239,15 @@
         StatsService.SelectedDepartments = _selectedDepartments;
 
         StatsService.CardFilterOptions.RedFlagIssues = Enum.GetValues<RedFlagIssue>();
+        
+        if(UpdateUri)
+            UpdateUriQuery();
+    }
+
+    void OnDetailSwitched(bool value)
+    {
+        StatsService.DetailedButtonDropDown = value;
+        _detailSwitch = value;
         
         if(UpdateUri)
             UpdateUriQuery();

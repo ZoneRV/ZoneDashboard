@@ -13,7 +13,7 @@
                     @foreach (var van in Vans.Where(x => x.Position.Equals(pos)))
                     {
                         <RadzenRow Gap="1em" AlignItems="AlignItems.Start">
-                            <VanButton VanName="@van.Name" DetailedButton="true" Color="#FFFFFF" OverrideColorToStatus="true" UseStatsServiceFilter="true"/>
+                            <VanButton VanName="@van.Name" DetailedButton="@StatsService.DetailedButtonDropDown" Color="#FFFFFF" OverrideColorToStatus="true" UseStatsServiceFilter="true"/>
                         </RadzenRow>
                     }
                 </RadzenColumn>
@@ -28,7 +28,7 @@
             {
                 <RadzenStack>
                     <RadzenText>Handover @van.Handover!.Value.LocalDateTime.Date.ToString("dd/MM")</RadzenText>
-                    <VanButton VanName="@van.Name" DetailedButton="true" Color="#FFFFFF" OverrideColorToStatus="true" UseStatsServiceFilter="true"/>
+                    <VanButton VanName="@van.Name" DetailedButton="@StatsService.DetailedButtonDropDown" Color="#FFFFFF" OverrideColorToStatus="true" UseStatsServiceFilter="true"/>
                 </RadzenStack>
             }
         </RadzenStack>
