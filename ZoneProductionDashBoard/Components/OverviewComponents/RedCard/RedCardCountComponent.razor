@@ -69,6 +69,22 @@
                         StateHasChanged();
                         await _typeChart.UpdateOptionsAsync(true, true, false);
                         await _typeChart.UpdateSeriesAsync();
+
+                        if (_lastSelectedIssue.HasValue)
+                        {
+                            int element = 0;
+
+                            foreach (var item in _typeChart.Series.First().Items)
+                            {
+                                if ((RedFlagIssue)item.Key == _lastSelectedIssue.Value && item.Value > 0)
+                                {
+                                    await _typeChart.ToggleDataPointSelectionAsync(0, element);
+                                    break;
+                                }
+
+                                element++;
+                            }
+                        }
                     });
     }
 
@@ -116,7 +132,7 @@
                                        x.CreationDate.Value.LocalDateTime.Date <= MaxDate.Date)
                            .ToList();
 
-        _outstandingRedCardCount = redCards.Count(x => 
+        _outstandingRedCardCount = redCards.Count(x =>
                                                       x.CardStatus != CardStatus.Completed && 
                                                       StatsService.CardFilterOptions.RedFlagIssues.Contains(x.RedFlagIssue));
         
