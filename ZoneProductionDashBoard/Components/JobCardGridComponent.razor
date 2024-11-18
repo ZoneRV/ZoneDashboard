@@ -111,6 +111,23 @@
         </RadzenDataGridColumn>
 
         <RadzenDataGridColumn TItem="JobCard" SortProperty="AreaOfOrigin" FilterProperty="AreaOfOrigin" Title="Area Of Origin" Template="CardAreaRender" Sortable="false" Width="165px"/>
+        
+        <RadzenDataGridColumn TItem="JobCard" FilterProperty="Position.PositionName" Title="Bay" Template="CardBayRender" Sortable="false" Width="165px">
+            <FilterTemplate>
+                <RadzenDropDown TValue="IProductionPosition" Data="Gen2ProductionPosition.GetAll().Concat(ExpoProductionPosition.GetAll())">
+                    <Template Context="pos">
+                        @if (pos is Gen2ProductionPosition gen2)
+                        {
+                            @($"Gen 2 - {gen2.PositionName}")
+                        }
+                        @if (pos is ExpoProductionPosition exp)
+                        {
+                            @($"Exp - {exp.PositionName}")
+                        }
+                    </Template>
+                </RadzenDropDown>
+            </FilterTemplate>
+        </RadzenDataGridColumn>
 
     </Columns>
 </RadzenDataGrid>
@@ -425,8 +442,16 @@
         return __builder =>
                {
                    <RadzenCard Style="@("height: 4em; background:" + jobCard.AreaOfOrigin.ToChartColor())">
-                       <RadzenText Style="white-space: pre-wrap; text-align: center;">@jobCard.AreaOfOrigin.CleanName()</RadzenText>
+                       <RadzenText>@jobCard.AreaOfOrigin.CleanName()</RadzenText>
                    </RadzenCard>
+               };
+    }
+
+    private RenderFragment CardBayRender(JobCard jobCard)
+    {
+        return __builder =>
+               {
+                   <RadzenText Style="white-space: pre-wrap; text-align: center;">@jobCard.Position.PositionName</RadzenText>
                };
     }
 
