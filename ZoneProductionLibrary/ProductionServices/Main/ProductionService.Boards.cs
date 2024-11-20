@@ -80,7 +80,7 @@ public partial class ProductionService
             { 
                 cards = await _trelloClient.GetCardsOnBoardAsync(productionInfo.Id, getCardOptions);
             }
-            catch (Exception ex)
+            catch (Exception ex) //TODO: Handle "TrelloDotNet.Model.TrelloApiException: The requested resource was not found" exception
             {
                 if (ex is TrelloApiException && ex.Message == "invalid id")
                 {

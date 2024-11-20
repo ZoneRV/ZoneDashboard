@@ -7,6 +7,7 @@ public class ExpoProductionPosition : IProductionPosition
 
     public int PositionId { get; }
     public string PositionName => Positions.Single(x => x.id == PositionId).name;
+    public string ShortPositionName => Positions.Single(x => x.id == PositionId).shortName;
 
     public override string ToString() => $"{PositionName} {PositionId}";
 
@@ -36,7 +37,7 @@ public class ExpoProductionPosition : IProductionPosition
     {
         List<IProductionPosition> results = [];
 
-        foreach ((string name, int id) position in Positions)
+        foreach (var position in Positions)
         {
             results.Add(new ExpoProductionPosition(position.id));
         }
@@ -106,16 +107,16 @@ public class ExpoProductionPosition : IProductionPosition
         return false;
     }
 
-    public static readonly (string name, int id)[] Positions =
+    public static readonly (string name, string shortName, int id)[] Positions =
     [
-        ("Chassis Module Expo", 0),
-        ("EXPO BAY 1", 1),
-        ("EXPO BAY 2", 2),
-        ("Outside/Paint Bay", 3),
-        ("EXPO BAY 3", 4),
-        ("EXPO BAY 4", 5),
-        ("EXPO BAY 5", 6),
-        ("RAIN MAKER", 7)
+        ("Chassis Module Expo", "Chassis", 0),
+        ("EXPO BAY 1", "1", 1),
+        ("EXPO BAY 2", "2", 2),
+        ("Outside/Paint Bay", "Paint", 3),
+        ("EXPO BAY 3", "3", 4),
+        ("EXPO BAY 4", "4", 5),
+        ("EXPO BAY 5", "5", 6),
+        ("RAIN MAKER", "Rain Maker", 7)
     ];
 
     public static readonly (string name, int id)[] BoardPositions =
