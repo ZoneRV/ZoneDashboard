@@ -5,7 +5,13 @@ public interface IProductionPosition : IEquatable<IProductionPosition>, IEqualit
     public bool IsInProduction { get; }
     public bool IsInCarPark(HandoverState handoverState);
     public string PositionName { get; }
-
+    public string ShortPositionName
+    {
+        get
+        {
+            return PositionName;
+        }
+    }
     public static bool operator <(IProductionPosition first, IProductionPosition second)
     {
         if (first is PreProduction) 

@@ -7,6 +7,7 @@ public class ExpoProductionPosition : IProductionPosition
 
     public int PositionId { get; }
     public string PositionName => Positions.Single(x => x.id == PositionId).name;
+    public string ShortPositionName => Positions.Single(x => x.id == PositionId).shortName;
 
     public override string ToString() => $"{PositionName} {PositionId}";
 
@@ -36,7 +37,7 @@ public class ExpoProductionPosition : IProductionPosition
     {
         List<IProductionPosition> results = [];
 
-        foreach ((string name, int id) position in Positions)
+        foreach (var position in Positions)
         {
             results.Add(new ExpoProductionPosition(position.id));
         }
@@ -106,17 +107,16 @@ public class ExpoProductionPosition : IProductionPosition
         return false;
     }
 
-    public static readonly (string name, int id)[] Positions =
+    public static readonly (string name, string shortName, int id)[] Positions =
     [
-        ("Chassis Module Expo", 0),
-        ("EXPO CABS FUNNEL", 1),
-        ("EXPO BAY 1", 2),
-        ("EXPO BAY 2", 3),
-        ("Outside/Paint Bay", 4),
-        ("EXPO BAY 3", 5),
-        ("EXPO BAY 4", 6),
-        ("EXPO BAY 5", 7),
-        ("RAIN MAKER", 8)
+        ("Chassis Module Expo", "Chassis", 0),
+        ("EXPO BAY 1", "1", 1),
+        ("EXPO BAY 2", "2", 2),
+        ("Outside/Paint Bay", "Paint", 3),
+        ("EXPO BAY 3", "3", 4),
+        ("EXPO BAY 4", "4", 5),
+        ("EXPO BAY 5", "5", 6),
+        ("RAIN MAKER", "Rain Maker", 7)
     ];
 
     public static readonly (string name, int id)[] BoardPositions =
@@ -126,46 +126,46 @@ public class ExpoProductionPosition : IProductionPosition
         ("[QC] Chassis Bay", 0),
         ("CABs MODULE", 0),
         ("CABS MODULE", 0),
-        ("QA Cabs Expo Checklist", 1),
-        ("[QC] Cabs Expo Checklist", 1),
-        ("CABS PREP expo", 1),
-        ("SUB ASSAMBLY", 1),
-        ("SUB ASSAMBLY (REV001)", 1),
-        ("SUB ASSAMBLY (REV002)", 1),
-        ("SUB ASSAMBLY (REV003)", 1),
-        ("QA Cabs Expo Checklist (REV002)", 1),
-        ("BAY 1 MODULE INSTALL", 2),
-        ("[QC] BAY 1 Expo Checklist", 2),
-        ("EXPO Electrical bay 1", 2),
-        ("BAY 1 ELECTRICAL", 2),
-        ("WALL MOD", 2),
-        ("WALL PREP BAY", 2),
-        ("[QC] WALL PREP BAY Expo Checklist", 2),
-        ("[QC] ROOF BAY Expo Checklist", 2),
-        ("[QC] WALL BAY Expo Checklist", 2),
-        ("ROOF MOD A", 2),
-        ("ROOF MOD", 2),
-        ("ROOF MOD B", 2),
-        ("ROOF BAY Expo Checklist", 2),
-        ("QC WALL BAY Expo Checklist", 2),
-        ("MODE - EXPO DOOR MOD", 3),     //TODO: Confirm Position
-        ("[QC] MODE Expo Checklist", 3), //TODO: Confirm Position
-        ("BAY 2", 3),
-        ("[QC] BAY 2 Expo Checklist", 3),
-        ("EXPO Electrical Bay 2", 3),
-        ("PAINT BAY", 4),
-        ("[QC] PAINT Expo Checklist", 4),
-        ("QC PAINT Expo Checklist", 4),
-        ("BAY 3", 5),
-        ("[QC] BAY 3 Expo Checklist", 5),
-        ("EXPO Electrical Bay 3", 5),
-        ("BAY 4", 6),
-        ("[QC] BAY 4 Expo Checklist", 6),
-        ("EXPO COMMISSIONING (REV002)", 7),
-        ("BAY 5 EXPO COMMISSIONING (REV002)", 7),
-        ("EXPO COMMISSIONING REPORT - PTI's", 7),
-        ("EXPO LINE QC CHECKS", 7),
-        ("HANDOVEER DAY", 8),
-        ("HangarO", 8)
+        ("QA Cabs Expo Checklist", 0),
+        ("[QC] Cabs Expo Checklist", 0),
+        ("CABS PREP expo", 0),
+        ("SUB ASSAMBLY", 0),
+        ("SUB ASSAMBLY (REV001)", 0),
+        ("SUB ASSAMBLY (REV002)", 0),
+        ("SUB ASSAMBLY (REV003)", 0),
+        ("QA Cabs Expo Checklist (REV002)", 0),
+        ("BAY 1 MODULE INSTALL", 1),
+        ("[QC] BAY 1 Expo Checklist", 1),
+        ("EXPO Electrical bay 1", 1),
+        ("BAY 1 ELECTRICAL", 1),
+        ("WALL MOD", 1),
+        ("WALL PREP BAY", 1),
+        ("[QC] WALL PREP BAY Expo Checklist", 1),
+        ("[QC] ROOF BAY Expo Checklist", 1),
+        ("[QC] WALL BAY Expo Checklist", 1),
+        ("ROOF MOD A", 1),
+        ("ROOF MOD", 1),
+        ("ROOF MOD B", 1),
+        ("ROOF BAY Expo Checklist", 1),
+        ("QC WALL BAY Expo Checklist", 1),
+        ("MODE - EXPO DOOR MOD", 2),     //TODO: Confirm Position
+        ("[QC] MODE Expo Checklist", 2), //TODO: Confirm Position
+        ("BAY 2", 2),
+        ("[QC] BAY 2 Expo Checklist", 2),
+        ("EXPO Electrical Bay 2", 2),
+        ("PAINT BAY", 3),
+        ("[QC] PAINT Expo Checklist", 3),
+        ("QC PAINT Expo Checklist", 3),
+        ("BAY 3", 4),
+        ("[QC] BAY 3 Expo Checklist", 4),
+        ("EXPO Electrical Bay 3", 4),
+        ("BAY 4", 5),
+        ("[QC] BAY 4 Expo Checklist", 5),
+        ("EXPO COMMISSIONING (REV002)", 6),
+        ("BAY 5 EXPO COMMISSIONING (REV002)", 6),
+        ("EXPO COMMISSIONING REPORT - PTI's", 6),
+        ("EXPO LINE QC CHECKS", 6),
+        ("HANDOVEER DAY", 7),
+        ("HangarO", 7)
     ];
 }

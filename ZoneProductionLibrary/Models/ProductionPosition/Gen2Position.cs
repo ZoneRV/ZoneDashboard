@@ -6,6 +6,7 @@ public class Gen2ProductionPosition : IProductionPosition
     public bool IsInCarPark(HandoverState _) => false;
 
     public string PositionName => Positions.Single(x => x.id == PositionId).name;
+    public string ShortPositionName => Positions.Single(x => x.id == PositionId).shortName;
     public int PositionId { get; }
     public override string ToString() => $"{PositionName} {PositionId}";
 
@@ -58,7 +59,7 @@ public class Gen2ProductionPosition : IProductionPosition
     {
         List<IProductionPosition> results = [];
 
-        foreach ((string name, int id) position in Positions)
+        foreach (var position in Positions)
         {
             results.Add(new Gen2ProductionPosition(position.id));
         }
@@ -104,20 +105,20 @@ public class Gen2ProductionPosition : IProductionPosition
         return false;
     }
 
-    public static readonly (string name, int id)[] Positions =
+    public static readonly (string name, string shortName, int id)[] Positions =
     [
-        ("Chassis Module Gen2", 0),
-        ("BAY 1 - Funnel", 1),
-        ("BAY 1 Furniture install", 2),
-        ("BAY 2 Electrical", 3),
-        ("BAY 3 Wall & Roof", 4),
-        ("BAY 4", 5),
-        ("BAY 5 Sealing", 6),
-        ("BAY 6", 7),
-        ("BAY 7 Commissioning", 8),
-        ("BAY 8 Commissioning", 9),
-        ("Outside BAY 8", 10),
-        ("RAIN MAKER", 11)
+        ("Chassis Module Gen2", "Chassis", 0),
+        ("BAY 1 - Funnel", "Funnel", 1),
+        ("BAY 1 Furniture install", "1", 2),
+        ("BAY 2 Electrical", "2", 3),
+        ("BAY 3 Wall & Roof", "3", 4),
+        ("BAY 4", "4", 5),
+        ("BAY 5 Sealing", "5", 6),
+        ("BAY 6", "6", 7),
+        ("BAY 7 Commissioning", "7", 8),
+        ("BAY 8 Commissioning", "8", 9),
+        ("Outside BAY 8", "Outside Funnel", 10),
+        ("RAIN MAKER", "Rain Maker", 11)
     ];
 
     public static readonly (string name, int id)[] BoardPositions =
