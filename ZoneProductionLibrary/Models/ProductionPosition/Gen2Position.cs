@@ -116,15 +116,15 @@ public class Gen2ProductionPosition : IProductionPosition
     [
         ("Chassis Module Gen2", "Chassis", 0),
         ("BAY 1 - Funnel", "Funnel", 1),
-        ("BAY 1 Furniture install", "1", 2),
-        ("BAY 2 Electrical", "2", 3),
-        ("BAY 3 Wall & Roof", "3", 4),
-        ("BAY 4", "4", 5),
-        ("BAY 5 Sealing", "5", 6),
-        ("BAY 6", "6", 7),
-        ("BAY 7 Commissioning", "7", 8),
-        ("BAY 8 Commissioning", "8", 9),
-        ("Outside BAY 8", "Outside Funnel", 10),
+        ("BAY 1 Furniture install", "Bay 1", 2),
+        ("BAY 2 Electrical", "Bay 2", 3),
+        ("BAY 3 Wall & Roof", "Bay 3", 4),
+        ("BAY 4", "Bay 4", 5),
+        ("BAY 5 Sealing", "Bay 5", 6),
+        ("BAY 6", "Bay 6", 7),
+        ("BAY 7 Commissioning", "Bay 7", 8),
+        ("BAY 8 Commissioning", "Bay 8", 9),
+        ("Outside BAY 8", "Outside Bay 8", 10),
         ("RAIN MAKER", "Rain Maker", 11)
     ];
 

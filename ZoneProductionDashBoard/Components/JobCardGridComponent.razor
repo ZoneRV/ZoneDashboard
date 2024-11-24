@@ -112,18 +112,11 @@
 
         <RadzenDataGridColumn TItem="JobCard" SortProperty="AreaOfOrigin" FilterProperty="AreaOfOrigin" Title="Area Of Origin" Template="CardAreaRender" Sortable="false" Width="165px"/>
         
-        <RadzenDataGridColumn TItem="JobCard" FilterProperty="Position.PositionName" Title="Bay" Template="CardBayRender" Sortable="true" SortProperty="Position" Width="165px">
+        <RadzenDataGridColumn TItem="JobCard" FilterProperty="Position.ShortPositionName" Title="Bay" Template="CardBayRender" Sortable="true" SortProperty="Position" Width="165px">
             <FilterTemplate>
-                <RadzenDropDown TValue="IProductionPosition" Change="SetBayFilters" Data="Gen2ProductionPosition.GetAll().Concat(ExpoProductionPosition.GetAll())" AllowClear="true">
+                <RadzenDropDown TValue="string" Change="SetBayFilters" Data="Gen2ProductionPosition.GetAll().Concat(ExpoProductionPosition.GetAll()).Select(x => x.ShortPositionName).Distinct()" AllowClear="true">
                     <Template Context="pos">
-                        @if (pos is Gen2ProductionPosition gen2)
-                        {
-                            @($"Gen 2 - {gen2.ShortPositionName}")
-                        }
-                        @if (pos is ExpoProductionPosition exp)
-                        {
-                            @($"Exp - {exp.ShortPositionName}")
-                        }
+                        @pos
                     </Template>
                 </RadzenDropDown>
             </FilterTemplate>
@@ -328,24 +321,17 @@
             return;
         }
 
-        IProductionPosition? selection = (IProductionPosition?)value;
+        string selection = (string)value;
         
-        if (selection is Gen2ProductionPosition gen2 && gen2 is not null)
+        if (string.IsNullOrEmpty(selection) || string.IsNullOrWhiteSpace(selection))
         {
             column.ClearFilters();
-            column.FilterOperator = FilterOperator.Equals;
-            column.FilterValue = gen2.PositionName;
-            return;
-        }
-        else if (selection is ExpoProductionPosition expo && expo is not null)
-        {
-            column.ClearFilters();
-            column.FilterOperator = FilterOperator.Equals;
-            column.FilterValue = expo.PositionName;
             return;
         }
         
         column.ClearFilters();
+        column.FilterOperator = FilterOperator.Equals;
+        column.FilterValue = selection;
     }
     
     void SetVanNameFilters(object? value)

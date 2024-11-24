@@ -117,12 +117,12 @@ public class ExpoProductionPosition : IProductionPosition
     public static readonly (string name, string shortName, int id)[] Positions =
     [
         ("Chassis Module Expo", "Chassis", 0),
-        ("EXPO BAY 1", "1", 1),
-        ("EXPO BAY 2", "2", 2),
+        ("EXPO BAY 1", "Bay 1", 1),
+        ("EXPO BAY 2", "Bay 2", 2),
         ("Outside/Paint Bay", "Paint", 3),
-        ("EXPO BAY 3", "3", 4),
-        ("EXPO BAY 4", "4", 5),
-        ("EXPO BAY 5", "5", 6),
+        ("EXPO BAY 3", "Bay 3", 4),
+        ("EXPO BAY 4", "Bay 4", 5),
+        ("EXPO BAY 5", "Bay 5", 6),
         ("RAIN MAKER", "Rain Maker", 7)
     ];
 
