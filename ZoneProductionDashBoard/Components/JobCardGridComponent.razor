@@ -24,7 +24,7 @@
         {
             if (context.Data.Key is CardAreaOfOrigin) 
             {
-                if(_dataGrid.ColumnsCollection.Where(x => x.Title == "Status" || x.Title == "Due").All(x => x.FilterValue == null))
+                if(_dataGrid.ColumnsCollection.All(x => x.FilterValue == null))
                 {
                     <RadzenText>@AreaFromDynamic(context).CleanName() - @_dataGrid.View.Where(x => x.AreaOfOrigin == AreaFromDynamic(context)).GetCompletionRate(2)% complete</RadzenText>
                 }
@@ -35,7 +35,7 @@
             }
             else if (context.Data.Key is DueStatus) 
             {
-                if(_dataGrid.ColumnsCollection.Where(x => x.Title == "Status" || x.Title == "Due").All(x => x.FilterValue == null))
+                if(_dataGrid.ColumnsCollection.All(x => x.FilterValue == null))
                 {
                     <RadzenText>@DueStatusFromDynamic(context).CleanName() - @_dataGrid.View.Where(x => x.DueStatus == DueStatusFromDynamic(context)).GetCompletionRate(2)% complete</RadzenText>
                 }
@@ -86,7 +86,7 @@
                                   Sortable="true" SortProperty="TimeToHandover" Filterable="false" Template="TimeToHandoverRenderFragment" Width="200px"/>
         }
 
-        <RadzenDataGridColumn TItem="JobCard" Property="Name" Title="Name"
+        <RadzenDataGridColumn TItem="JobCard" Property="Name" Title="Card Name"
                               Sortable="false" Template="RedCardNameRenderFragment" MinWidth="500px">
             
             <FilterTemplate>
@@ -112,17 +112,17 @@
 
         <RadzenDataGridColumn TItem="JobCard" SortProperty="AreaOfOrigin" FilterProperty="AreaOfOrigin" Title="Area Of Origin" Template="CardAreaRender" Sortable="false" Width="165px"/>
         
-        <RadzenDataGridColumn TItem="JobCard" FilterProperty="Position.PositionName" Title="Bay" Template="CardBayRender" Sortable="false" Width="165px">
+        <RadzenDataGridColumn TItem="JobCard" FilterProperty="Position.PositionName" Title="Bay" Template="CardBayRender" Sortable="true" SortProperty="Position" Width="165px">
             <FilterTemplate>
-                <RadzenDropDown TValue="IProductionPosition" Data="Gen2ProductionPosition.GetAll().Concat(ExpoProductionPosition.GetAll())">
+                <RadzenDropDown TValue="IProductionPosition" Change="SetBayFilters" Data="Gen2ProductionPosition.GetAll().Concat(ExpoProductionPosition.GetAll())" AllowClear="true">
                     <Template Context="pos">
                         @if (pos is Gen2ProductionPosition gen2)
                         {
-                            @($"Gen 2 - {gen2.PositionName}")
+                            @($"Gen 2 - {gen2.ShortPositionName}")
                         }
                         @if (pos is ExpoProductionPosition exp)
                         {
-                            @($"Exp - {exp.PositionName}")
+                            @($"Exp - {exp.ShortPositionName}")
                         }
                     </Template>
                 </RadzenDropDown>
@@ -295,7 +295,7 @@
     
     void SetNameFilters(object? value)
     {
-        RadzenDataGridColumn<JobCard>? column = _dataGrid.ColumnsCollection.Single(x => x.Title == "Name");
+        RadzenDataGridColumn<JobCard>? column = _dataGrid.ColumnsCollection.Single(x => x.Title == "Card Name");
 
         if (value is null)
         {
@@ -314,6 +314,38 @@
         column.ClearFilters();
         column.FilterOperator = FilterOperator.Contains;
         column.FilterValue = selection;
+    }
+    
+    
+    
+    void SetBayFilters(object? value)
+    {
+        RadzenDataGridColumn<JobCard>? column = _dataGrid.ColumnsCollection.Single(x => x.Title == "Bay");
+
+        if (value is null)
+        {
+            column.ClearFilters();
+            return;
+        }
+
+        IProductionPosition? selection = (IProductionPosition?)value;
+        
+        if (selection is Gen2ProductionPosition gen2 && gen2 is not null)
+        {
+            column.ClearFilters();
+            column.FilterOperator = FilterOperator.Equals;
+            column.FilterValue = gen2.PositionName;
+            return;
+        }
+        else if (selection is ExpoProductionPosition expo && expo is not null)
+        {
+            column.ClearFilters();
+            column.FilterOperator = FilterOperator.Equals;
+            column.FilterValue = expo.PositionName;
+            return;
+        }
+        
+        column.ClearFilters();
     }
     
     void SetVanNameFilters(object? value)

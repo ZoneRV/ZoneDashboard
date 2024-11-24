@@ -1,6 +1,6 @@
 ﻿namespace ZoneProductionLibrary.Models.ProductionPosition;
 
-public interface IProductionPosition : IEquatable<IProductionPosition>, IEqualityComparer<IProductionPosition>
+public interface IProductionPosition : IEquatable<IProductionPosition>, IEqualityComparer<IProductionPosition>, IComparable<IProductionPosition>
 {
     public bool IsInProduction { get; }
     public bool IsInCarPark(HandoverState handoverState);
@@ -31,8 +31,7 @@ public interface IProductionPosition : IEquatable<IProductionPosition>, IEqualit
             if (second is Gen2ProductionPosition gen2)
                 return gen1.PositionId < gen2.PositionId;
 
-            throw
-                new ArgumentException("Cannot compare production positions from 2 different production lines");
+            return true;
         }
         
         if (first is ExpoProductionPosition exp1)
@@ -46,8 +45,7 @@ public interface IProductionPosition : IEquatable<IProductionPosition>, IEqualit
             if (second is ExpoProductionPosition exp2)
                 return exp1.PositionId < exp2.PositionId;
 
-            throw
-                new ArgumentException("Cannot compare production positions from 2 different production lines");
+            return false;
         }
 
         throw new Exception("unhandled case in comparing IProductionPosition occured");
@@ -72,8 +70,7 @@ public interface IProductionPosition : IEquatable<IProductionPosition>, IEqualit
             if (second is Gen2ProductionPosition gen2)
                 return gen1.PositionId > gen2.PositionId;
 
-            throw
-                new ArgumentException("Cannot compare production positions from 2 different production lines");
+            return false;
         }
         
         if (first is ExpoProductionPosition exp1)
@@ -87,8 +84,7 @@ public interface IProductionPosition : IEquatable<IProductionPosition>, IEqualit
             if (second is ExpoProductionPosition exp2)
                 return exp1.PositionId > exp2.PositionId;
 
-            throw
-                new ArgumentException("Cannot compare production positions from 2 different production lines");
+            return true;
         }
 
         throw new Exception("unhandled case in comparing IProductionPosition occured");

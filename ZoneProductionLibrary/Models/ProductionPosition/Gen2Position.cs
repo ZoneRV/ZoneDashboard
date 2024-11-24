@@ -36,6 +36,13 @@ public class Gen2ProductionPosition : IProductionPosition
         
     public bool Equals(IProductionPosition? first, IProductionPosition? second) => first != null && first.Equals(second);
 
+    public int CompareTo(IProductionPosition? other)
+    {
+        PositionComparer comparer = new PositionComparer();
+
+        return comparer.Compare(this, other);
+    }
+
     public int GetHashCode(IProductionPosition pos)
     {
         if(pos is Gen2ProductionPosition gen2)

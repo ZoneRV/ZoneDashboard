@@ -40,7 +40,7 @@
             </RadzenDataGridColumn>
         }
 
-        <RadzenDataGridColumn TItem="YellowCard" Property="Name" Title="Name"
+        <RadzenDataGridColumn TItem="YellowCard" Property="Name" Title="Card Name"
                               Sortable="false" Template="YellowCardNameRenderFragment" MinWidth="500px">
             <FilterTemplate>
                 <RadzenTextBox @ref="@_nameFilterBox" Change="SetNameFilters" Style="width: 100%"/>
@@ -171,7 +171,7 @@
     
     void SetNameFilters(object? value)
     {
-        RadzenDataGridColumn<YellowCard>? column = _dataGrid.ColumnsCollection.Single(x => x.Title == "Name");
+        RadzenDataGridColumn<YellowCard>? column = _dataGrid.ColumnsCollection.Single(x => x.Title == "Card Name");
 
         if (value is null)
         {

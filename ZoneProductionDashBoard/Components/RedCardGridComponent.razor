@@ -38,7 +38,7 @@
                                   Sortable="true" SortProperty="TimeToHandover" Filterable="false" Template="TimeToHandoverRenderFragment" Width="200px"/>
         }
         
-        <RadzenDataGridColumn TItem="RedCard" Property="Name" Title="Name"
+        <RadzenDataGridColumn TItem="RedCard" Property="Name" Title="Card Name"
                               Sortable="false" Template="RedCardNameRenderFragment" MinWidth="500px">
             <FilterTemplate>
                 <RadzenTextBox @ref="@_nameFilterBox" Change="SetNameFilters" Style="width: 100%"/>
@@ -184,7 +184,7 @@
     
     void SetNameFilters(object? value)
     {
-        RadzenDataGridColumn<RedCard>? column = _dataGrid.ColumnsCollection.Single(x => x.Title == "Name");
+        RadzenDataGridColumn<RedCard>? column = _dataGrid.ColumnsCollection.Single(x => x.Title == "Card Name");
 
         if (value is null)
         {
