@@ -22,7 +22,7 @@
     <PackageReference Include="Serilog" Version="4.0.1" />
     <PackageReference Include="Serilog.AspNetCore" Version="8.0.2" />
     <PackageReference Include="Serilog.Settings.Configuration" Version="8.0.2" />
-    <PackageReference Include="TrelloDotNet" Version="1.10.6" />
+    <PackageReference Include="TrelloDotNet" Version="1.11.4" />
   </ItemGroup>
 
   <ItemGroup>

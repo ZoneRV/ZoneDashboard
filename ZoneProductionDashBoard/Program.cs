@@ -38,7 +38,8 @@ internal class Program
                              flushToDiskInterval: TimeSpan.FromSeconds(10),
                              retainedFileCountLimit: 7,
                              rollOnFileSizeLimit: true,
-                             outputTemplate: "<NewLogLine>[{Level:u3} {Timestamp:HH:mm:ss}] {Message:lj} {NewLine}{Exception}")
+                             outputTemplate: "<NewLogLine>[{Level:u3} {Timestamp:dd:MM} {Timestamp:HH:mm:ss}] {Message:lj} {NewLine}{Exception}", 
+                             fileSizeLimitBytes: 500000)
                          .CreateLogger();
             
             Log.Logger.Information("Application is starting...");
