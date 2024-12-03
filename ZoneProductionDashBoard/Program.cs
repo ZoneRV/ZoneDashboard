@@ -36,9 +36,9 @@ internal class Program
                              "Logs/log.txt",
                              shared: true,
                              flushToDiskInterval: TimeSpan.FromSeconds(10),
-                             retainedFileCountLimit: 7,
-                             rollOnFileSizeLimit: true,
-                             outputTemplate: "<NewLogLine>[{Level:u3} {Timestamp:dd:MM} {Timestamp:HH:mm:ss}] {Message:lj} {NewLine}{Exception}", 
+                             retainedFileCountLimit: 1,
+                             rollOnFileSizeLimit: false,
+                             outputTemplate: "<NewLogLine>[{Level:u3} {Timestamp:dd/MM} {Timestamp:HH:mm:ss}] {Message:lj} {NewLine}{Exception}", 
                              fileSizeLimitBytes: 500000)
                          .CreateLogger();
             
@@ -57,7 +57,7 @@ internal class Program
             builder.Services.AddScoped<ContextMenuService>();
             builder.Services.AddScoped<TooltipService>();
 
-            builder.Services.AddSingleton<ISqlDataAccess, SqlDataAccess>();
+            builder.Services.AddSingleton<ISqlDataAccess, MSSQLDataAccess>();
             builder.Services.AddSingleton<ITrelloActionData, TrelloActionData>();
             builder.Services.AddSingleton<IVanIdData, VanIdData>();
 
