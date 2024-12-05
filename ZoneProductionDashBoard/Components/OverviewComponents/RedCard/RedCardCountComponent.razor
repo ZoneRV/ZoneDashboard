@@ -10,11 +10,15 @@
     <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center">
         <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center">
             <RadzenText>Outstanding Red Cards:</RadzenText>
-            <RadzenText Style="color:red" TextStyle="TextStyle.H2">@_outstandingRedCardCount</RadzenText>
+            <RadzenText Style="color:red" TextStyle="TextStyle.H3">@_outstandingRedCardCount</RadzenText>
         </RadzenStack>
         <RadzenStack AlignItems="AlignItems.Center">
             <RadzenText>Completed Red Cards:</RadzenText>
-            <RadzenText Style="color:limegreen" TextStyle="TextStyle.H2">@_completedRedCardCount</RadzenText>
+            <RadzenText Style="color:limegreen" TextStyle="TextStyle.H3">@_completedRedCardCount</RadzenText>
+        </RadzenStack>
+        <RadzenStack AlignItems="AlignItems.Center">
+            <RadzenText>Cards created per van:</RadzenText>
+            <RadzenText Style="color:red" TextStyle="TextStyle.H3">@_averageCards</RadzenText>
         </RadzenStack>
         <ApexChart
             TItem="DataItem"
@@ -58,6 +62,7 @@
 
     int _outstandingRedCardCount = 0;
     int _completedRedCardCount = 0;
+    decimal _averageCards = 0;
     IEnumerable<DataItem> _redCardTypeData = [];
     
     public override void Update()
@@ -139,6 +144,11 @@
         _completedRedCardCount = redCards.Count(x => x.CardStatus == CardStatus.Completed && StatsService.CardFilterOptions.RedFlagIssues.Contains(x.RedFlagIssue));
 
         _redCardTypeData = redCards.RedCardByTypeData();
+
+        if (!redCards.Any())
+            _averageCards = 0;
+        else
+            _averageCards = System.Math.Round((decimal)redCards.Count() / (decimal)redCards.Select(x => x.BoardId).Distinct().Count(), 1);
     }
 
     private void DataClicked(SelectedData<DataItem> item)
