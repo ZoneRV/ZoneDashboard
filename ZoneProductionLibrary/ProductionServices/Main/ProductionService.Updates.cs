@@ -577,6 +577,8 @@ public partial class ProductionService
                                                     ? HandoverState.HandedOver
                                                     : HandoverState.UnhandedOver);
                     
+                    info.HandoverStateLastUpdated = DateTimeOffset.Now;
+                    
                     Log.Logger.Debug("Hanover information updated for {cardName}", e.CardName);
                     
                     if (!string.IsNullOrEmpty(info.Id) && !string.IsNullOrWhiteSpace(info.Id))

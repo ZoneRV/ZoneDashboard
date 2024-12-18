@@ -329,8 +329,15 @@ public partial class ProductionService : IProductionService
                         }
 
                         if (card.Due.HasValue)
+                        {
                             value.HandoverState =
                                 card.DueComplete ? HandoverState.HandedOver : HandoverState.UnhandedOver;
+                            
+                            var dueUpdatedAction = actions.LastOrDefault(x => x.DueDate.HasValue);
+                            
+                            if(dueUpdatedAction is not null)
+                                value.HandoverStateLastUpdated = dueUpdatedAction.DateOffset;
+                        }
 
                         Log.Logger.Debug("Added {handover} to {vanName} ({handoverStat})", card.Due.Value.LocalDateTime.Date.ToString("dd/MM/yy"), value.Name, value.HandoverState);
                     }

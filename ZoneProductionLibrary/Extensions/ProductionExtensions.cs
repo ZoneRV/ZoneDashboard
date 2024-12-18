@@ -146,5 +146,13 @@ namespace ZoneProductionLibrary.Extensions
                     return true;
             }
         }
+        
+        public static bool InProductionBeforeDate(this IEnumerable<(DateTimeOffset date, IProductionPosition position)> PositionHistory, DateTimeOffset end)
+        {
+            if (!PositionHistory.Any(x => x.position is PostProduction))
+                return false;
+
+            return PositionHistory.First(x => x.position is PostProduction).date < end;
+        }
     }
 }

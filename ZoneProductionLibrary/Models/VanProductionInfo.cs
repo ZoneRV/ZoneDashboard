@@ -13,6 +13,7 @@
 
         public DateTimeOffset? Handover => HandoverHistory.Any() ? HandoverHistory.Last().HandoverDate : null;
         public HandoverState HandoverState { get; set; } = HandoverState.Unknown;
+        public DateTimeOffset HandoverStateLastUpdated { get; set; }
 
         public TimeSpan? TimeToHandover => Handover.HasValue ? Handover.Value - DateTimeOffset.Now : null;
         public bool IsInCarPark => Position.IsInCarPark(HandoverState);

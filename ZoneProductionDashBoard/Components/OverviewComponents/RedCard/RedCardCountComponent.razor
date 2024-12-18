@@ -163,10 +163,14 @@
                                  .ToList();
 
         var prodCards 
-            = allRedCards.Where(x => ProductionService.ProductionVans[x.BoardName.ToLower()].Position.IsInProduction);
+            = allRedCards.Where(x => 
+                ProductionService.ProductionVans[x.BoardName.ToLower()].PositionHistory.InProductionBeforeDate(MaxDate.Date));
 
         var redLineCards 
-            = allRedCards.Where(x => !ProductionService.ProductionVans[x.BoardName.ToLower()].Position.IsInProduction);
+            = allRedCards.Where(x => 
+                !ProductionService.ProductionVans[x.BoardName.ToLower()].PositionHistory.InProductionBeforeDate(MaxDate.Date) &&
+                ProductionService.ProductionVans[x.BoardName.ToLower()].HandoverState != HandoverState.HandedOver &&
+                ProductionService.ProductionVans[x.BoardName.ToLower()].HandoverStateLastUpdated > MaxDate.Date);
 
         _outstandingRedCardCountProduction
             = prodCards.Count(x =>
