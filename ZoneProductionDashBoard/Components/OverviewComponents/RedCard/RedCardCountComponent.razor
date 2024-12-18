@@ -8,38 +8,18 @@
 
 <div class="flex flex-col items-center justify-between">
     <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center">
-        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-            <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center">
-                <RadzenText Style="font-weight: bold">Production</RadzenText>
-                <RadzenStack AlignItems="AlignItems.Center">
-                    <RadzenText>Outstanding:</RadzenText>
-                    <RadzenText Style="color:red" TextStyle="TextStyle.H3">@_outstandingRedCardCountProduction</RadzenText>
-                </RadzenStack>
-                <RadzenStack AlignItems="AlignItems.Center">
-                    <RadzenText>Completed:</RadzenText>
-                    <RadzenText Style="color:limegreen" TextStyle="TextStyle.H3">@_completedRedCardProduction</RadzenText>
-                </RadzenStack>
-                <RadzenStack AlignItems="AlignItems.Center">
-                    <RadzenText>Average:</RadzenText>
-                    <RadzenText Style="color:red" TextStyle="TextStyle.H3">@_averageCardProduction</RadzenText>
-                </RadzenStack>
-            </RadzenStack>
-            <RadzenStack AlignItems="AlignItems.Center">
-                    <RadzenText Style="font-weight: bold">Redline</RadzenText>
-                    <RadzenStack AlignItems="AlignItems.Center">
-                        <RadzenText>Outstanding:</RadzenText>
-                        <RadzenText Style="color:red" TextStyle="TextStyle.H3">@_outstandingRedCardCountRedline</RadzenText>
-                    </RadzenStack>
-                    <RadzenStack AlignItems="AlignItems.Center">
-                        <RadzenText>Completed:</RadzenText>
-                        <RadzenText Style="color:limegreen" TextStyle="TextStyle.H3">@_completedRedCardCountRedline</RadzenText>
-                    </RadzenStack>
-                    <RadzenStack AlignItems="AlignItems.Center">
-                        <RadzenText>Average:</RadzenText>
-                        <RadzenText Style="color:red" TextStyle="TextStyle.H3">@_averageCardRedline</RadzenText>
-                    </RadzenStack>
-                </RadzenStack>
-            </RadzenStack>
+        <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center">
+            <RadzenText>Outstanding Red Cards:</RadzenText>
+            <RadzenText Style="color:red" TextStyle="TextStyle.H3">@_outstandingRedCardCount</RadzenText>
+        </RadzenStack>
+        <RadzenStack AlignItems="AlignItems.Center">
+            <RadzenText>Completed Red Cards:</RadzenText>
+            <RadzenText Style="color:limegreen" TextStyle="TextStyle.H3">@_completedRedCardCount</RadzenText>
+        </RadzenStack>
+        <RadzenStack AlignItems="AlignItems.Center">
+            <RadzenText>Cards created per van:</RadzenText>
+            <RadzenText Style="color:red" TextStyle="TextStyle.H3">@_averageCards</RadzenText>
+        </RadzenStack>
         <ApexChart
             TItem="DataItem"
             Height="500"
@@ -80,14 +60,9 @@
     ApexChart<DataItem> _typeChart = default!;
     ApexChartOptions<DataItem> _options = new ApexChartOptions<DataItem>();
 
-    int _outstandingRedCardCountProduction = 0;
-    int _completedRedCardProduction = 0;
-    decimal _averageCardProduction = 0;
-    
-    int _outstandingRedCardCountRedline = 0;
-    int _completedRedCardCountRedline = 0;
-    decimal _averageCardRedline = 0;
-    
+    int _outstandingRedCardCount = 0;
+    int _completedRedCardCount = 0;
+    decimal _averageCards = 0;
     IEnumerable<DataItem> _redCardTypeData = [];
     
     public override void Update()
@@ -153,52 +128,27 @@
 
     void GetCountData()
     {
-        List<RedCard> allRedCards = ProductionService.GetRedCards().ToList();
+        List<RedCard> redCards = ProductionService.GetRedCards().ToList();
 
-        allRedCards = allRedCards.Where(x => StatsService.SelectedVanType == x.VanType && 
-                                             StatsService.CardFilterOptions.CardAreaOfOrigins.Contains(x.AreaOfOrigin) &&
-                                             x.CreationDate.HasValue &&
-                                             x.CreationDate.Value.LocalDateTime.Date >= MinDate.Date &&
-                                             x.CreationDate.Value.LocalDateTime.Date <= MaxDate.Date)
-                                 .ToList();
+        redCards = redCards.Where(x => StatsService.SelectedVanType == x.VanType && 
+                                       StatsService.CardFilterOptions.CardAreaOfOrigins.Contains(x.AreaOfOrigin) &&
+                                       x.CreationDate.HasValue &&
+                                       x.CreationDate.Value.LocalDateTime.Date >= MinDate.Date &&
+                                       x.CreationDate.Value.LocalDateTime.Date <= MaxDate.Date)
+                           .ToList();
 
-        var prodCards 
-            = allRedCards.Where(x => ProductionService.ProductionVans[x.BoardName.ToLower()].Position.IsInProduction);
-
-        var redLineCards 
-            = allRedCards.Where(x => !ProductionService.ProductionVans[x.BoardName.ToLower()].Position.IsInProduction);
-
-        _outstandingRedCardCountProduction
-            = prodCards.Count(x =>
-                              x.CardStatus != CardStatus.Completed && 
-                              StatsService.CardFilterOptions.RedFlagIssues.Contains(x.RedFlagIssue));
+        _outstandingRedCardCount = redCards.Count(x =>
+                                                      x.CardStatus != CardStatus.Completed && 
+                                                      StatsService.CardFilterOptions.RedFlagIssues.Contains(x.RedFlagIssue));
         
-        _outstandingRedCardCountRedline
-            = redLineCards.Count(x =>
-                              x.CardStatus != CardStatus.Completed && 
-                              StatsService.CardFilterOptions.RedFlagIssues.Contains(x.RedFlagIssue));
-        
-        _completedRedCardProduction 
-            = prodCards.Count(x =>
-                x.CardStatus == CardStatus.Completed && 
-                StatsService.CardFilterOptions.RedFlagIssues.Contains(x.RedFlagIssue));
-        
-        _completedRedCardCountRedline 
-            = redLineCards.Count(x =>
-                x.CardStatus == CardStatus.Completed && 
-                StatsService.CardFilterOptions.RedFlagIssues.Contains(x.RedFlagIssue));
+        _completedRedCardCount = redCards.Count(x => x.CardStatus == CardStatus.Completed && StatsService.CardFilterOptions.RedFlagIssues.Contains(x.RedFlagIssue));
 
-        _redCardTypeData = allRedCards.RedCardByTypeData();
+        _redCardTypeData = redCards.RedCardByTypeData();
 
-        if (!prodCards.Any())
-            _averageCardProduction = 0;
+        if (!redCards.Any())
+            _averageCards = 0;
         else
-            _averageCardProduction = System.Math.Round((decimal)prodCards.Count() / (decimal)prodCards.Select(x => x.BoardId).Distinct().Count(), 1);
-
-        if (!redLineCards.Any())
-            _averageCardRedline = 0;
-        else
-            _averageCardRedline = System.Math.Round((decimal)redLineCards.Count() / (decimal)redLineCards.Select(x => x.BoardId).Distinct().Count(), 1);
+            _averageCards = System.Math.Round((decimal)redCards.Count() / (decimal)redCards.Select(x => x.BoardId).Distinct().Count(), 1);
     }
 
     private void DataClicked(SelectedData<DataItem> item)
