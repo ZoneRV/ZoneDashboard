@@ -169,8 +169,9 @@
         var redLineCards 
             = allRedCards.Where(x => 
                 !ProductionService.ProductionVans[x.BoardName.ToLower()].PositionHistory.InProductionBeforeDate(MaxDate.Date) &&
-                ProductionService.ProductionVans[x.BoardName.ToLower()].HandoverState != HandoverState.HandedOver &&
-                ProductionService.ProductionVans[x.BoardName.ToLower()].HandoverStateLastUpdated > MaxDate.Date);
+                (ProductionService.ProductionVans[x.BoardName.ToLower()].HandoverState != HandoverState.HandedOver &&
+                ProductionService.ProductionVans[x.BoardName.ToLower()].HandoverStateLastUpdated > MaxDate.Date) 
+                || ProductionService.ProductionVans[x.BoardName.ToLower()].HandoverState == HandoverState.UnhandedOver);
 
         _outstandingRedCardCountProduction
             = prodCards.Count(x =>
@@ -194,15 +195,25 @@
 
         _redCardTypeData = allRedCards.RedCardByTypeData();
 
-        if (!prodCards.Any())
+        int vansInProd = ProductionService.ProductionVans.Values.Count(x => 
+            x.Position.IsInProduction &&
+            x.PositionHistory.InProductionBeforeDate())
+        
+        int vansPastRedline = ProductionService.ProductionVans.Values.Count(x => 
+            x.PositionHistory.InProductionBeforeDate(MaxDate.Date) && 
+            (x.HandoverState != HandoverState.HandedOver &&
+            x.HandoverStateLastUpdated > MaxDate.Date) ||
+            x.HandoverState == HandoverState.UnhandedOver);
+        
+        if (vansInProd == 0)
             _averageCardProduction = 0;
         else
-            _averageCardProduction = System.Math.Round((decimal)prodCards.Count() / (decimal)prodCards.Select(x => x.BoardId).Distinct().Count(), 1);
+            _averageCardProduction = System.Math.Round((decimal)prodCards.Count() / (decimal)vansInProd, 1);
 
-        if (!redLineCards.Any())
+        if (vansPastRedline == 0)
             _averageCardRedline = 0;
         else
-            _averageCardRedline = System.Math.Round((decimal)redLineCards.Count() / (decimal)redLineCards.Select(x => x.BoardId).Distinct().Count(), 1);
+            _averageCardRedline = System.Math.Round((decimal)redLineCards.Count() / (decimal)vansPastRedline, 1);
     }
 
     private void DataClicked(SelectedData<DataItem> item)
