@@ -171,6 +171,7 @@ public class ExpoProductionPosition : IProductionPosition
         ("EXPO COMMISSIONING (REV002)", 6),
         ("BAY 5 EXPO COMMISSIONING (REV002)", 6),
         ("EXPO COMMISSIONING REPORT - PTI's", 6),
+        ("BAY 5 EXPO + COMMISSIONING", 6),
         ("EXPO LINE QC CHECKS", 6),
         ("HANDOVEER DAY", 7),
         ("HangarO", 7)
