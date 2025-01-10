@@ -164,14 +164,14 @@
 
         var prodCards 
             = allRedCards.Where(x => 
-                ProductionService.ProductionVans[x.BoardName.ToLower()].PositionHistory.InProductionBeforeDate(MaxDate.Date));
+                ProductionService.ProductionVans[x.BoardName.ToLower()].PositionHistory.InProductionBeforeDate(MaxDate.Date)).ToList();
 
         var redLineCards 
             = allRedCards.Where(x => 
                 !ProductionService.ProductionVans[x.BoardName.ToLower()].PositionHistory.InProductionBeforeDate(MaxDate.Date) &&
                 (ProductionService.ProductionVans[x.BoardName.ToLower()].HandoverState != HandoverState.HandedOver &&
                 ProductionService.ProductionVans[x.BoardName.ToLower()].HandoverStateLastUpdated > MaxDate.Date) 
-                || ProductionService.ProductionVans[x.BoardName.ToLower()].HandoverState == HandoverState.UnhandedOver);
+                || ProductionService.ProductionVans[x.BoardName.ToLower()].HandoverState == HandoverState.UnhandedOver).ToList();
 
         _outstandingRedCardCountProduction
             = prodCards.Count(x =>
@@ -195,9 +195,11 @@
 
         _redCardTypeData = allRedCards.RedCardByTypeData();
 
-        int vansInProd = ProductionService.ProductionVans.Values.Count(x => 
-            x.Position.IsInProduction &&
-            x.PositionHistory.InProductionBeforeDate())
+        int vansInProd =
+            ProductionService.ProductionVans.Values.Count(x =>
+              x.Position.IsInProduction &&
+              x.PositionHistory.InProductionBeforeDate(MaxDate.Date) &&
+              x.PositionHistory.EnteredProductionAfter(MinDate.Date));
         
         int vansPastRedline = ProductionService.ProductionVans.Values.Count(x => 
             x.PositionHistory.InProductionBeforeDate(MaxDate.Date) && 

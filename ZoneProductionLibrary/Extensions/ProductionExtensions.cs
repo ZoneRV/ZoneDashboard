@@ -154,5 +154,10 @@ namespace ZoneProductionLibrary.Extensions
 
             return PositionHistory.First(x => x.position is PostProduction).date < end;
         }
+
+        public static bool EnteredProductionAfter(this IEnumerable<(DateTimeOffset date, IProductionPosition position)> positionhistory, DateTimeOffset dateEntered)
+        {
+            return positionhistory.Any(x => x.position.IsInProduction && x.date > dateEntered);
+        }
     }
 }
