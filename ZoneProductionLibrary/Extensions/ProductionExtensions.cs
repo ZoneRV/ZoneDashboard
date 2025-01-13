@@ -150,7 +150,7 @@ namespace ZoneProductionLibrary.Extensions
         public static bool InProductionBeforeDate(this IEnumerable<(DateTimeOffset date, IProductionPosition position)> PositionHistory, DateTimeOffset end)
         {
             if (!PositionHistory.Any(x => x.position is PostProduction))
-                return false;
+                return true;
 
             return PositionHistory.First(x => x.position is PostProduction).date < end;
         }
