@@ -1,0 +1,111 @@
+﻿@page "/report/"
+@using System.Data
+@using Newtonsoft.Json
+@using Dapper
+@using DBLibrary.DbAccess
+@using MySqlConnector
+@using ApexCharts
+
+@if (data is null)
+{
+    <RadzenText>Loading..</RadzenText>
+}
+else
+{
+    // Use html to show data on the page using '@' to insert code
+    <h1>This is a report for @(nameof(ExampleModel))</h1>
+    
+    <ul>
+        <li>@data.prop1</li>
+        <li>@data.prop2</li>
+        <li>@data.prop3</li>
+    </ul>
+    
+    // Can also use Radzen (https://blazor.radzen.com/?theme=material3) which has a bunch of components to use (including
+    // a few basic Graphs) to speed things up a bit
+    
+    <RadzenCard Variant="Variant.Filled">
+        <RadzenStack>
+            <RadzenText TextStyle="TextStyle.H1">This is a report for @(nameof(ExampleModel))</RadzenText>
+            <RadzenText>@data.prop1</RadzenText>
+            <RadzenText>@data.prop2</RadzenText>
+            <RadzenText>@data.prop3</RadzenText>
+        </RadzenStack>
+    </RadzenCard>
+    
+    // Or use Blazor Apex charts (https://apexcharts.github.io/Blazor-ApexCharts/) for more advanced graphs
+    
+    <ApexChart TItem="DataItem" Title="Data">
+        
+        <ApexPointSeries
+            TItem="DataItem"
+            Items="@exampleGraphData"
+            XValue="item => item.Key"
+            YValue="item => item.Value"/>
+
+    </ApexChart>
+}
+
+
+@code {
+    // Will be injected automatically 
+    [Inject]
+    public IConfiguration _Configuration { get; set; } = default!;
+
+    // All your page properties 
+    ExampleModel?  data;
+    List<DataItem> exampleGraphData = [new DataItem("zpp", 1), new DataItem("zsp", 3), new DataItem("zspf", 10)];
+    
+    /// <summary>
+    /// Code is run when the page is first loaded. Load all your data here
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        // Loading a model from and api
+        data = await GetObjectFromApi<ExampleModel>("Uri goes here");
+
+        // Getting a collection of data items from MySql
+        List<ExampleModel> listOfData = await GetObjectFromMySQL<ExampleModel>(@"SELECT * FROM TABLE;");
+        
+        await base.OnInitializedAsync();
+    }
+
+    /// <summary>
+    /// Generic method for getting simple objects from an api. Keep in mind this may return null or throw an exception
+    /// </summary>
+    /// <typeparam name="T">The type of object your want to get</typeparam>
+    private async Task<T?> GetObjectFromApi<T>(string uri)
+    {
+        HttpClient client = new HttpClient();
+       
+        using var response = await client.GetAsync(uri);
+
+        response.EnsureSuccessStatusCode();
+
+        var json = await response.Content.ReadAsStringAsync();
+        
+        return JsonConvert.DeserializeObject<T>(json);
+    }
+
+    /// <summary>
+    /// Generic method for getting simple objects from an api. Keep in mind this may return null or throw an exception
+    /// </summary>
+    /// <typeparam name="T">The type of object your want to get</typeparam>
+    private async Task<List<T>> GetObjectFromMySQL<T>(string query)
+    {
+        using IDbConnection connection = new MySqlConnection(_Configuration.GetConnectionString("MySql"));
+            
+        IEnumerable<T> results = await ISqlDataAccess.ExecuteSqlTaskWithRetry(connection.QueryAsync<T>(query, commandType: CommandType.Text));
+
+        List<T> loadData = results.ToList();
+            
+        return loadData;
+    }
+
+    public class ExampleModel
+    {
+        public required string prop1 { get; set; }
+        public required string prop2 { get; set; }
+        public required string prop3 { get; set; }
+    } 
+}

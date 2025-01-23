@@ -1,0 +1,19 @@
+{
+  "ConnectionStrings": {
+    "MySql": ""
+  },
+  "enableWebhooks": false,
+  "UseDevProductionService": true,
+  "AllowOverviewPage": true,
+  "Serilog": {
+    "Using": [],
+    "MinimumLevel": {
+      "Default": "Information",
+      "Override": {
+        "Microsoft": "Warning"
+      }
+    }
+  },
+  "AllowedHosts": "*",
+  "DetailedErrors": true
+}
