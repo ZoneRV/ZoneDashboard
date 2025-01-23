@@ -33,7 +33,8 @@ public partial class ProductionService : IProductionService
     private readonly List<ProductionDepartment> _gen2ProductionDepartments =
     [
         new ProductionDepartment("Chassis",          [CardAreaOfOrigin.Chassis]),
-        new ProductionDepartment("Cabinetry",        [CardAreaOfOrigin.CabsAssembly, CardAreaOfOrigin.SubAssembly, CardAreaOfOrigin.CabsPrep]),
+        new ProductionDepartment("Cabinetry",        [CardAreaOfOrigin.CabsAssembly, CardAreaOfOrigin.SubAssembly]),
+        new ProductionDepartment("Cabinetry Prep",   [CardAreaOfOrigin.CabsPrep]),
         new ProductionDepartment("Bay 1",            [CardAreaOfOrigin.Bay1]),
         new ProductionDepartment("Electrical",       [CardAreaOfOrigin.Electrical]),
         new ProductionDepartment("Wall/Roof Mod",    [CardAreaOfOrigin.WallRoofMod]),
@@ -50,7 +51,8 @@ public partial class ProductionService : IProductionService
     private readonly List<ProductionDepartment> _expoProductionDepartments =
     [
         new ProductionDepartment("Chassis",       [CardAreaOfOrigin.Chassis]),
-        new ProductionDepartment("Cabinetry",     [CardAreaOfOrigin.CabsAssembly, CardAreaOfOrigin.SubAssembly, CardAreaOfOrigin.CabsPrep]),
+        new ProductionDepartment("Cabinetry",     [CardAreaOfOrigin.CabsAssembly, CardAreaOfOrigin.SubAssembly]),
+        new ProductionDepartment("CabinetryPrep", [CardAreaOfOrigin.CabsPrep]),
         new ProductionDepartment("Wall/Roof Mod", [CardAreaOfOrigin.WallRoofMod]),
         new ProductionDepartment("Electrical",    [CardAreaOfOrigin.Electrical]),
         new ProductionDepartment("Bay 1",         [CardAreaOfOrigin.Bay1]),
