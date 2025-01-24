@@ -5,107 +5,145 @@
 @using DBLibrary.DbAccess
 @using MySqlConnector
 @using ApexCharts
+@using Serilog
 
-@if (data is null)
+@if (allWarrantyData is null)
 {
     <RadzenText>Loading..</RadzenText>
 }
 else
 {
-    // Use html to show data on the page using '@' to insert code
-    <h1>This is a report for @(nameof(ExampleModel))</h1>
-    
-    <ul>
-        <li>@data.prop1</li>
-        <li>@data.prop2</li>
-        <li>@data.prop3</li>
-    </ul>
-    
-    // Can also use Radzen (https://blazor.radzen.com/?theme=material3) which has a bunch of components to use (including
-    // a few basic Graphs) to speed things up a bit
-    
-    <RadzenCard Variant="Variant.Filled">
-        <RadzenStack>
-            <RadzenText TextStyle="TextStyle.H1">This is a report for @(nameof(ExampleModel))</RadzenText>
-            <RadzenText>@data.prop1</RadzenText>
-            <RadzenText>@data.prop2</RadzenText>
-            <RadzenText>@data.prop3</RadzenText>
-        </RadzenStack>
-    </RadzenCard>
-    
-    // Or use Blazor Apex charts (https://apexcharts.github.io/Blazor-ApexCharts/) for more advanced graphs
-    
-    <ApexChart TItem="DataItem" Title="Data">
-        
-        <ApexPointSeries
-            TItem="DataItem"
-            Items="@exampleGraphData"
-            XValue="item => item.Key"
-            YValue="item => item.Value"/>
+    <h1>Warranty Claims Insights</h1>
 
-    </ApexChart>
+    <!-- Total Claims Card -->
+    <div class="card text-white bg-info mb-3" style="width: 18rem;">
+        <div class="card-header">Total Claims</div>
+        <div class="card-body">
+            <h5 class="card-title">@warrantyClaimCount</h5>
+            <p class="card-text">Number of warranty claims during the selected period.</p>
+        </div>
+    </div>
+
+    <!-- Total Sales Card -->
+    <div class="card text-white bg-info mb-3" style="width: 18rem;">
+        <div class="card-header">Total Sales</div>
+        <div class="card-body">
+            <h5 class="card-title">@String.Format("{0:C}", totalcost)</h5>
+            <p class="card-text">Total sales for sales during the selected period.</p>
+        </div>
+    </div>
+
+    <!-- Total Warranty Cost -->
+    <div class="card text-white bg-info mb-3" style="width: 18rem;">
+        <div class="card-header">Warranty Cost</div>
+        <div class="card-body">
+            <h5 class="card-title">@String.Format("{0:C}", totalwarrantyclaims)</h5>
+            <p class="card-text">Total cost for warranty claims during the selected period.</p>
+        </div>
+    </div>
+
+    <!-- Period selection tab -->
+    <RadzenTabs SelectedIndex="periodKey" Change="OnTabChange">
+        <Tabs>
+            <RadzenTabsItem Text="Quarterly"></RadzenTabsItem>
+            <RadzenTabsItem Text="Monthly"></RadzenTabsItem>
+        </Tabs>
+    </RadzenTabs>
+
+
+    <!-- Display ApexChart -->
+    <div class="my-4">
+        <h3>Warranty Claims vs Sales</h3>
+        <ApexChart @ref="Chart" TItem="DataItem" Title="Warranty Claims">
+            <ApexPointSeries TItem="DataItem" Items="@periods.ElementAt(periodKey)" XValue="item => item.Key" YValue="item => item.Value" />
+        </ApexChart>
+    </div>
+
+    <!-- Data Summary Table -->
+    <div class="my-4">
+        <h3>Data Summary</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Total Claims</th>
+                    <th>Total Sales</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in warrantyClaimsByDay)
+                {
+                    <tr>
+                        <td>@item.Key.ToString("yyyy-MM-dd")</td>
+                        <td>@item.Value</td>
+                        <td>@String.Format("{0:C}", item.Value)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }
 
-
 @code {
-    // Will be injected automatically 
+    decimal totalcost => allWarrantyData?.Sum(x => x.totalPrice) ?? 0;
+    decimal totalwarrantyclaims => allWarrantyData?.Sum(x => x.cost) ?? 0;
+    int warrantyClaimCount => allWarrantyData?.Count ?? 0;
+    List<WarrantyClaims>? allWarrantyData = null;
+    List<DateDataItem> warrantyClaimsByDay = new();
+    List<List<DataItem>> periods = new();
+    int periodKey { get; set; } = 0;
+
+    private ApexChart<DataItem> Chart = default!;
+
     [Inject]
     public IConfiguration _Configuration { get; set; } = default!;
 
-    // All your page properties 
-    ExampleModel?  data;
-    List<DataItem> exampleGraphData = [new DataItem("zpp", 1), new DataItem("zsp", 3), new DataItem("zspf", 10)];
-    
-    /// <summary>
-    /// Code is run when the page is first loaded. Load all your data here
-    /// </summary>
     protected override async Task OnInitializedAsync()
     {
-        // Loading a model from and api
-        data = await GetObjectFromApi<ExampleModel>("Uri goes here");
+        allWarrantyData = await GetObjectFromMySQL<WarrantyClaims>(@"SELECT num, totalPrice, cost, dateCreated FROM so;");
 
-        // Getting a collection of data items from MySql
-        List<ExampleModel> listOfData = await GetObjectFromMySQL<ExampleModel>(@"SELECT * FROM TABLE;");
-        
+        if (allWarrantyData is null) return;
+
+        warrantyClaimsByDay = allWarrantyData
+            .GroupBy(claim => claim.trueDate.Date)
+            .Select(g => new DateDataItem(g.Key, g.Sum(claim => claim.totalPrice)))
+            .ToList();
+
+        periods = new List<List<DataItem>>
+        {
+            allWarrantyData
+                .GroupBy(claim => $"Q{(claim.trueDate.Month - 1) / 3 + 1} {claim.trueDate:yyyy}")
+                .Select(g => new DataItem(g.Key, g.Sum(claim => claim.totalPrice)))
+                .ToList(),
+
+            allWarrantyData
+                .GroupBy(claim => $"{claim.trueDate:MMM yyyy}")
+                .Select(g => new DataItem(g.Key, g.Sum(claim => claim.totalPrice)))
+                .ToList()
+        };
+
         await base.OnInitializedAsync();
     }
 
-    /// <summary>
-    /// Generic method for getting simple objects from an api. Keep in mind this may return null or throw an exception
-    /// </summary>
-    /// <typeparam name="T">The type of object your want to get</typeparam>
-    private async Task<T?> GetObjectFromApi<T>(string uri)
+    private async Task OnTabChange(int index)
     {
-        HttpClient client = new HttpClient();
-       
-        using var response = await client.GetAsync(uri);
-
-        response.EnsureSuccessStatusCode();
-
-        var json = await response.Content.ReadAsStringAsync();
-        
-        return JsonConvert.DeserializeObject<T>(json);
+        periodKey = index;
+        await Chart.UpdateSeriesAsync();
     }
 
-    /// <summary>
-    /// Generic method for getting simple objects from an api. Keep in mind this may return null or throw an exception
-    /// </summary>
-    /// <typeparam name="T">The type of object your want to get</typeparam>
+
     private async Task<List<T>> GetObjectFromMySQL<T>(string query)
     {
         using IDbConnection connection = new MySqlConnection(_Configuration.GetConnectionString("MySql"));
-            
-        IEnumerable<T> results = await ISqlDataAccess.ExecuteSqlTaskWithRetry(connection.QueryAsync<T>(query, commandType: CommandType.Text));
-
-        List<T> loadData = results.ToList();
-            
-        return loadData;
+        return (await connection.QueryAsync<T>(query)).ToList();
     }
 
-    public class ExampleModel
+    public class WarrantyClaims
     {
-        public required string prop1 { get; set; }
-        public required string prop2 { get; set; }
-        public required string prop3 { get; set; }
-    } 
+        public required string num { get; init; }
+        public decimal totalPrice { get; init; }
+        public decimal cost { get; init; }
+        private DateTimeOffset dateCreated { get; init; }
+        public DateTime trueDate => dateCreated.LocalDateTime;
+    }
 }
