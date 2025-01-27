@@ -1,214 +1,172 @@
-﻿@page "/report/"
-@using System.Data
-@using Newtonsoft.Json
-@using Dapper
-@using DBLibrary.DbAccess
-@using MySqlConnector
-@using ApexCharts
-@using Serilog
+﻿@page "/overview/"
 
-@if (allWarrantyData is null)
+@using System.Diagnostics
+@using Microsoft.AspNetCore.WebUtilities
+
+@inherits ProductionPageBase
+
+<PageTitle>Overview</PageTitle>
+
+@if (!DashboardConfig.AllowOverviewPage)
 {
-    <RadzenText>Loading..</RadzenText>
+    <a>Overview page has beeen temporarily disabled due to technical reasons</a>
+}
+else if (PageLoaded)
+{
+    <StatFilterComponent Height="4rem"/>
+    
+    <RadzenTabs @ref="_tabs" Change="TabsUpdated" @bind-SelectedIndex="_tabsIndex">
+        <Tabs>
+            <RadzenTabsItem Text="Red Cards">
+                <RedCardOverviewComponent @ref="_general"/>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Production">
+                <VanProductionOverviewComponent @ref="_production"/>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Redline Deadline" Disabled="@(!Debugger.IsAttached)">
+                <DepartmentAverageRedLineDeadLineComponent @ref="_redLine"/>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Handover View">
+                <HandoverOverViewComponent @ref="_handover"/>
+            </RadzenTabsItem>
+        </Tabs>
+    </RadzenTabs>
 }
 else
 {
-    <h1>Warranty Claims Insights</h1>
-
-    <!-- Total Claims Card -->
-    <div class="card text-white bg-info mb-3" style="width: 18rem;">
-        <div class="card-header">Total Claims</div>
-        <div class="card-body">
-            <h5 class="card-title">@warrantyClaimCount</h5>
-            <p class="card-text">Number of warranty claims during the selected period.</p>
-        </div>
-    </div>
-
-    <!-- Total Sales Card -->
-    <div class="card text-white bg-info mb-3" style="width: 18rem;">
-        <div class="card-header">Total Sales</div>
-        <div class="card-body">
-            <h5 class="card-title">@String.Format("{0:C}", totalcost)</h5>
-            <p class="card-text">Total sales for sales during the selected period.</p>
-        </div>
-    </div>
-
-    <!-- Total Warranty Cost -->
-    <div class="card text-white bg-info mb-3" style="width: 18rem;">
-        <div class="card-header">Warranty Cost</div>
-        <div class="card-body">
-            <h5 class="card-title">@String.Format("{0:C}", totalwarrantyclaims)</h5>
-            <p class="card-text">Total cost for warranty claims during the selected period.</p>
-        </div>
-    </div>
-
-    <!-- Period selection tab -->
-    <RadzenTabs SelectedIndex="periodKey" Change="OnTabChange">
-        <Tabs>
-            <RadzenTabsItem Text="Quarterly"></RadzenTabsItem>
-            <RadzenTabsItem Text="Monthly"></RadzenTabsItem>
-        </Tabs>
-    </RadzenTabs>
-
-    <!-- Display ApexChart -->
-    <div class="my-4">
-        <h3>Warranty Claims vs Sales</h3>
-        <ApexChart @ref="Chart" TItem="DataItem" Title="Warranty Claims">
-            <ApexPointSeries TItem="DataItem" Items="@periods.ElementAt(periodKey)" XValue="item => item.Key" YValue="item => item.Value" />
-        </ApexChart>
-    </div>
-
-    <!-- Data Summary Table -->
-    <div class="my-4">
-        <h3>Data Summary</h3>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Total Claims</th>
-                    <th>Total Sales</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in warrantyClaimsByDay)
-                {
-                    <tr>
-                        <td>@item.Key.ToString("yyyy-MM-dd")</td>
-                        <td>@item.Value</td>
-                        <td>@String.Format("{0:C}", item.Value)</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+    <RadzenText>Loading</RadzenText>
 }
 
 @code {
-    /// <summary>
-    /// Total sales cost for the selected period.
-    /// </summary>
-    decimal totalcost => allWarrantyData?.Sum(x => x.totalPrice) ?? 0;
+    [Inject] 
+    public NavigationManager NavigationManager { get; set; } = default!;
+    
+    RedCardOverviewComponent? _general;
+    HandoverOverViewComponent? _handover;
+    VanProductionOverviewComponent? _production;
+    DepartmentAverageRedLineDeadLineComponent? _redLine;
 
-    /// <summary>
-    /// Total warranty claims cost for the selected period.
-    /// </summary>
-    decimal totalwarrantyclaims => allWarrantyData?.Sum(x => x.cost) ?? 0;
+    RadzenTabs _tabs = default!;
 
-    /// <summary>
-    /// Total number of warranty claims.
-    /// </summary>
-    int warrantyClaimCount => allWarrantyData?.Count ?? 0;
+    private int _tabsIndex = 0;
 
-    /// <summary>
-    /// List of all warranty claims retrieved from the database.
-    /// </summary>
-    List<WarrantyClaims>? allWarrantyData = null;
+    public override void Dispose()
+    {
+        _general?.Dispose();
+        _handover?.Dispose();
+        _production?.Dispose();
+        _redLine?.Dispose();
+        
+        base.Dispose();
+    }
 
-    /// <summary>
-    /// Daily grouped data of warranty claims for display in the summary table.
-    /// </summary>
-    List<DateDataItem> warrantyClaimsByDay = new();
-
-    /// <summary>
-    /// Data for each period (Quarterly, Monthly) used in the ApexChart.
-    /// </summary>
-    List<List<DataItem>> periods = new();
-
-    /// <summary>
-    /// Currently selected period index (0 for Quarterly, 1 for Monthly).
-    /// </summary>
-    int periodKey { get; set; } = 0;
-
-    /// <summary>
-    /// Reference to the ApexChart component.
-    /// </summary>
-    private ApexChart<DataItem> Chart = default!;
-
-    [Inject]
-    public IConfiguration _Configuration { get; set; } = default!;
-
-    /// <summary>
-    /// Initializes the page and loads warranty data from the database.
-    /// </summary>
     protected override async Task OnInitializedAsync()
     {
-        allWarrantyData = await GetObjectFromMySQL<WarrantyClaims>(@"SELECT num, totalPrice, cost, dateCreated FROM so;");
-
-        if (allWarrantyData is null) return;
-
-        // Group warranty claims by day for the summary table.
-        warrantyClaimsByDay = allWarrantyData
-            .GroupBy(claim => claim.trueDate.Date)
-            .Select(g => new DateDataItem(g.Key, g.Sum(claim => claim.totalPrice)))
-            .ToList();
-
-        // Group data by Quarterly and Monthly periods for the chart.
-        periods = new List<List<DataItem>>
+        if (DashboardConfig.AllowOverviewPage)
         {
-            allWarrantyData
-                .GroupBy(claim => $"Q{(claim.trueDate.Month - 1) / 3 + 1} {claim.trueDate:yyyy}")
-                .Select(g => new DataItem(g.Key, g.Sum(claim => claim.totalPrice)))
-                .ToList(),
+            List<string> idsToLoad = ProductionService.RequiredBoardIds().ToList();
 
-            allWarrantyData
-                .GroupBy(claim => $"{claim.trueDate:MMM yyyy}")
-                .Select(g => new DataItem(g.Key, g.Sum(claim => claim.totalPrice)))
-                .ToList()
-        };
+            await ProductionService.GetBoardsAsync(Progress, idsToLoad);
 
+            SubscribedIds = idsToLoad;
+            SubscribedTypes = [BoardUpdateType.RedCard];
+
+            UpdateRateLimit = TimeSpan.FromSeconds(60);
+        }
+
+        PageLoaded = true;
+        
         await base.OnInitializedAsync();
     }
 
-    /// <summary>
-    /// Handles tab changes and updates the chart series based on the selected period.
-    /// </summary>
-    /// <param name="index">Index of the selected tab.</param>
-    private async Task OnTabChange(int index)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        periodKey = index;
-        await Chart.UpdateSeriesAsync();
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (firstRender)
+        {
+            Uri uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+            
+            if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("tab", out var value))
+            {
+
+                if (value == "Red Cards")
+                {
+                    _tabsIndex = 0;
+                    StateHasChanged();
+                }
+                else if (value == "Production")
+                {
+                    _tabsIndex = 1;
+                    StateHasChanged();
+                }
+                else if (value == "Redline Deadline")
+                {
+                    _tabsIndex = 2;
+                    StateHasChanged();
+                }
+                else if (value == "Handover View")
+                {
+                    _tabsIndex = 3;
+                    StateHasChanged();
+                }
+            }
+        }
     }
 
-    /// <summary>
-    /// Executes the provided SQL query and returns the result as a list of objects.
-    /// </summary>
-    /// <typeparam name="T">The type of the objects returned.</typeparam>
-    /// <param name="query">The SQL query to execute.</param>
-    /// <returns>A list of objects of type T.</returns>
-    private async Task<List<T>> GetObjectFromMySQL<T>(string query)
+    void TabsUpdated(int tabIndex)
     {
-        using IDbConnection connection = new MySqlConnection(_Configuration.GetConnectionString("MySql"));
-        return (await connection.QueryAsync<T>(query)).ToList();
+        UpdateUriQuery();
+        
+        if(_general is not null && !UpdatableComponents.Contains(_general))
+            UpdatableComponents.Add(_general);
+        
+        if(_handover is not null && !UpdatableComponents.Contains(_handover))
+            UpdatableComponents.Add(_handover);
+        
+        if(_redLine is not null && !UpdatableComponents.Contains(_redLine))
+            UpdatableComponents.Add(_redLine);
+        
+        if(_production is not null && !UpdatableComponents.Contains(_production))
+            UpdatableComponents.Add(_production);
+
+        if (tabIndex == 0)
+        {
+            SubscribedTypes = [BoardUpdateType.RedCard];
+            SubscribedIds = ProductionService.RequiredBoardIds().ToList();
+        }
+        
+        else if (tabIndex == 1)
+        {
+            SubscribedTypes = [BoardUpdateType.JobCard, BoardUpdateType.Position, BoardUpdateType.RedCard];
+            SubscribedIds = ProductionService.RequiredBoardIds().ToList();
+        }
+        
+        else if (tabIndex == 2)
+        {
+            SubscribedTypes = [BoardUpdateType.Position, BoardUpdateType.JobCard];
+            SubscribedIds = ProductionService.RequiredBoardIds().ToList();
+        }
+        
+        else if (tabIndex == 3)
+        {
+            SubscribedTypes = [BoardUpdateType.JobCard, BoardUpdateType.Hanover, BoardUpdateType.RedCard];
+            
+            SubscribedIds = [];
+            
+            SubscribedIds.AddRange(ProductionService.GetNextExpoHanoverIds(10).ToList());
+            SubscribedIds.AddRange(ProductionService.GetNextGen2HanoverIds(10).ToList());
+        }
     }
-
-    /// <summary>
-    /// Represents a warranty claim record retrieved from the database.
-    /// </summary>
-    public class WarrantyClaims
+    
+    void UpdateUriQuery()
     {
-        /// <summary>
-        /// Unique identifier for the warranty claim.
-        /// </summary>
-        public required string num { get; init; }
+        Dictionary<string, object?> parameters = [];
+                
+        parameters.Add("tab", _tabs.SelectedTab.Text);
 
-        /// <summary>
-        /// Total price of the warranty claim.
-        /// </summary>
-        public decimal totalPrice { get; init; }
-
-        /// <summary>
-        /// Cost of the warranty claim.
-        /// </summary>
-        public decimal cost { get; init; }
-
-        /// <summary>
-        /// The date the warranty claim was created.
-        /// </summary>
-        private DateTimeOffset dateCreated { get; init; }
-
-        /// <summary>
-        /// Returns the local date of the warranty claim creation.
-        /// </summary>
-        public DateTime trueDate => dateCreated.LocalDateTime;
+        var newUri = NavigationManager.GetUriWithQueryParameters(parameters);
+                
+        NavigationManager.NavigateTo(newUri, false, true);
     }
 }

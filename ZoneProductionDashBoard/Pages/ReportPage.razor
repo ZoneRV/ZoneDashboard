@@ -50,7 +50,6 @@ else
         </Tabs>
     </RadzenTabs>
 
-
     <!-- Display ApexChart -->
     <div class="my-4">
         <h3>Warranty Claims vs Sales</h3>
@@ -85,30 +84,65 @@ else
 }
 
 @code {
+    /// <summary>
+    /// Total sales cost for the selected period.
+    /// </summary>
     decimal totalcost => allWarrantyData?.Sum(x => x.totalPrice) ?? 0;
+
+    /// <summary>
+    /// Total warranty claims cost for the selected period.
+    /// </summary>
     decimal totalwarrantyclaims => allWarrantyData?.Sum(x => x.cost) ?? 0;
+
+    /// <summary>
+    /// Total number of warranty claims.
+    /// </summary>
     int warrantyClaimCount => allWarrantyData?.Count ?? 0;
+
+    /// <summary>
+    /// List of all warranty claims retrieved from the database.
+    /// </summary>
     List<WarrantyClaims>? allWarrantyData = null;
+
+    /// <summary>
+    /// Daily grouped data of warranty claims for display in the summary table.
+    /// </summary>
     List<DateDataItem> warrantyClaimsByDay = new();
+
+    /// <summary>
+    /// Data for each period (Quarterly, Monthly) used in the ApexChart.
+    /// </summary>
     List<List<DataItem>> periods = new();
+
+    /// <summary>
+    /// Currently selected period index (0 for Quarterly, 1 for Monthly).
+    /// </summary>
     int periodKey { get; set; } = 0;
 
+    /// <summary>
+    /// Reference to the ApexChart component.
+    /// </summary>
     private ApexChart<DataItem> Chart = default!;
 
     [Inject]
     public IConfiguration _Configuration { get; set; } = default!;
 
+    /// <summary>
+    /// Initializes the page and loads warranty data from the database.
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
         allWarrantyData = await GetObjectFromMySQL<WarrantyClaims>(@"SELECT num, totalPrice, cost, dateCreated FROM so;");
 
         if (allWarrantyData is null) return;
 
+        // Group warranty claims by day for the summary table.
         warrantyClaimsByDay = allWarrantyData
             .GroupBy(claim => claim.trueDate.Date)
             .Select(g => new DateDataItem(g.Key, g.Sum(claim => claim.totalPrice)))
             .ToList();
 
+        // Group data by Quarterly and Monthly periods for the chart.
         periods = new List<List<DataItem>>
         {
             allWarrantyData
@@ -125,25 +159,56 @@ else
         await base.OnInitializedAsync();
     }
 
+    /// <summary>
+    /// Handles tab changes and updates the chart series based on the selected period.
+    /// </summary>
+    /// <param name="index">Index of the selected tab.</param>
     private async Task OnTabChange(int index)
     {
         periodKey = index;
         await Chart.UpdateSeriesAsync();
     }
 
-
+    /// <summary>
+    /// Executes the provided SQL query and returns the result as a list of objects.
+    /// </summary>
+    /// <typeparam name="T">The type of the objects returned.</typeparam>
+    /// <param name="query">The SQL query to execute.</param>
+    /// <returns>A list of objects of type T.</returns>
     private async Task<List<T>> GetObjectFromMySQL<T>(string query)
     {
         using IDbConnection connection = new MySqlConnection(_Configuration.GetConnectionString("MySql"));
         return (await connection.QueryAsync<T>(query)).ToList();
     }
 
+    /// <summary>
+    /// Represents a warranty claim record retrieved from the database.
+    /// </summary>
     public class WarrantyClaims
     {
+        /// <summary>
+        /// Unique identifier for the warranty claim.
+        /// </summary>
         public required string num { get; init; }
+
+        /// <summary>
+        /// Total price of the warranty claim.
+        /// </summary>
         public decimal totalPrice { get; init; }
+
+        /// <summary>
+        /// Cost of the warranty claim.
+        /// </summary>
         public decimal cost { get; init; }
+
+        /// <summary>
+        /// The date the warranty claim was created.
+        /// </summary>
         private DateTimeOffset dateCreated { get; init; }
+
+        /// <summary>
+        /// Returns the local date of the warranty claim creation.
+        /// </summary>
         public DateTime trueDate => dateCreated.LocalDateTime;
     }
 }
