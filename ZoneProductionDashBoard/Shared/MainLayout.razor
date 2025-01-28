@@ -11,6 +11,7 @@
                 <RadzenMenuItem Text="Production" Path="production" Icon="factory" />
                 <RadzenMenuItem Text="Overview" Path="overview" Icon="assessment" Disabled="@(!DashboardConfig.AllowOverviewPage)"/>
                 <RadzenMenuItem Text="Cards" Path="cards" Icon="stack"/>
+                <RadzenMenuItem Text="Warranty" Path="warranty" Icon="summarize" />
                 @if (Debugger.IsAttached)
                 {
                     <RadzenMenuItem Text="Debug" Icon="bug_report" Path="debug"/>
@@ -34,6 +35,10 @@
     <article class="content px-4">
         @Body
     </article>
+    
+    <footer style="position: absolute; bottom: 0; left: 0; font-size: 1.875em;">
+        <a >For any requests or suggestions please add a card </a> <a href="https://trello.com/b/j7pawua4/data-scientist-projects">here</a>
+    </footer>
 </main>
 
 <RadzenDialog />
