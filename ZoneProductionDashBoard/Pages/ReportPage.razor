@@ -1,0 +1,205 @@
+﻿@page "/warranty/"
+@using System.Data
+@using Dapper
+@using MySqlConnector
+@using ApexCharts
+@using Serilog
+
+@if (_allWarrantyData is null)
+{
+    <RadzenText>Loading..</RadzenText>
+}
+else
+{
+    <h1>Warranty Claims Insights</h1>
+
+    <div class="d-flex justify-content-between">
+        <!-- Total Claims Card -->
+        <div class="card text-white bg-info mb-3" style="width: 18rem;">
+            <div class="card-header">Total Claims</div>
+            <div class="card-body">
+                <h5 class="card-title">@WarrantyClaimCount</h5>
+                <p class="card-text">Number of warranty claims during the selected period.</p>
+            </div>
+        </div>
+
+        <!-- Total Sales Card -->
+        <div class="card text-white bg-info mb-3" style="width: 18rem;">
+            <div class="card-header">Total Sales</div>
+            <div class="card-body">
+                <h5 class="card-title">@String.Format("{0:C}", Totalcost)</h5>
+                <p class="card-text">Total sales for sales during the selected period.</p>
+            </div>
+        </div>
+
+        <!-- Total Warranty Cost Card -->
+        <div class="card text-white bg-info mb-3" style="width: 18rem;">
+            <div class="card-header">Warranty Cost</div>
+            <div class="card-body">
+                <h5 class="card-title">@String.Format("{0:C}", Totalwarrantyclaims)</h5>
+                <p class="card-text">Total cost for warranty claims during the selected period.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Period selection tab -->
+    <RadzenTabs SelectedIndex="PeriodKey" Change="OnTabChange">
+        <Tabs>
+            <RadzenTabsItem Text="Quarterly"></RadzenTabsItem>
+            <RadzenTabsItem Text="Monthly"></RadzenTabsItem>
+        </Tabs>
+    </RadzenTabs>
+
+    <!-- Display ApexChart -->
+    <div class="my-4">
+        <h3>Warranty Claims vs Sales</h3>
+        <ApexChart @ref="_chart" TItem="DataItem" Title="Warranty Claims" Width="1600" Height="600">
+            <ApexPointSeries TItem="DataItem" Items="@_periods.ElementAt(PeriodKey)" XValue="item => item.Key" YValue="item => item.Value" />
+        </ApexChart>
+    </div>
+
+    <!-- Data Summary Table with Virtualization -->
+    <div class="my-4">
+        <h3>Data Summary</h3>
+        <RadzenDataGrid Data="@_allWarrantyData" TItem="WarrantyClaims" AllowVirtualization="true" Style="height: 400px" AllowFiltering="true" AllowSorting="true" FilterMode="FilterMode.Advanced">
+            <Columns>
+                <RadzenDataGridColumn TItem="WarrantyClaims" Property="Num" Title="MO Id" Filterable="true" Sortable="true"/>
+                <RadzenDataGridColumn TItem="WarrantyClaims" Property="TrueTotalPrice" Title="Price" Filterable="true" Sortable="true"/>
+                <RadzenDataGridColumn TItem="WarrantyClaims" Property="TrueCost" Title="Cost" Filterable="true" Sortable="true"/>
+                <RadzenDataGridColumn TItem="WarrantyClaims" Property="TrueDate" Title="Date Created" Filterable="true" Sortable="true"/>
+            </Columns>
+        </RadzenDataGrid>
+    </div>
+    
+}
+
+@code {
+    /// <summary>
+    /// Total sales cost for the selected period.
+    /// </summary>
+    decimal Totalcost => _allWarrantyData?.Sum(x => x.TrueTotalPrice) ?? 0;
+
+    /// <summary>
+    /// Total warranty claims cost for the selected period.
+    /// </summary>
+    decimal Totalwarrantyclaims => _allWarrantyData?.Sum(x => x.TrueCost) ?? 0;
+
+    /// <summary>
+    /// Total number of warranty claims.
+    /// </summary>
+    int WarrantyClaimCount => _allWarrantyData?.Count ?? 0;
+
+    /// <summary>
+    /// List of all warranty claims retrieved from the database.
+    /// </summary>
+    List<WarrantyClaims>? _allWarrantyData;
+
+    /// <summary>
+    /// Data for each period (Quarterly, Monthly) used in the ApexChart.
+    /// </summary>
+    List<List<DataItem>> _periods = new();
+
+    /// <summary>
+    /// Currently selected period index (0 for Quarterly, 1 for Monthly).
+    /// </summary>
+    int PeriodKey { get; set; }
+
+    /// <summary>
+    /// Reference to the ApexChart component.
+    /// </summary>
+    private ApexChart<DataItem> _chart = default!;
+
+    [Inject]
+    public IConfiguration Configuration { get; set; } = default!;
+
+    /// <summary>
+    /// Initializes the page and loads warranty data from the database.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        _allWarrantyData = await GetObjectFromMySql<WarrantyClaims>(@"SELECT num, totalPrice, cost, dateCreated FROM so;");
+
+        if (_allWarrantyData is null) return;
+
+        // Group data by Quarterly and Monthly periods for the chart.
+        _periods = new List<List<DataItem>>
+        {
+            _allWarrantyData
+                .GroupBy(claim => $"Q{(claim.TrueDate.Month - 1) / 3 + 1} {claim.TrueDate:yyyy}")
+                .Select(g => new DataItem(g.Key, g.Sum(claim => claim.TrueTotalPrice)))
+                .ToList(),
+
+            _allWarrantyData
+                .GroupBy(claim => $"{claim.TrueDate:MMM yyyy}")
+                .Select(g => new DataItem(g.Key, g.Sum(claim => claim.TrueTotalPrice)))
+                .ToList()
+        };
+
+        await base.OnInitializedAsync();
+    }
+
+    /// <summary>
+    /// Handles tab changes and updates the chart series based on the selected period.
+    /// </summary>
+    /// <param name="index">Index of the selected tab.</param>
+    private async Task OnTabChange(int index)
+    {
+        PeriodKey = index;
+        await _chart.UpdateSeriesAsync();
+    }
+
+    /// <summary>
+    /// Executes the provided SQL query and returns the result as a list of objects.
+    /// </summary>
+    /// <typeparam name="T">The type of the objects returned.</typeparam>
+    /// <param name="query">The SQL query to execute.</param>
+    /// <returns>A list of objects of type T.</returns>
+    private async Task<List<T>> GetObjectFromMySql<T>(string query)
+    {
+        using IDbConnection connection = new MySqlConnection(Configuration.GetConnectionString("MySql"));
+        return (await connection.QueryAsync<T>(query)).ToList();
+    }
+
+    /// <summary>
+    /// Represents a warranty claim record retrieved from the database.
+    /// </summary>
+    public class WarrantyClaims
+    {
+        /// <summary>
+        /// Unique identifier for the warranty claim.
+        /// </summary>
+        public required string Num { get; init; }
+
+        /// <summary>
+        /// Total price of the warranty claim.
+        /// </summary>
+        private decimal TotalPrice { get; init; }
+
+        /// <summary>
+        ///  Sanatized Total Price
+        /// </summary>
+        public decimal TrueTotalPrice => decimal.Round(TotalPrice, 2, MidpointRounding.ToZero);
+        
+        /// <summary>
+        /// Cost of the warranty claim.
+        /// </summary>
+        private decimal Cost { get; init; }
+
+        /// <summary>
+        /// Sanatized Cost
+        /// </summary>
+        public decimal TrueCost => decimal.Round(TotalPrice, 2, MidpointRounding.ToZero);
+
+        /// <summary>
+        /// The date the warranty claim was created.
+        /// </summary>
+        private DateTimeOffset DateCreated { get; init; }
+
+        /// <summary>
+        /// Returns the local date of the warranty claim creation.
+        /// </summary>
+        public DateTime TrueDate => DateCreated.LocalDateTime;
+    }
+
+
+}
