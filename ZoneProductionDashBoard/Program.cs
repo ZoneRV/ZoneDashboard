@@ -33,7 +33,7 @@ internal class Program
                              theme: AnsiConsoleTheme.Code,
                              outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {NewLine}{Exception}")
                          .WriteTo.File(
-                             "Logs/log.txt",
+                             "Logs/log2.txt",
                              shared: true,
                              flushToDiskInterval: TimeSpan.FromSeconds(10),
                              retainedFileCountLimit: 1,
