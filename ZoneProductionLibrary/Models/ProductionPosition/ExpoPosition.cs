@@ -123,7 +123,10 @@ public class ExpoProductionPosition : IProductionPosition
         ("EXPO BAY 3", "Bay 3", 4),
         ("EXPO BAY 4", "Bay 4", 5),
         ("EXPO BAY 5", "Bay 5", 6),
-        ("Dome - EXPO", "Dome", 7)
+        ("Dome - EXPO", "Dome", 7),
+        ("REWORK - EXPO", "Rework", 8),
+        ("DETAIL - EXPO", "Detail", 9),
+        ("SALES PROHO - EXPO", "Sales ProHo", 10)
     ];
 
     public static readonly (string name, int id)[] BoardPositions =
