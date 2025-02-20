@@ -127,6 +127,9 @@ public class Gen2ProductionPosition : IProductionPosition
         ("Outside BAY 8", "Outside Bay 8", 10),
         ("RAIN MAKER", "Rain Maker", 11),
         ("Dome - GEN2", "Dome", 12),
+        ("REWORK - GEN2", "Rework", 13),
+        ("DETAIL - GEN2", "Detail", 14),
+        ("SALES PROHO - GEN2", "Sales ProHo", 15)
     ];
 
     public static readonly (string name, int id)[] BoardPositions =
