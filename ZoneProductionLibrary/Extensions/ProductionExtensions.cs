@@ -53,7 +53,7 @@ namespace ZoneProductionLibrary.Extensions
 
                 string listName = list.Name;
 
-                if (listName == "SCHEDULED VANS (50x)" || listName == "SCHEDULED EXPO VANS")
+                if (listName == "SCHEDULED VANS (50x)" || listName == "SCHEDULED EXPO VANS" || listName == "Welding In Progress" || listName == "Ready For Gal" || listName == "Chassis At Gal" || listName == "Chassis Onsite" || listName == "Chassis At Paint" || listName == "Ready For Production")
                     positionHistory.Add((move.Date, new PreProduction()));
 
                 else if (Gen2ProductionPosition.Positions.Any(x => x.name == listName) && Gen2ProductionPosition.TryGetGen2Position(ProductionPositionEntryType.LineMoveName,
