@@ -11,6 +11,13 @@
                 <RadzenMenuItem Text="Production" Path="production" Icon="factory" />
                 <RadzenMenuItem Text="Overview" Path="overview" Icon="assessment" Disabled="@(!DashboardConfig.AllowOverviewPage)"/>
                 <RadzenMenuItem Text="Cards" Path="cards" Icon="stack"/>
+                <RadzenMenuItem Text="Forms" Icon="sticky_note_2">
+                    <RadzenMenuItem Text="NCR" Path="https://app.smartsheet.com/b/form/bc986a5125134463a685c1114cdff314" />
+                    <RadzenMenuItem Text="ECR" Path="https://app.smartsheet.com/b/form/3fbddf63863a41a581a2916709004958" />
+                    <RadzenMenuItem Text="Trello Change" Path="https://app.smartsheet.com/b/form/5002434e81e346b7b29d9e9149702e83" />
+                    <RadzenMenuItem Text="BOM" Path="https://app.smartsheet.com/b/form/0c3a67bb04844357a905dee97d1c4d46" />
+                    <RadzenMenuItem Text="Continuous Improvement" Path="https://app.smartsheet.com/b/form/87a5dcd2fa774e33aa3cbd455720e741" />
+                </RadzenMenuItem>
                 <RadzenMenuItem Text="Warranty" Path="warranty" Icon="summarize" />
                 @if (Debugger.IsAttached)
                 {
