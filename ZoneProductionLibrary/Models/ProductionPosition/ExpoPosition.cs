@@ -119,7 +119,7 @@ public class ExpoProductionPosition : IProductionPosition
         ("Chassis Module Expo", "Chassis", 0),
         ("EXPO BAY 1", "Bay 1", 1),
         ("EXPO BAY 2", "Bay 2", 2),
-        ("Outside/Paint Bay", "Paint", 3),
+        ("EXPO Sealing", "Sealing", 3),
         ("EXPO BAY 3", "Bay 3", 4),
         ("EXPO BAY 4", "Bay 4", 5),
         ("EXPO BAY 5", "Bay 5", 6),
